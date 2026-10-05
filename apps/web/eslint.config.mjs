@@ -29,6 +29,51 @@ const requireServerOnly = {
   },
 };
 
+const importPatterns = [
+  relativeImport("@/"),
+  {
+    group: ["@supabase/*"],
+    message:
+      "web は Supabase に触れない。データは api 経由で取る（docs/adr/0001-separate-web-and-api.md）",
+  },
+  {
+    group: ["@pitari/api"],
+    allowTypeImports: true,
+    message: "api からは型だけ使える。import type で書く",
+  },
+];
+
+// NEXT_PUBLIC_ の値はブラウザ向けのコードに埋め込まれるので、秘密に見える名前は止める
+const secretPublicEnv = {
+  selector:
+    "MemberExpression[object.object.name='process'][object.property.name='env'][property.name=/^NEXT_PUBLIC_.*(SECRET|TOKEN|PASSWORD|PRIVATE|SERVICE_ROLE|KEY)/]",
+  message:
+    "秘密に見える NEXT_PUBLIC_ の環境変数はブラウザに埋め込まれる。src/server/ で NEXT_PUBLIC_ なしの名前で読む（公開してよい値なら、理由を書いて eslint-disable する）",
+};
+
+// 外部 API や api の呼び出し先がブラウザに見えないよう、src/server/ の外では止める。
+// URL を変数で渡す書き方までは見分けられない
+const outsideServer = {
+  honoClient: {
+    group: ["hono/client"],
+    message: "api のクライアントは src/server/ の中だけで作る",
+  },
+  absoluteFetch: [
+    {
+      selector:
+        "CallExpression[callee.name='fetch'][arguments.0.type='Literal'][arguments.0.value=/^https?:/]",
+      message:
+        "外部の URL を直接 fetch しない。呼び出しは src/server/ に置き、画面からは /api/* を呼ぶ",
+    },
+    {
+      selector:
+        "CallExpression[callee.name='fetch'][arguments.0.type='TemplateLiteral'][arguments.0.quasis.0.value.raw=/^https?:/]",
+      message:
+        "外部の URL を直接 fetch しない。呼び出しは src/server/ に置き、画面からは /api/* を呼ぶ",
+    },
+  ],
+};
+
 export default defineConfig([
   ...nextVitals,
   ...sharedConfig(import.meta.dirname),
@@ -37,31 +82,23 @@ export default defineConfig([
     rules: {
       "@typescript-eslint/no-restricted-imports": [
         "error",
-        {
-          patterns: [
-            relativeImport("@/"),
-            {
-              group: ["@supabase/*"],
-              message:
-                "web は Supabase に触れない。データは api 経由で取る（docs/adr/0001-separate-web-and-api.md）",
-            },
-            {
-              group: ["@pitari/api"],
-              allowTypeImports: true,
-              message: "api からは型だけ使える。import type で書く",
-            },
-          ],
-        },
+        { patterns: importPatterns },
       ],
-      // NEXT_PUBLIC_ の値はブラウザ向けのコードに埋め込まれるので、秘密に見える名前は止める
+      "no-restricted-syntax": ["error", secretPublicEnv],
+    },
+  },
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    ignores: ["src/server/**"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        { patterns: [...importPatterns, outsideServer.honoClient] },
+      ],
       "no-restricted-syntax": [
         "error",
-        {
-          selector:
-            "MemberExpression[object.object.name='process'][object.property.name='env'][property.name=/^NEXT_PUBLIC_.*(SECRET|TOKEN|PASSWORD|PRIVATE|SERVICE_ROLE|KEY)/]",
-          message:
-            "秘密に見える NEXT_PUBLIC_ の環境変数はブラウザに埋め込まれる。src/server/ で NEXT_PUBLIC_ なしの名前で読む（公開してよい値なら、理由を書いて eslint-disable する）",
-        },
+        secretPublicEnv,
+        ...outsideServer.absoluteFetch,
       ],
     },
   },
