@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+
+# create-next-app が生成した設定を root に移したもの。
+# これらの install スクリプトは不要（lefthook は prepare で入れる）なので、警告だけ止める
+ignoredBuiltDependencies:
+  - sharp
+  - unrs-resolver
+  - lefthook
