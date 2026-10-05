@@ -44,12 +44,21 @@ const importPatterns = [
 ];
 
 // NEXT_PUBLIC_ の値はブラウザ向けのコードに埋め込まれるので、秘密に見える名前は止める
-const secretPublicEnv = {
-  selector:
-    "MemberExpression[object.object.name='process'][object.property.name='env'][property.name=/^NEXT_PUBLIC_.*(SECRET|TOKEN|PASSWORD|PRIVATE|SERVICE_ROLE|KEY)/]",
-  message:
-    "秘密に見える NEXT_PUBLIC_ の環境変数はブラウザに埋め込まれる。src/server/ で NEXT_PUBLIC_ なしの名前で読む（公開してよい値なら、理由を書いて eslint-disable する）",
-};
+const secretName =
+  "/^NEXT_PUBLIC_.*(SECRET|TOKEN|PASSWORD|PRIVATE|SERVICE_ROLE|KEY)/";
+const secretPublicEnvMessage =
+  "秘密に見える NEXT_PUBLIC_ の環境変数はブラウザに埋め込まれる。src/server/ で NEXT_PUBLIC_ なしの名前で読む（公開してよい値なら、理由を書いて eslint-disable する）";
+const secretPublicEnv = [
+  {
+    selector: `MemberExpression[object.object.name='process'][object.property.name='env'][property.name=${secretName}]`,
+    message: secretPublicEnvMessage,
+  },
+  {
+    // process.env["NEXT_PUBLIC_..."] の書き方も止める
+    selector: `MemberExpression[computed=true][object.object.name='process'][object.property.name='env'][property.value=${secretName}]`,
+    message: secretPublicEnvMessage,
+  },
+];
 
 // 外部 API や api の呼び出し先がブラウザに見えないよう、src/server/ の外では止める。
 // URL を変数で渡す書き方までは見分けられない
@@ -84,7 +93,7 @@ export default defineConfig([
         "error",
         { patterns: importPatterns },
       ],
-      "no-restricted-syntax": ["error", secretPublicEnv],
+      "no-restricted-syntax": ["error", ...secretPublicEnv],
     },
   },
   {
@@ -97,7 +106,7 @@ export default defineConfig([
       ],
       "no-restricted-syntax": [
         "error",
-        secretPublicEnv,
+        ...secretPublicEnv,
         ...outsideServer.absoluteFetch,
       ],
     },

@@ -16,7 +16,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - **api の呼び出しは [src/server/api.ts](src/server/api.ts) からだけ行う**：型は `@pitari/api` から `import type` で受け取る（Hono RPC）
 - **`src/server/` のファイルには `import "server-only"` を書く**：クライアントから読み込まれたときに build で止めるため。書き忘れると ESLint で止まる
 - **画面のコードから外部の URL を直接呼ばない**：画面からは自分の `/api/*` だけを呼ぶ。`src/server/` の外で `https://` などの URL を直接 `fetch` したり、`hono/client` を import したりすると ESLint で止まる。URL を変数で渡す書き方までは見分けられないので、そこは各自で守る
-- **秘密の値を `NEXT_PUBLIC_` の環境変数にしない**：名前に SECRET・TOKEN・KEY などを含む `process.env.NEXT_PUBLIC_*` は ESLint で止まる
+- **秘密の値を `NEXT_PUBLIC_` の環境変数にしない**：名前に SECRET・TOKEN・KEY などを含む `process.env.NEXT_PUBLIC_*` は、`process.env["..."]` の書き方も含めて ESLint で止まる
 - **`/api/*` の Route Handler は api の `/v1/*` と同じパス構成で中継する**：見本は [src/app/api/health/route.ts](src/app/api/health/route.ts)。api のエラー内容はブラウザに出さない
 - **useEffect は外部と同期するときだけ使う**：カメラや three.js などが該当する。それ以外は state と props の計算や、イベントハンドラで済ませる
 - **スタイルは Tailwind で書く**
