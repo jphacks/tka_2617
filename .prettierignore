@@ -1,2 +1,5 @@
 pnpm-lock.yaml
 apps/api/src/lib/database.types.ts
+
+# JPHacks の提出テンプレートなので、空の箇条書きなどの形を崩さない
+README.md
