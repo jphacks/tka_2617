@@ -22,6 +22,7 @@ flowchart LR
 | 依存を入れる（git hook も入る） | `pnpm install`                                 |
 | web と api を起動               | `pnpm dev`                                     |
 | lint / 型チェック / 整形        | `pnpm lint` / `pnpm typecheck` / `pnpm format` |
+| build（CI でも流す）            | `pnpm build`                                   |
 | ローカルの Supabase を起動      | `supabase start`                               |
 | DB の型を生成                   | `pnpm --filter @pitari/api db:types`           |
 
@@ -54,7 +55,7 @@ URL を知っていれば、誰でも `/api/*` を叩けて、服の登録や削
 
 ### 境界とセキュリティ
 
-- **外部 API と backend の呼び出しは server-only で行う**：ハッカソンとはいえ、開発者ツールで中身が見えたら話にならないため。呼び出しのコードは `apps/web/src/server/` に置き、ファイルの先頭で `server-only` を import する（クライアント側から読み込むとビルドが止まる）。秘密の値は `NEXT_PUBLIC_` で始まる環境変数にしない（ブラウザに埋め込まれる）
+- **外部 API と backend の呼び出しは server-only で行う**：ハッカソンとはいえ、開発者ツールで中身が見えたら話にならないため。呼び出しのコードは `apps/web/src/server/` に置き、ファイルの先頭で `server-only` を import する（クライアント側から読み込むと build が止まる。CI でも build する）。秘密の値は `NEXT_PUBLIC_` で始まる環境変数にしない（ブラウザに埋め込まれる）
 - **`.env` は commit しない**：値を足したら `.env.example` も更新する
 
 ### DB と API

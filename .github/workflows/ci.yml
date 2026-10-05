@@ -22,3 +22,5 @@ jobs:
       - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm typecheck
+      # server-only の違反（クライアントからサーバー専用のコードを読み込む）は build でしか分からないため
+      - run: pnpm build
