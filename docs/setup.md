@@ -50,6 +50,7 @@ lefthook が、staged のファイルを Prettier で整形し、ESLint で検�
 ## DB を変えるとき
 
 1. `supabase migration new <変更の名前>` で migration を作り、SQL を書く
+   - `profiles` を作るときは、`supabase/seed.sql` にデモユーザー（`apps/api/.env.example` の `DEMO_PROFILE_ID`）の行も入れる。`supabase db reset` のたびに流れる
 2. `supabase db reset` でローカルの DB に反映する
 3. `pnpm --filter @pitari/api db:types` で型を作り直す
 4. [docs/er.md](er.md) を更新する
