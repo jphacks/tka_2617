@@ -12,6 +12,15 @@ const otherLayers = {
   message: "services 同士や routes は呼ばない。共通の処理は #src/lib/ に置く",
 };
 
+// Hono RPC は、つなげて書いたルートだけを型にする。
+// `v1.get(...)` のように別の文で足すと、web から型が見えなくなるため止める
+const routeStatement = {
+  selector:
+    "ExpressionStatement > CallExpression > MemberExpression.callee[object.type='Identifier'][property.name=/^(get|post|put|patch|delete|all|on|use|route)$/]",
+  message:
+    "ルートは new Hono().get(...).post(...) のように、1つの式につなげて書く（別の文で足すと web から型が見えない）",
+};
+
 function restrictImports(...patterns) {
   return {
     "@typescript-eslint/no-restricted-imports": ["error", { patterns }],
@@ -23,6 +32,10 @@ export default defineConfig([
   {
     files: ["src/**/*.ts"],
     rules: restrictImports(relative, supabaseClient),
+  },
+  {
+    files: ["src/app.ts", "src/routes/**/*.ts"],
+    rules: { "no-restricted-syntax": ["error", routeStatement] },
   },
   {
     files: ["src/lib/supabase.ts"],
