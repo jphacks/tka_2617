@@ -31,7 +31,7 @@
 
 ## 参考文献
 
-- [Next.jsの環境変数のセキュリティ（Zenn）](https://zenn.dev/masato24524/articles/eb87246a0bada1)：`NEXT_PUBLIC_` を付けたキーが開発者ツールで見えてしまった例
+- [Next.jsの環境変数のセキュリティ（Zenn）](https://zenn.dev/masato24524/articles/eb87246a0bada1)：`NEXT_PUBLIC_` 付きの環境変数にした API キーが、開発者ツールで見えてしまった例
 - [Next.jsで「API丸見え」を防ぐ設計（Zenn）](https://zenn.dev/tshishido/articles/9074645de87627)
 - [SupabaseのANON_KEYとSERVICE_ROLE_KEYの違いをちゃんと理解する（Zenn）](https://zenn.dev/seekseep/articles/supabase-anon-key-vs-service-role-key)
 - [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)

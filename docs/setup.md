@@ -32,7 +32,7 @@
    - `INTERNAL_API_TOKEN`：下のコマンドで作り、api と web の両方に同じ値を入れる
 
    ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+   openssl rand -hex 32
    ```
 
 4. 起動する

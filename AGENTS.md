@@ -54,7 +54,7 @@ URL を知っていれば、誰でも `/api/*` を叩けて、服の登録や削
 
 ### 境界とセキュリティ
 
-- **外部 API と backend の呼び出しは server-only で行う**：ハッカソンとはいえ、開発者ツールで中身が見えたら話にならないため。呼び出しは `apps/web/src/server/` に置き、`import "server-only"` を付ける。秘密の値に `NEXT_PUBLIC_` を付けない
+- **外部 API と backend の呼び出しは server-only で行う**：ハッカソンとはいえ、開発者ツールで中身が見えたら話にならないため。呼び出しのコードは `apps/web/src/server/` に置き、ファイルの先頭で `server-only` を import する（クライアント側から読み込むとビルドが止まる）。秘密の値は `NEXT_PUBLIC_` で始まる環境変数にしない（ブラウザに埋め込まれる）
 - **`.env` は commit しない**：値を足したら `.env.example` も更新する
 
 ### DB と API
@@ -80,7 +80,7 @@ Claude Code は [.claude/settings.json](.claude/settings.json)、Codex は [.cod
 ## 参考文献
 
 - [Next.js: Preventing environment poisoning（server-only）](https://nextjs.org/docs/app/getting-started/server-and-client-components#preventing-environment-poisoning)
-- [Next.jsの環境変数のセキュリティ（Zenn）](https://zenn.dev/masato24524/articles/eb87246a0bada1)：`NEXT_PUBLIC_` を付けた API キーが開発者ツールで見えてしまった例
+- [Next.jsの環境変数のセキュリティ（Zenn）](https://zenn.dev/masato24524/articles/eb87246a0bada1)：`NEXT_PUBLIC_` 付きの環境変数にした API キーが、開発者ツールで見えてしまった例
 - [【TypeScript】importする際相対パスではなくエイリアスを使用する（Zenn）](https://zenn.dev/tusi/articles/31fac753cf0150)
 - [Claude Code: Configure permissions](https://code.claude.com/docs/en/permissions)
 - [Codex: Rules](https://learn.chatgpt.com/docs/agent-configuration/rules)
