@@ -1,0 +1,48 @@
+# .claude/settings.json と同じ方針。片方を変えたら、もう片方も合わせる。
+# Codex の rules はコマンドの先頭一致なので、フラグが途中にある形までは止められない。
+
+prefix_rule(
+    pattern = ["git", "push", ["--force", "-f", "--force-with-lease"]],
+    decision = "forbidden",
+    justification = "他の人の commit を消してしまうため",
+    match = ["git push --force origin main", "git push -f"],
+    not_match = ["git push origin main"],
+)
+
+prefix_rule(
+    pattern = ["git", "commit", ["--no-verify", "-n"]],
+    decision = "forbidden",
+    justification = "commit 前の format と lint（lefthook）を飛ばさないため",
+    match = ["git commit --no-verify -m wip"],
+    not_match = ["git commit -m wip"],
+)
+
+prefix_rule(
+    pattern = ["supabase", "db", "push"],
+    decision = "forbidden",
+    justification = "クラウドの DB への反映は人が行う",
+)
+
+prefix_rule(
+    pattern = ["supabase", "db", "reset", "--linked"],
+    decision = "forbidden",
+    justification = "クラウドの DB を消してしまうため",
+)
+
+prefix_rule(
+    pattern = ["pnpm", "add"],
+    decision = "prompt",
+    justification = "依存を増やすときは確認する",
+)
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "push する前に確認する",
+)
+
+prefix_rule(
+    pattern = ["supabase", "link"],
+    decision = "prompt",
+    justification = "クラウドのプロジェクトにつなぐ前に確認する",
+)
