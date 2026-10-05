@@ -1,0 +1,17 @@
+# format を先に、lint を後に流したいので jobs で順番を固定する
+pre-commit:
+  jobs:
+    - name: format
+      glob: "*.{js,mjs,ts,tsx,json,md,yml,yaml,css}"
+      run: pnpm exec prettier --write --ignore-unknown {staged_files}
+      stage_fixed: true
+    - name: lint web
+      root: "apps/web/"
+      glob: "*.{ts,tsx,mjs}"
+      run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
+    - name: lint api
+      root: "apps/api/"
+      glob: "*.{ts,mjs}"
+      run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
