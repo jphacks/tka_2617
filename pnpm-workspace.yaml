@@ -7,3 +7,4 @@ ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
   - lefthook
+  - esbuild
