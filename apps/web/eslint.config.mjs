@@ -1,18 +1,32 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { relativeImport, sharedConfig } from "../../eslint.shared.mjs";
 
-const eslintConfig = defineConfig([
+export default defineConfig([
   ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
+  ...sharedConfig(import.meta.dirname),
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            relativeImport("@/"),
+            {
+              group: ["@supabase/*"],
+              message:
+                "web は Supabase に触れない。データは api 経由で取る（docs/adr/0001-separate-web-and-api.md）",
+            },
+            {
+              group: ["@pitari/api"],
+              allowTypeImports: true,
+              message: "api からは型だけ使える。import type で書く",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);
-
-export default eslintConfig;
