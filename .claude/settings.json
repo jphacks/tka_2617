@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.local)",
+      "Bash(git push *--force*)",
+      "Bash(git push -f *)",
+      "Bash(git push * -f)",
+      "Bash(git commit *--no-verify*)",
+      "Bash(git commit -n *)",
+      "Bash(supabase db push *)",
+      "Bash(supabase db reset *--linked*)"
+    ],
+    "ask": ["Bash(pnpm add *)", "Bash(git push *)", "Bash(supabase link *)"],
+    "allow": [
+      "Bash(pnpm lint *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm format *)",
+      "Bash(pnpm format:check)",
+      "Bash(supabase status *)",
+      "Bash(supabase migration new *)",
+      "Bash(pnpm --filter @pitari/api db:types)"
+    ]
+  }
+}

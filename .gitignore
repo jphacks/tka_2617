@@ -1,0 +1,21 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+.DS_Store
+*.log
+
+# 秘密の値が入るので .env.example 以外は commit しない
+.env
+.env.*
+!.env.example
+
+.claude/settings.local.json
+CLAUDE.local.md
+
+*.pem
