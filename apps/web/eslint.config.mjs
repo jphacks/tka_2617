@@ -2,6 +2,33 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import { relativeImport, sharedConfig } from "../../eslint.shared.mjs";
 
+// server-only を import しておけば、クライアントから読み込まれたときに build で止まる。
+// 書き忘れると止まらないので、src/server/ では書いてあるかを確かめる
+const requireServerOnly = {
+  meta: {
+    type: "problem",
+    schema: [],
+    messages: {
+      missing:
+        'src/server/ のファイルには import "server-only" を書く（クライアントから読み込まれたら build で止めるため）',
+    },
+  },
+  create(context) {
+    return {
+      Program(program) {
+        const imported = program.body.some(
+          (node) =>
+            node.type === "ImportDeclaration" &&
+            node.source.value === "server-only",
+        );
+        if (!imported) {
+          context.report({ node: program, messageId: "missing" });
+        }
+      },
+    };
+  },
+};
+
 export default defineConfig([
   ...nextVitals,
   ...sharedConfig(import.meta.dirname),
@@ -37,6 +64,13 @@ export default defineConfig([
         },
       ],
     },
+  },
+  {
+    files: ["src/server/**/*.{ts,tsx}"],
+    plugins: {
+      pitari: { rules: { "require-server-only": requireServerOnly } },
+    },
+    rules: { "pitari/require-server-only": "error" },
   },
   globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
 ]);
