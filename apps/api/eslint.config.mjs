@@ -12,6 +12,12 @@ const otherLayers = {
   message: "services 同士や routes は呼ばない。共通の処理は #src/lib/ に置く",
 };
 
+const dbFromRoutes = {
+  regex: "^#src/lib/supabase$",
+  message:
+    "DB は services で触る。routes は受け取りと検証、返す形を整えるところまで",
+};
+
 // Hono RPC は、つなげて書いたルートだけを型にする。
 // `v1.get(...)` のように別の文で足すと、web から型が見えなくなるため止める
 const routeStatement = {
@@ -36,6 +42,10 @@ export default defineConfig([
   {
     files: ["src/app.ts", "src/routes/**/*.ts"],
     rules: { "no-restricted-syntax": ["error", routeStatement] },
+  },
+  {
+    files: ["src/routes/**/*.ts"],
+    rules: restrictImports(relative, supabaseClient, dbFromRoutes),
   },
   {
     files: ["src/lib/supabase.ts"],

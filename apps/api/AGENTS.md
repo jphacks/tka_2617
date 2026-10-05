@@ -2,7 +2,7 @@
 
 全体のルールは [../../AGENTS.md](../../AGENTS.md)。
 
-- **2層にする**：`src/routes/`（受け取りと zod の検証、返す形を整える）→ `src/services/`（処理と DB）
+- **2層にする**：`src/routes/`（受け取りと zod の検証、返す形を整える）→ `src/services/`（処理と DB）。routes から DB を触ると ESLint で止まる
 - **1ファイルには1つの処理だけを書く**：例 `src/services/create-garment.ts`
 - **services 同士で呼び合わない**：共通の処理は `src/lib/` に置く。ESLint で止まる
 - **Supabase のクライアントは [src/lib/supabase.ts](src/lib/supabase.ts) だけで作る**：secret key は RLS を素通りするため
