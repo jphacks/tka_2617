@@ -78,6 +78,17 @@ Claude Code は [.claude/settings.json](.claude/settings.json)、Codex は [.cod
 
 `.env` の読み取り禁止は、Claude のファイルツールと `cat` などには効くが、スクリプトの中で読むことまでは防げない。
 
+### 止められる範囲
+
+|                                     | Claude Code          | Codex                                      |
+| ----------------------------------- | -------------------- | ------------------------------------------ |
+| フラグの位置                        | どこにあっても止まる | 先頭に書いた形だけ止まる                   |
+| 例：`git push origin main --force`  | 止まる               | 止まらない（通常の push と同じく確認だけ） |
+| 例：`git commit -m wip --no-verify` | 止まる               | 止まらない                                 |
+| `.env` の読み取り                   | 止まる               | 止まらない                                 |
+
+Codex の rules はコマンドの先頭一致でしか書けないため。Claude も、`git -C . push --force` のような別の書き方までは見分けられない。どちらの AI も、人が手で打つコマンドは止められない。最後の砦は GitHub 側の main の保護（PR 必須・CI 必須・force push 禁止）で、設定はリポジトリの管理者にお願いしている。
+
 ## 参考文献
 
 - [Next.js: Preventing environment poisoning（server-only）](https://nextjs.org/docs/app/getting-started/server-and-client-components#preventing-environment-poisoning)
