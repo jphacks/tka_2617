@@ -13,7 +13,7 @@
 - web（`apps/web`）はVercelのHobbyプランに置く
 - GitHubとはつながず、手元のMacからVercelのCLI（`npx vercel --prod`）でデプロイする。手順は[setup.md](../setup.md#webをvercelにデプロイする)
 - リポジトリのルートに`.vercelignore`を置き、`.env`などの秘密のファイルを送らない
-- Vercelでは、インストールのときにスクリプトを動かさない（`apps/web/vercel.json`の`installCommand`に`--ignore-scripts`）。CLIで送ったファイルには`.git`が無く、ルートの`prepare`（`lefthook install`）が失敗するため。webのbuildに要るスクリプトは無い
+- Vercelでは、インストールのときにスクリプトを動かさない（`apps/web/vercel.json`の`installCommand`に`--ignore-scripts`）。CLIで送ったファイルには`.git`が無く、ルートの`prepare`（`lefthook install`）が失敗するため。依存のインストールスクリプトは、手元とCIでも`pnpm-workspace.yaml`で止めているので、動きは変わらない。インストールスクリプトが要る依存を足したら、この設定を見直す
 - apiとSupabaseの置き場所は、DBと登録のAPIができてから決める
 
 ## 理由
