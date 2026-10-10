@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=general-sans@400,500,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+body{margin:0;background:#EEF1F4;font-family:"General Sans","Noto Sans JP",system-ui,sans-serif;color:#0F172A;-webkit-font-smoothing:antialiased}
+a{color:#0F172A}a:hover{color:#000}
+button{font-family:inherit}
+button:focus-visible{outline:2px solid #0F172A;outline-offset:3px}
+.pt button:focus-visible{outline:3px solid #F3A683;outline-offset:4px;border-radius:9999px}
+.z3 button:focus-visible,.z3 input:focus-visible{outline:2px solid #222222;outline-offset:2px}
+.z3-scroll::-webkit-scrollbar{display:none}
+.s5 button:focus-visible{outline:2px solid #111111;outline-offset:2px;border-radius:6px}
+@keyframes s5-r{0%{opacity:0;transform:translateX(28px)}100%{opacity:1;transform:none}}
+@keyframes s5-l{0%{opacity:0;transform:translateX(-28px)}100%{opacity:1;transform:none}}
+@keyframes s5-fade{0%{opacity:0}100%{opacity:1}}
+@keyframes s5-popA{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes s5-popB{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+@keyframes s5-burst{0%{opacity:0;transform:scale(.3)}25%{opacity:.95;transform:scale(1.1)}40%{transform:scale(.95)}75%{opacity:.95;transform:scale(1)}100%{opacity:0;transform:scale(1.15)}}
+@keyframes s5-sheet{0%{transform:translateY(100%)}100%{transform:none}}
+.g4 button:focus-visible{outline:3px solid #1CB0F6;outline-offset:3px}
+@keyframes g4-hopA{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-14px) scale(1.05,.95)}60%{transform:translateY(0) scale(1.08,.92)}80%{transform:translateY(-3px)}}
+@keyframes g4-hopB{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-14px) scale(1.05,.95)}60%{transform:translateY(0) scale(1.08,.92)}80%{transform:translateY(-3px)}}
+@keyframes g4-bounceA{0%{transform:scale(1)}40%{transform:scale(1.22) rotate(-6deg)}70%{transform:scale(.95)}100%{transform:scale(1.08)}}
+@keyframes g4-bounceB{0%{transform:scale(1)}40%{transform:scale(1.22) rotate(-6deg)}70%{transform:scale(.95)}100%{transform:scale(1.08)}}
+@keyframes g4-in{0%{opacity:0;transform:translateY(16px) scale(.96)}100%{opacity:1;transform:none}}
+@keyframes g4-pulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.55);opacity:0}}
+@keyframes g4-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes g4-toast{0%{opacity:0;transform:translateY(-20px) scale(.7)}15%{opacity:1;transform:translateY(0) scale(1.06)}22%{transform:scale(1)}85%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-10px) scale(.95)}}
+@keyframes g4-confetti{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),260px) rotate(540deg)}}
+@keyframes z3-in{0%{opacity:0}100%{opacity:1}}
+@keyframes pt-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes pt-pop{0%{opacity:0;transform:translateY(10px) scale(.98)}100%{opacity:1;transform:none}}
+@keyframes pt-sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(3deg)}}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}.dv-opts{display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}.dv-next{margin:28px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+</style>
+</helmet>
+<section class="dv-turn" id="t6">
+<div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">新しい方向性 3案 — 雑誌・仕立て屋・試着室</span></div>
+<p style="margin:0 0 28px;max-width:720px;font:12px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55)">服のアプリらしさを、画面の「素材」から考えた3案です。<a class="dv-oid" href="#6a">6a</a> はファッション誌のページ、<a class="dv-oid" href="#6b">6b</a> は型紙・メジャー・織りネームといった仕立て道具、<a class="dv-oid" href="#6c">6c</a> は照明を落とした試着室で、写真が一番映えます。ただし <a class="dv-oid" href="#6c">6c</a> は「明るい背景」の条件から外れるため、比較用の案です。</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="6a">
+<div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>明朝ルックブック — 余白・番号・キャプション</div>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;border-radius:44px;border:1px solid #E4DFD6;box-sizing:border-box;background:#FAF8F4;color:#1F1D1A;font-family:'Zen Kaku Gothic New',sans-serif">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:110px">
+<header style="position:sticky;top:0;z-index:2;background:rgba(250,248,244,.94);backdrop-filter:blur(4px);border-bottom:1px solid #E4DFD6;padding:52px 24px 18px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:11px;font-weight:500;letter-spacing:.32em">PITARI</span><span style="font-family:'Shippori Mincho',serif;font-size:13px;color:#7A746B">{{ hNo }} / 03</span></div>
+<h1 style="margin:0;font-family:'Shippori Mincho',serif;font-weight:700;font-size:30px;letter-spacing:.04em">{{ hTitle }}</h1>
+</header>
+<sc-if value="{{ hCloset }}" hint-placeholder-val="{{ true }}">
+<div style="padding:22px 24px 0;display:flex;flex-direction:column;gap:18px;animation:z3-in .4s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.9;color:#5E584F">撮影して登録した服が、ここに並びます。</p>
+<figure style="margin:0;display:flex;flex-direction:column;gap:12px">
+<div style="position:relative;width:100%;aspect-ratio:3/4;background:#F1EDE6;display:flex;align-items:center;justify-content:center"><div style="position:absolute;inset:14px;border:1px solid #E0D9CD"></div><span style="font-family:'Shippori Mincho',serif;font-size:72px;color:#DCD4C7">01</span></div>
+<figcaption style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'Shippori Mincho',serif;font-weight:700;font-size:18px">まだ服が登録されていません</span><span style="font-size:13px;line-height:1.8;color:#5E584F">最初の1着を撮影して、クローゼットに追加しましょう。</span></figcaption>
+</figure>
+<button onClick="{{ hGoCapture }}" style="height:56px;border:0;border-radius:0;background:#1F1D1A;color:#FAF8F4;font-family:'Shippori Mincho',serif;font-weight:700;font-size:16px;letter-spacing:.12em;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:0 22px;transition:background .3s,transform .1s" style-hover="background:#7B2D26" style-active="transform:scale(0.98)"><span>服を登録する</span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 12h17"></path><path d="m15 7 5 5-5 5"></path></svg></button>
+</div>
+</sc-if>
+<sc-if value="{{ hCapture }}" hint-placeholder-val="{{ false }}">
+<div style="padding:22px 24px 0;display:flex;flex-direction:column;gap:18px;animation:z3-in .4s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.9;color:#5E584F">服を撮影して、クローゼットに登録します。</p>
+<figure style="margin:0;display:flex;flex-direction:column;gap:12px">
+<div style="position:relative;width:100%;aspect-ratio:3/4;background:#F1EDE6;display:flex;align-items:center;justify-content:center"><div style="position:absolute;inset:14px;border:1px solid #E0D9CD"></div><span style="font-size:12px;color:#8C857A">カメラのプレビュー領域</span></div>
+<figcaption style="display:flex;align-items:center;gap:10px;font-size:12px;color:#7B2D26;letter-spacing:.08em"><span style="width:24px;height:1px;background:#7B2D26"></span>準備中</figcaption>
+</figure>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'Shippori Mincho',serif;font-weight:700;font-size:18px">撮影機能は現在準備中です</span><span style="font-size:13px;line-height:1.8;color:#5E584F">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</span></div>
+</div>
+</sc-if>
+<sc-if value="{{ hAvatar }}" hint-placeholder-val="{{ false }}">
+<div style="padding:22px 24px 0;display:flex;flex-direction:column;gap:18px;animation:z3-in .4s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.9;color:#5E584F">体型を調整したアバターに、登録した服を着せられます。</p>
+<figure style="margin:0;display:flex;flex-direction:column;gap:12px">
+<div style="position:relative;width:100%;aspect-ratio:3/4;background:#F1EDE6;display:flex;align-items:center;justify-content:center"><div style="position:absolute;inset:14px;border:1px solid #E0D9CD"></div><div style="width:84px;height:176px;border-radius:9999px;border:1px solid #CFC6B7"></div><span style="position:absolute;bottom:30px;font-size:12px;color:#8C857A">3Dアバターの表示領域</span></div>
+<figcaption style="display:flex;align-items:center;gap:10px;font-size:12px;color:#7B2D26;letter-spacing:.08em"><span style="width:24px;height:1px;background:#7B2D26"></span>準備中</figcaption>
+</figure>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-family:'Shippori Mincho',serif;font-weight:700;font-size:18px">アバター機能は現在準備中です</span><span style="font-size:13px;line-height:1.8;color:#5E584F">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</span></div>
+</div>
+</sc-if>
+</div>
+<nav aria-label="メインナビゲーション" style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:#FAF8F4;border-top:1px solid #E4DFD6;padding:0 16px 30px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<sc-for list="{{ navH }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;cursor:pointer;color:{{ item.color }};box-shadow:inset 0 2px 0 {{ item.bar }};font-family:'Shippori Mincho',serif;transition:color .2s,box-shadow .3s">
+<span style="font-size:11px">{{ item.num }}</span><span style="font-size:13px;font-weight:700;letter-spacing:.06em">{{ item.label }}</span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+
+<div class="dv-opt" id="6b">
+<div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a>仕立て屋 — 型紙の方眼・メジャー・織りネーム</div>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;border-radius:44px;border:1.5px solid #2B2A28;box-sizing:border-box;background-color:#F6F1E7;background-image:linear-gradient(rgba(46,74,125,.12) 1px,transparent 1px),linear-gradient(90deg,rgba(46,74,125,.12) 1px,transparent 1px),linear-gradient(rgba(46,74,125,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(46,74,125,.06) 1px,transparent 1px);background-size:60px 60px,60px 60px,12px 12px,12px 12px;color:#2B2A28;font-family:'Zen Kaku Gothic New',sans-serif">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:110px">
+<header style="position:sticky;top:0;z-index:2;background:rgba(246,241,231,.93);backdrop-filter:blur(4px);padding:52px 20px 14px">
+<div style="display:inline-flex;padding:1.5px;background:#2B2A28;clip-path:polygon(16px 0,100% 0,100% 100%,16px 100%,0 50%)">
+<div style="display:flex;align-items:center;gap:12px;background:#FFFDF8;padding:10px 20px 10px 22px;clip-path:polygon(15px 0,100% 0,100% 100%,15px 100%,0 50%)">
+<span style="width:8px;height:8px;border-radius:9999px;border:1.5px solid #2B2A28;flex:none"></span>
+<h1 style="margin:0;font-size:20px;font-weight:700;letter-spacing:.04em">{{ iTitle }}</h1>
+</div>
+</div>
+</header>
+<sc-if value="{{ iCloset }}" hint-placeholder-val="{{ true }}">
+<div style="padding:6px 20px 0;display:flex;flex-direction:column;gap:16px;animation:z3-in .35s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.8;font-weight:500">撮影して登録した服が、ここに並びます。</p>
+<div style="background:#FFFDF8;border:1.5px solid #2B2A28;border-radius:6px;overflow:hidden">
+<div style="height:24px;background-color:#F2C230;background-image:repeating-linear-gradient(90deg,#2B2A28 0 1px,transparent 1px 30px),repeating-linear-gradient(90deg,#2B2A28 0 1px,transparent 1px 6px);background-size:100% 12px,100% 6px;background-repeat:no-repeat;border-bottom:1.5px solid #2B2A28"></div>
+<div style="padding:18px;display:flex;flex-direction:column;gap:16px">
+<div style="position:relative;width:100%;aspect-ratio:4/5;border:2px dashed #D9452B;border-radius:4px;box-sizing:border-box;display:flex;align-items:center;justify-content:center">
+<svg style="position:absolute;top:-12px;left:18px;background:#FFFDF8;padding:0 4px" width="30" height="22" viewBox="0 0 24 24" fill="none" stroke="#D9452B" stroke-width="1.8" stroke-linecap="round"><circle cx="6" cy="7" r="3"></circle><circle cx="6" cy="17" r="3"></circle><path d="M8.5 8.5 20 18"></path><path d="M8.5 15.5 20 6"></path></svg>
+<span style="font-size:12px;color:#8A4A3C">ここに服の写真が並びます</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:17px;font-weight:700">まだ服が登録されていません</span><span style="font-size:13px;line-height:1.8;color:#5C574F">最初の1着を撮影して、<br>クローゼットに追加しましょう。</span></div>
+<button onClick="{{ iGoCapture }}" style="position:relative;height:56px;border:0;border-radius:6px;background:#2E4A7D;color:#FFFDF8;font:inherit;font-size:16px;font-weight:700;letter-spacing:.1em;cursor:pointer;transition:transform .1s,background .2s" style-hover="background:#253D68" style-active="transform:scale(0.97)"><span style="position:absolute;inset:5px;border:1.5px dashed rgba(255,253,248,.55);border-radius:3px"></span>服を登録する</button>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ iCapture }}" hint-placeholder-val="{{ false }}">
+<div style="padding:6px 20px 0;display:flex;flex-direction:column;gap:16px;animation:z3-in .35s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.8;font-weight:500">服を撮影して、クローゼットに登録します。</p>
+<div style="background:#FFFDF8;border:1.5px solid #2B2A28;border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:16px">
+<div style="position:relative;width:100%;aspect-ratio:4/5;background:#F6F1E7;border-radius:4px;display:flex;align-items:center;justify-content:center">
+<div style="position:absolute;top:14px;left:14px;width:22px;height:22px;border-top:2px solid #D9452B;border-left:2px solid #D9452B"></div>
+<div style="position:absolute;top:14px;right:14px;width:22px;height:22px;border-top:2px solid #D9452B;border-right:2px solid #D9452B"></div>
+<div style="position:absolute;bottom:14px;left:14px;width:22px;height:22px;border-bottom:2px solid #D9452B;border-left:2px solid #D9452B"></div>
+<div style="position:absolute;bottom:14px;right:14px;width:22px;height:22px;border-bottom:2px solid #D9452B;border-right:2px solid #D9452B"></div>
+<span style="font-size:12px;color:#5C574F">カメラのプレビュー領域</span>
+<span style="position:absolute;top:-10px;right:20px;transform:rotate(3deg);background:#FFFFFF;border:1.5px solid #2B2A28;padding:4px 12px;font-size:12px;font-weight:700;letter-spacing:.1em">準備中</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:17px;font-weight:700">撮影機能は現在準備中です</span><span style="font-size:13px;line-height:1.8;color:#5C574F">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</span></div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ iAvatar }}" hint-placeholder-val="{{ false }}">
+<div style="padding:6px 20px 0;display:flex;flex-direction:column;gap:16px;animation:z3-in .35s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.8;font-weight:500">体型を調整したアバターに、登録した服を着せられます。</p>
+<div style="background:#FFFDF8;border:1.5px solid #2B2A28;border-radius:6px;padding:18px;display:flex;flex-direction:column;gap:16px">
+<div style="position:relative;width:100%;aspect-ratio:4/5;background:#F6F1E7;border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;overflow:hidden">
+<span style="position:absolute;top:14px;right:16px;transform:rotate(3deg);background:#FFFFFF;border:1.5px solid #2B2A28;padding:4px 12px;font-size:12px;font-weight:700;letter-spacing:.1em">準備中</span>
+<div style="width:80px;height:170px;border-radius:9999px;border:2px dashed #2E4A7D;box-sizing:border-box"></div>
+<span style="font-size:12px;color:#5C574F">3Dアバターの表示領域</span>
+<div style="position:absolute;left:-10px;right:-10px;bottom:18px;height:22px;transform:rotate(-4deg);background-color:#F2C230;background-image:repeating-linear-gradient(90deg,#2B2A28 0 1px,transparent 1px 30px),repeating-linear-gradient(90deg,#2B2A28 0 1px,transparent 1px 6px);background-size:100% 12px,100% 6px;background-repeat:no-repeat;border-top:1.5px solid #2B2A28;border-bottom:1.5px solid #2B2A28"></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:17px;font-weight:700">アバター機能は現在準備中です</span><span style="font-size:13px;line-height:1.8;color:#5C574F">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</span></div>
+</div>
+</div>
+</sc-if>
+</div>
+<nav aria-label="メインナビゲーション" style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:#FFFDF8;border-top:1.5px solid #2B2A28;padding:10px 12px 28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<span style="position:absolute;top:5px;left:0;right:0;border-top:1.5px dashed rgba(43,42,40,.3)"></span>
+<sc-for list="{{ navI }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;cursor:pointer;color:{{ item.color }};font:inherit;transition:transform .1s" style-active="transform:scale(0.95)">
+<span style="width:52px;height:32px;border-radius:6px;border:1.5px solid {{ item.chipBorder }};background:{{ item.chipBg }};display:flex;align-items:center;justify-content:center;transition:background .2s">
+<sc-if value="{{ item.isCloset }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M5.5 19.5c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"></path></svg></sc-if>
+</span>
+<span style="font-size:11px;font-weight:700">{{ item.label }}</span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+
+<div class="dv-opt" id="6c">
+<div class="dv-olabel"><a class="dv-oid" href="#6c">6c</a>ダーク試着室 — スポットライト × シャンパン</div>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;border-radius:44px;border:1px solid #2C2A27;box-sizing:border-box;background:#141312;color:#F2EFEA;font-family:'Zen Kaku Gothic New',sans-serif">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:130px">
+<header style="position:sticky;top:0;z-index:2;background:rgba(20,19,18,.92);backdrop-filter:blur(6px);padding:52px 20px 16px;display:flex;flex-direction:column;gap:6px">
+<span style="font-size:11px;font-weight:500;letter-spacing:.3em;color:#E8D8B8">PITARI</span>
+<h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:.02em">{{ jTitle }}</h1>
+</header>
+<sc-if value="{{ jCloset }}" hint-placeholder-val="{{ true }}">
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:18px;animation:z3-in .5s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.8;color:#A39E96">撮影して登録した服が、ここに並びます。</p>
+<div style="width:100%;aspect-ratio:3/4;border-radius:16px;border:1px solid #2C2A27;box-sizing:border-box;background:radial-gradient(ellipse 70% 55% at 50% 0%,rgba(232,216,184,.2),transparent 70%),#1C1B19;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8D8B8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg>
+<span style="font-size:17px;font-weight:700">まだ服が登録されていません</span>
+<span style="font-size:13px;line-height:1.8;color:#A39E96;text-align:center;padding:0 24px">最初の1着を撮影して、<br>クローゼットに追加しましょう。</span>
+</div>
+<button onClick="{{ jGoCapture }}" style="height:56px;border:0;border-radius:9999px;background:#E8D8B8;color:#141312;font:inherit;font-size:16px;font-weight:700;letter-spacing:.06em;cursor:pointer;transition:background .2s,transform .1s,box-shadow .3s" style-hover="background:#F3E6CB;box-shadow:0 0 24px rgba(232,216,184,.35)" style-active="transform:scale(0.97)">服を登録する</button>
+</div>
+</sc-if>
+<sc-if value="{{ jCapture }}" hint-placeholder-val="{{ false }}">
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:18px;animation:z3-in .5s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.8;color:#A39E96">服を撮影して、クローゼットに登録します。</p>
+<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;border:1px solid #2C2A27;box-sizing:border-box;background:radial-gradient(ellipse 70% 55% at 50% 0%,rgba(232,216,184,.16),transparent 70%),#1C1B19;display:flex;align-items:center;justify-content:center">
+<div style="position:absolute;top:18px;left:18px;width:24px;height:24px;border-top:1.5px solid #E8D8B8;border-left:1.5px solid #E8D8B8;border-top-left-radius:8px"></div>
+<div style="position:absolute;top:18px;right:18px;width:24px;height:24px;border-top:1.5px solid #E8D8B8;border-right:1.5px solid #E8D8B8;border-top-right-radius:8px"></div>
+<div style="position:absolute;bottom:18px;left:18px;width:24px;height:24px;border-bottom:1.5px solid #E8D8B8;border-left:1.5px solid #E8D8B8;border-bottom-left-radius:8px"></div>
+<div style="position:absolute;bottom:18px;right:18px;width:24px;height:24px;border-bottom:1.5px solid #E8D8B8;border-right:1.5px solid #E8D8B8;border-bottom-right-radius:8px"></div>
+<span style="font-size:12px;color:#A39E96">カメラのプレビュー領域</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="align-self:flex-start;font-size:12px;font-weight:500;color:#E8D8B8;border:1px solid #E8D8B8;border-radius:9999px;padding:4px 12px">準備中</span><span style="font-size:17px;font-weight:700">撮影機能は現在準備中です</span><span style="font-size:13px;line-height:1.8;color:#A39E96">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</span></div>
+</div>
+</sc-if>
+<sc-if value="{{ jAvatar }}" hint-placeholder-val="{{ false }}">
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:18px;animation:z3-in .5s ease-out both">
+<p style="margin:0;font-size:14px;line-height:1.8;color:#A39E96">体型を調整したアバターに、登録した服を着せられます。</p>
+<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:16px;border:1px solid #2C2A27;box-sizing:border-box;overflow:hidden;background:radial-gradient(ellipse 45% 80% at 50% 0%,rgba(232,216,184,.22),transparent 75%),#1C1B19;display:flex;align-items:center;justify-content:center">
+<div style="width:84px;height:176px;border-radius:9999px;border:1.5px dashed #5A554E;box-sizing:border-box;margin-bottom:20px"></div>
+<div style="position:absolute;left:22%;right:22%;bottom:34px;height:30px;border-radius:50%;background:radial-gradient(ellipse,rgba(232,216,184,.28),transparent 70%)"></div>
+<span style="position:absolute;top:18px;font-size:12px;color:#A39E96">3Dアバターの表示領域</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="align-self:flex-start;font-size:12px;font-weight:500;color:#E8D8B8;border:1px solid #E8D8B8;border-radius:9999px;padding:4px 12px">準備中</span><span style="font-size:17px;font-weight:700">アバター機能は現在準備中です</span><span style="font-size:13px;line-height:1.8;color:#A39E96">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</span></div>
+</div>
+</sc-if>
+</div>
+<nav aria-label="メインナビゲーション" style="position:absolute;left:16px;right:16px;bottom:28px;z-index:3;background:rgba(28,27,25,.92);backdrop-filter:blur(8px);border:1px solid #2C2A27;border-radius:24px;padding:6px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<sc-for list="{{ navJ }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;cursor:pointer;color:{{ item.color }};font:inherit;transition:color .25s,transform .1s" style-active="transform:scale(0.95)">
+<sc-if value="{{ item.isCloset }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M5.5 19.5c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"></path></svg></sc-if>
+<span style="font-size:11px;font-weight:500">{{ item.label }}</span>
+<span style="width:4px;height:4px;border-radius:9999px;background:{{ item.dot }};box-shadow:{{ item.glow }};transition:all .3s"></span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+
+</div>
+<p class="dv-next">次の例: 「<a class="dv-oid" href="#6b">6b</a> のメジャーをアバター画面の体型スライダーにして」 · 「<a class="dv-oid" href="#6a">6a</a> を少し柔らかく」 · 「<a class="dv-oid" href="#6c">6c</a> の明るい版」</p>
+</section>
+<section class="dv-turn" id="t5">
+<div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">写真SNS風 — プロフィール型クローゼット・グリッド/フィード切替</span></div>
+<p style="margin:0 0 28px;max-width:720px;font:12px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55)">3画面・下部ナビ・「服を登録する」の導線は同じです。クローゼットはプロフィール画面の形で、グリッド表示とフィード表示を切り替えられます。フィードの投稿は「表示イメージ」です。ハートと保存は押すと切り替わり、写真をダブルタップでもハートが付きます。共有は押すと「準備中」のシートが出ます。画面は、ナビで移動する方向に合わせて横にスライドします。</p>
+<div class="dv-opts">
+<div class="dv-opt" id="5a">
+<div class="dv-olabel"><a class="dv-oid" href="#5a">5a</a>白 × #111 / 細線 #DBDBDB / ラインアイコン</div>
+<div class="s5" style="width:390px;height:844px;position:relative;overflow:hidden;border-radius:44px;border:1px solid #DBDBDB;box-sizing:border-box;background:#FFFFFF;color:#111111;font-family:-apple-system,'Hiragino Sans','Noto Sans JP',system-ui,sans-serif">
+<div style="position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-bottom:90px">
+
+<sc-if value="{{ gCloset }}" hint-placeholder-val="{{ true }}">
+<div style="animation:{{ gAnim }}">
+<header style="position:sticky;top:0;z-index:2;background:#FFFFFF;padding:50px 8px 0 16px;height:94px;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between">
+<h1 style="margin:0;font-size:22px;font-weight:700;letter-spacing:-.01em">クローゼット</h1>
+<button onClick="{{ gGoCapture }}" aria-label="服を登録する" style="width:44px;height:44px;border:0;background:none;color:#111111;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s" style-active="transform:scale(0.9)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="5"></rect><path d="M12 8v8"></path><path d="M8 12h8"></path></svg></button>
+</header>
+<div style="padding:8px 16px 16px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:20px">
+<button onClick="{{ gGoCapture }}" aria-label="服を撮影して登録する" style="position:relative;flex:none;width:84px;height:84px;border-radius:9999px;border:1px solid #DBDBDB;background:#FAFAFA;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#B5B5B5" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg>
+<span style="position:absolute;right:0;bottom:0;width:24px;height:24px;border-radius:9999px;background:#111111;border:2px solid #FFFFFF;display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg></span>
+</button>
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:2px">
+<span style="font-size:17px;font-weight:700">0</span>
+<span style="font-size:13px">登録した服</span>
+</div>
+</div>
+<p style="margin:0;font-size:14px;line-height:1.5">撮影して登録した服が、ここに並びます。</p>
+<button onClick="{{ gGoCapture }}" style="height:36px;border:0;border-radius:8px;background:#EFEFEF;color:#111111;font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s,transform .1s" style-hover="background:#E3E3E3" style-active="transform:scale(0.98)">服を登録する</button>
+</div>
+<div role="tablist" aria-label="表示の切り替え" style="position:sticky;top:94px;z-index:2;background:#FFFFFF;display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #DBDBDB">
+<sc-for list="{{ gViews }}" as="v" hint-placeholder-count="2">
+<button role="tab" aria-selected="{{ v.active }}" aria-label="{{ v.label }}" onClick="{{ v.go }}" style="height:44px;border:0;background:none;cursor:pointer;color:{{ v.color }};box-shadow:inset 0 1px 0 {{ v.bar }};display:flex;align-items:center;justify-content:center;transition:color .2s">
+<sc-if value="{{ v.isGrid }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"></rect><path d="M9.2 3.5v17"></path><path d="M14.8 3.5v17"></path><path d="M3.5 9.2h17"></path><path d="M3.5 14.8h17"></path></svg></sc-if>
+<sc-if value="{{ v.isFeed }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="13" rx="2"></rect><path d="M4 20.5h16"></path></svg></sc-if>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ gGrid }}" hint-placeholder-val="{{ true }}">
+<div style="animation:s5-fade .3s ease-out both">
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px">
+<div style="aspect-ratio:3/4;background:#FAFAFA"></div><div style="aspect-ratio:3/4;background:#FAFAFA"></div><div style="aspect-ratio:3/4;background:#FAFAFA"></div>
+</div>
+<div style="padding:36px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
+<span style="width:62px;height:62px;border-radius:9999px;border:2px solid #111111;display:flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></span>
+<p style="margin:0;font-size:20px;font-weight:800">まだ服が登録されていません</p>
+<p style="margin:0;font-size:14px;line-height:1.5;color:#737373">最初の1着を撮影して、クローゼットに追加しましょう。</p>
+<button onClick="{{ gGoCapture }}" style="height:44px;padding:0 12px;border:0;background:none;color:#0095F6;font:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="color:#00376B">最初の1着を撮影する</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ gFeed }}" hint-placeholder-val="{{ false }}">
+<article style="animation:s5-fade .3s ease-out both">
+<div style="padding:10px 12px;display:flex;align-items:center;gap:10px">
+<span style="width:32px;height:32px;border-radius:9999px;background:#EFEFEF;border:1px solid #DBDBDB;box-sizing:border-box"></span>
+<div style="display:flex;flex-direction:column"><span style="font-size:13px;font-weight:600">クローゼット</span><span style="font-size:11px;color:#737373">表示イメージ・登録データではありません</span></div>
+</div>
+<div onDoubleClick="{{ gDoubleTap }}" style="position:relative;width:100%;aspect-ratio:3/4;background:#FAFAFA;display:flex;align-items:center;justify-content:center;user-select:none">
+<span style="font-size:12px;color:#B5B5B5">服の写真</span>
+<sc-if value="{{ gBurstOn }}" hint-placeholder-val="{{ false }}"><svg width="96" height="96" viewBox="0 0 24 24" fill="#FFFFFF" style="position:absolute;filter:drop-shadow(0 4px 12px rgba(0,0,0,.25));animation:s5-burst .8s ease-out both"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.7 8 3.6 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.5 0 5.4 3.5 4.3 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"></path></svg></sc-if>
+</div>
+<div style="padding:4px 4px 0;display:flex;align-items:center">
+<button onClick="{{ gToggleLike }}" aria-pressed="{{ gLiked }}" aria-label="いいね" style="width:44px;height:44px;border:0;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:{{ gHeartColor }}">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="{{ gHeartFill }}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="animation:{{ gLikeAnim }}"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.7 8 3.6 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.5 0 5.4 3.5 4.3 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"></path></svg>
+</button>
+<button onClick="{{ gOpenSheet }}" aria-label="共有" style="width:44px;height:44px;border:0;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#111111" style-active="transform:scale(0.9)">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M21.5 3 3 10l7 3.5L13.5 21z"></path><path d="M21.5 3 10 13.5"></path></svg>
+</button>
+<span style="flex:1"></span>
+<button onClick="{{ gToggleSave }}" aria-pressed="{{ gSaved }}" aria-label="保存" style="width:44px;height:44px;border:0;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#111111">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="{{ gSaveFill }}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="animation:{{ gSaveAnim }}"><path d="M6 3.5h12v17l-6-4.6-6 4.6z"></path></svg>
+</button>
+</div>
+<div style="padding:0 16px 20px;display:flex;flex-direction:column;gap:4px">
+<p style="margin:0;font-size:14px"><span style="font-weight:600">ブランド名</span>　<span style="color:#737373">アイテム名</span></p>
+<p style="margin:0;font-size:12px;color:#737373">カテゴリ</p>
+</div>
+</article>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ gCapture }}" hint-placeholder-val="{{ false }}">
+<div style="animation:{{ gAnim }}">
+<header style="position:sticky;top:0;z-index:2;background:#FFFFFF;border-bottom:1px solid #DBDBDB;padding:50px 16px 0;height:94px;box-sizing:border-box;display:flex;align-items:center;justify-content:center"><h1 style="margin:0;font-size:16px;font-weight:700">撮影</h1></header>
+<div style="position:relative;width:100%;aspect-ratio:3/4;background:#FAFAFA;display:flex;align-items:center;justify-content:center">
+<div style="position:absolute;inset:0;background-image:linear-gradient(90deg,transparent calc(33.33% - .5px),#E8E8E8 calc(33.33% - .5px) calc(33.33% + .5px),transparent calc(33.33% + .5px) calc(66.66% - .5px),#E8E8E8 calc(66.66% - .5px) calc(66.66% + .5px),transparent calc(66.66% + .5px)),linear-gradient(transparent calc(33.33% - .5px),#E8E8E8 calc(33.33% - .5px) calc(33.33% + .5px),transparent calc(33.33% + .5px) calc(66.66% - .5px),#E8E8E8 calc(66.66% - .5px) calc(66.66% + .5px),transparent calc(66.66% + .5px))"></div>
+<span style="position:relative;font-size:12px;color:#737373;background:#FAFAFA;padding:4px 8px">カメラのプレビュー領域</span>
+</div>
+<div style="padding:18px 16px;display:flex;flex-direction:column;gap:8px">
+<span style="align-self:flex-start;font-size:12px;font-weight:600;padding:4px 10px;border:1px solid #DBDBDB;border-radius:9999px">準備中</span>
+<p style="margin:4px 0 0;font-size:16px;font-weight:700">撮影機能は現在準備中です</p>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#737373;text-wrap:pretty">服を撮影して、クローゼットに登録します。カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ gAvatar }}" hint-placeholder-val="{{ false }}">
+<div style="animation:{{ gAnim }}">
+<header style="position:sticky;top:0;z-index:2;background:#FFFFFF;border-bottom:1px solid #DBDBDB;padding:50px 16px 0;height:94px;box-sizing:border-box;display:flex;align-items:center;justify-content:center"><h1 style="margin:0;font-size:16px;font-weight:700">アバター</h1></header>
+<div style="width:100%;aspect-ratio:3/4;background:#FAFAFA;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+<span style="width:96px;height:96px;border-radius:9999px;padding:3px;border:1px solid #DBDBDB;box-sizing:border-box;display:flex"><span style="flex:1;border-radius:9999px;background:#EFEFEF;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#B5B5B5" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.8"></circle><path d="M5 20c.7-3.8 3.6-6 7-6s6.3 2.2 7 6"></path></svg></span></span>
+<span style="font-size:12px;color:#737373">3Dアバターの表示領域</span>
+</div>
+<div style="padding:18px 16px;display:flex;flex-direction:column;gap:8px">
+<span style="align-self:flex-start;font-size:12px;font-weight:600;padding:4px 10px;border:1px solid #DBDBDB;border-radius:9999px">準備中</span>
+<p style="margin:4px 0 0;font-size:16px;font-weight:700">アバター機能は現在準備中です</p>
+<p style="margin:0;font-size:14px;line-height:1.6;color:#737373;text-wrap:pretty">体型を調整したアバターに、登録した服を着せられます。3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</sc-if>
+</div>
+
+<nav aria-label="メインナビゲーション" style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:#FFFFFF;border-top:1px solid #DBDBDB;padding:2px 24px 30px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<sc-for list="{{ navG }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" aria-label="{{ item.label }}" style="height:50px;display:flex;align-items:center;justify-content:center;border:0;background:none;cursor:pointer;color:#111111;transition:transform .1s" style-active="transform:scale(0.88)">
+<sc-if value="{{ item.isCloset }}"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ item.sw }}" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="27" height="27" viewBox="0 0 24 24" fill="{{ item.fill }}" stroke="currentColor" stroke-width="{{ item.sw }}" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1" fill="#FFFFFF"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><span style="width:28px;height:28px;border-radius:9999px;border:{{ item.ring }};box-sizing:border-box;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="{{ item.fill }}" stroke="currentColor" stroke-width="{{ item.sw }}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.8"></circle><path d="M5 20c.7-3.8 3.6-6 7-6s6.3 2.2 7 6z"></path></svg></span></sc-if>
+</button>
+</sc-for>
+</nav>
+
+<sc-if value="{{ gSheet }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;justify-content:flex-end">
+<div onClick="{{ gCloseSheet }}" style="position:absolute;inset:0;background:rgba(0,0,0,.4);animation:s5-fade .2s ease-out both"></div>
+<div role="dialog" aria-label="共有" style="position:relative;background:#FFFFFF;border-radius:14px 14px 0 0;padding:10px 16px 40px;display:flex;flex-direction:column;align-items:center;gap:14px;animation:s5-sheet .28s cubic-bezier(.2,.8,.2,1) both">
+<span style="width:36px;height:4px;border-radius:9999px;background:#DBDBDB"></span>
+<p style="margin:6px 0 0;font-size:16px;font-weight:700">共有は準備中です</p>
+<p style="margin:0;font-size:14px;color:#737373;text-align:center;line-height:1.5">服を登録できるようになったあとで使えるようになります。</p>
+<button onClick="{{ gCloseSheet }}" style="width:100%;height:44px;border:0;border-radius:8px;background:#EFEFEF;color:#111111;font:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#E3E3E3">閉じる</button>
+</div>
+</div>
+</sc-if>
+</div>
+</div>
+</div>
+<p class="dv-next">次の例: 「<a class="dv-oid" href="#5a">5a</a> のグリッドを1:1に」 · 「フィードを横スワイプのカルーセルに」 · 「<a class="dv-oid" href="#5a">5a</a> のPC幅レイアウトを見せて」</p>
+</section>
+<section class="dv-turn" id="t4">
+<div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">ゲーム風 — 3D押し込みボタン・進行マップ・キャラのフィードバック</span></div>
+<p style="margin:0 0 28px;max-width:720px;font:12px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55)">3画面・下部ナビ・「服を登録する」の導線は同じです。上部のバーは「3つの画面をのぞいてみよう」の実際の進み具合で、3画面すべて開くとバッジ獲得の演出が出ます。キャラ（ピタ）はタップすると跳ねてセリフが変わります。クローゼットの「はじめの一歩」は 0/3 から始まり、未実装の手順はロック表示です。</p>
+<div class="dv-opts">
+<div class="dv-opt" id="4a">
+<div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>グリーン #58CC02 × イエロー × ブルー / 丸ゴシック極太</div>
+<div class="g4" style="width:390px;height:844px;position:relative;overflow:hidden;border-radius:44px;border:2px solid #E5E5E5;box-sizing:border-box;background:#FFFFFF;color:#4B4B4B;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:700">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:110px">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border-bottom:2px solid #E5E5E5;padding:48px 16px 12px;display:flex;align-items:center;gap:12px">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+<span style="font-size:12px;color:#777777">3つの画面をのぞいてみよう　{{ fVisitedCount }}/3</span>
+<div role="progressbar" aria-label="画面の探検" aria-valuemin="0" aria-valuemax="3" aria-valuenow="{{ fVisitedCount }}" style="height:16px;border-radius:9999px;background:#E5E5E5;overflow:hidden">
+<div style="height:100%;width:{{ fPct }}%;border-radius:9999px;background:#58CC02;position:relative;transition:width .6s cubic-bezier(.34,1.5,.64,1)"><div style="position:absolute;left:8px;right:8px;top:3px;height:4px;border-radius:9999px;background:rgba(255,255,255,.35)"></div></div>
+</div>
+</div>
+<div aria-label="{{ fBadgeLabel }}" style="width:44px;height:44px;flex:none;border-radius:14px;border:2px solid {{ fBadgeBorder }};background:{{ fBadgeBg }};display:flex;align-items:center;justify-content:center;transition:all .3s">
+<svg width="26" height="26" viewBox="0 0 24 24"><path d="M7 2h4l2 6H9z" fill="{{ fRibbonA }}"></path><path d="M17 2h-4l-2 6h4z" fill="{{ fRibbonB }}"></path><circle cx="12" cy="15" r="7" fill="{{ fMedal }}" stroke="{{ fMedalEdge }}" stroke-width="1.6"></circle><path d="m12 11.5 1.1 2.2 2.4.3-1.8 1.7.5 2.4-2.2-1.2-2.2 1.2.5-2.4-1.8-1.7 2.4-.3z" fill="#FFFFFF"></path></svg>
+</div>
+</header>
+
+<div style="padding:18px 16px 0;display:flex;align-items:flex-end;gap:10px">
+<button onClick="{{ fTapMascot }}" aria-label="ピタに話しかける" style="flex:none;width:72px;height:72px;padding:0;border:0;background:none;cursor:pointer;animation:{{ fHopAnim }}">
+<svg width="72" height="72" viewBox="0 0 64 64"><path d="M32 13V9a4.5 4.5 0 1 1 4.5-4.5" stroke="#4B4B4B" stroke-width="3" fill="none" stroke-linecap="round"></path><ellipse cx="32" cy="58" rx="16" ry="3" fill="#E5E5E5"></ellipse><ellipse cx="32" cy="36" rx="24" ry="21" fill="#58CC02"></ellipse><ellipse cx="32" cy="43" rx="17" ry="11" fill="#89E219"></ellipse><circle cx="23" cy="31" r="6.5" fill="#FFFFFF"></circle><circle cx="41" cy="31" r="6.5" fill="#FFFFFF"></circle><circle cx="24.5" cy="32" r="3.2" fill="#4B4B4B"></circle><circle cx="42.5" cy="32" r="3.2" fill="#4B4B4B"></circle><circle cx="25.5" cy="30.8" r="1" fill="#FFFFFF"></circle><circle cx="43.5" cy="30.8" r="1" fill="#FFFFFF"></circle><path d="M27 42q5 5 10 0" stroke="#3E8E00" stroke-width="3" fill="none" stroke-linecap="round"></path></svg>
+</button>
+<div style="position:relative;flex:1;min-width:0;margin-bottom:14px;background:#FFFFFF;border:2px solid #E5E5E5;border-radius:16px;padding:12px 14px">
+<div style="position:absolute;left:-8px;bottom:14px;width:12px;height:12px;background:#FFFFFF;border-left:2px solid #E5E5E5;border-bottom:2px solid #E5E5E5;transform:rotate(45deg)"></div>
+<p aria-live="polite" style="margin:0;font-size:14px;line-height:1.6;text-wrap:pretty">{{ fLine }}</p>
+</div>
+</div>
+
+<sc-if value="{{ fCloset }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 16px 0;display:flex;flex-direction:column;gap:16px;animation:g4-in .45s cubic-bezier(.34,1.4,.64,1) both">
+<div><h1 style="margin:0;font-size:26px;font-weight:800">クローゼット</h1><p style="margin:4px 0 0;font-size:13px;line-height:1.7;color:#777777;font-weight:500">撮影して登録した服が、ここに並びます。</p></div>
+<div style="border:2px solid #E5E5E5;border-radius:20px;box-shadow:0 4px 0 #E5E5E5;padding:18px 16px 20px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:16px;font-weight:800">はじめの一歩</span><span style="font-size:13px;color:#777777">0 / 3</span></div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-left:-70px">
+<span style="background:#FFC800;color:#4B4B4B;font-size:11px;font-weight:800;padding:4px 10px;border-radius:10px;box-shadow:0 3px 0 #E5A800;animation:g4-float 1.6s ease-in-out infinite">ここから！</span>
+<button onClick="{{ fGoCapture }}" aria-label="ステップ1：服を登録する" style="position:relative;width:72px;height:72px;border:0;border-radius:9999px;background:#58CC02;box-shadow:0 6px 0 #58A700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s,box-shadow .1s" style-active="transform:translateY(6px);box-shadow:0 0 0 #58A700">
+<span style="position:absolute;inset:-6px;border-radius:9999px;border:4px solid #58CC02;animation:g4-pulse 1.6s ease-out infinite"></span>
+<svg width="34" height="34" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="14" rx="4" fill="#FFFFFF"></rect><path d="M8 7 9.5 4h5L16 7z" fill="#FFFFFF"></path><circle cx="12" cy="13.5" r="3.6" fill="#58CC02"></circle><circle cx="12" cy="13.5" r="1.8" fill="#FFFFFF"></circle></svg>
+</button>
+<span style="font-size:13px;font-weight:800">服を登録する</span>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-left:40px">
+<div style="width:64px;height:64px;border-radius:9999px;background:#E5E5E5;box-shadow:0 6px 0 #CECECE;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="#AFAFAF"><rect x="5" y="10" width="14" height="11" rx="3"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="#AFAFAF" stroke-width="2.6"></path></svg></div>
+<span style="font-size:12px;color:#777777">アバターを作る・準備中</span>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-left:-40px">
+<div style="width:64px;height:64px;border-radius:9999px;background:#E5E5E5;box-shadow:0 6px 0 #CECECE;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="#AFAFAF"><rect x="5" y="10" width="14" height="11" rx="3"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10" fill="none" stroke="#AFAFAF" stroke-width="2.6"></path></svg></div>
+<span style="font-size:12px;color:#777777">服を着せる・準備中</span>
+</div>
+</div>
+<button onClick="{{ fGoCapture }}" style="height:52px;border:0;border-radius:16px;background:#58CC02;color:#FFFFFF;font:inherit;font-size:16px;font-weight:800;letter-spacing:.06em;cursor:pointer;box-shadow:0 5px 0 #58A700;transition:transform .1s,box-shadow .1s,filter .15s" style-hover="filter:brightness(1.06)" style-active="transform:translateY(5px);box-shadow:0 0 0 #58A700">服を登録する</button>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ fCapture }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 16px 0;display:flex;flex-direction:column;gap:16px;animation:g4-in .45s cubic-bezier(.34,1.4,.64,1) both">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h1 style="margin:0;font-size:26px;font-weight:800">撮影</h1><p style="margin:4px 0 0;font-size:13px;line-height:1.7;color:#777777;font-weight:500">服を撮影して、クローゼットに登録します。</p></div><span style="flex:none;margin-top:4px;background:#FFC800;font-size:12px;font-weight:800;padding:5px 12px;border-radius:12px;box-shadow:0 3px 0 #E5A800">準備中</span></div>
+<div style="border:2px solid #E5E5E5;border-radius:20px;box-shadow:0 4px 0 #E5E5E5;padding:16px;display:flex;flex-direction:column;gap:16px">
+<ol aria-label="撮影の流れ（準備中）" style="margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<li style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="position:absolute;top:17px;left:calc(50% + 20px);right:-20px;height:4px;border-radius:9999px;background:#E5E5E5"></span><span style="width:36px;height:36px;border-radius:9999px;border:3px solid #E5E5E5;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:14px;color:#AFAFAF">1</span><span style="font-size:12px;color:#777777">撮る</span></li>
+<li style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="position:absolute;top:17px;left:calc(50% + 20px);right:-20px;height:4px;border-radius:9999px;background:#E5E5E5"></span><span style="width:36px;height:36px;border-radius:9999px;border:3px solid #E5E5E5;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:14px;color:#AFAFAF">2</span><span style="font-size:12px;color:#777777">確認</span></li>
+<li style="display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:36px;height:36px;border-radius:9999px;border:3px solid #E5E5E5;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:14px;color:#AFAFAF">3</span><span style="font-size:12px;color:#777777">登録</span></li>
+</ol>
+<div style="width:100%;aspect-ratio:4/5;border-radius:16px;background:#DDF4FF;border:2px dashed #84D8FF;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+<svg width="56" height="56" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="14" rx="4" fill="#1CB0F6" stroke="#1899D6" stroke-width="1.2"></rect><path d="M8 6.8 9.5 4h5L16 6.8z" fill="#1CB0F6" stroke="#1899D6" stroke-width="1.2" stroke-linejoin="round"></path><circle cx="12" cy="13.5" r="4" fill="#FFFFFF"></circle><circle cx="12" cy="13.5" r="2.2" fill="#1899D6"></circle><circle cx="18" cy="9.6" r="1" fill="#FFC800"></circle></svg>
+<span style="font-size:12px;color:#1480B3">カメラのプレビュー領域</span>
+</div>
+<div><p style="margin:0;font-size:16px;font-weight:800">撮影機能は現在準備中です</p><p style="margin:4px 0 0;font-size:13px;line-height:1.7;color:#777777;font-weight:500;text-wrap:pretty">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</p></div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ fAvatar }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 16px 0;display:flex;flex-direction:column;gap:16px;animation:g4-in .45s cubic-bezier(.34,1.4,.64,1) both">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><h1 style="margin:0;font-size:26px;font-weight:800">アバター</h1><p style="margin:4px 0 0;font-size:13px;line-height:1.7;color:#777777;font-weight:500">体型を調整したアバターに、登録した服を着せられます。</p></div><span style="flex:none;margin-top:4px;background:#FFC800;font-size:12px;font-weight:800;padding:5px 12px;border-radius:12px;box-shadow:0 3px 0 #E5A800">準備中</span></div>
+<div style="border:2px solid #E5E5E5;border-radius:20px;box-shadow:0 4px 0 #E5E5E5;padding:16px;display:flex;flex-direction:column;gap:16px">
+<div style="position:relative;width:100%;aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:linear-gradient(#DDF4FF,#FFFFFF 75%);border:2px solid #84D8FF;box-sizing:border-box;display:flex;align-items:center;justify-content:center">
+<span style="position:absolute;top:16px;left:0;right:0;text-align:center;font-size:12px;color:#1480B3">3Dアバターの表示領域</span>
+<div style="width:90px;height:170px;border-radius:9999px;border:3px dashed #84D8FF;box-sizing:border-box;margin-bottom:24px"></div>
+<div style="position:absolute;left:14%;right:14%;bottom:26px;height:40px;border-radius:50%;background:#89E219;box-shadow:inset 0 -6px 0 #58CC02"></div>
+</div>
+<div><p style="margin:0;font-size:16px;font-weight:800">アバター機能は現在準備中です</p><p style="margin:4px 0 0;font-size:13px;line-height:1.7;color:#777777;font-weight:500;text-wrap:pretty">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</p></div>
+</div>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ fToast }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden">
+<sc-for list="{{ fConfetti }}" as="p" hint-placeholder-count="0">
+<span style="position:absolute;top:150px;left:{{ p.left }}%;width:{{ p.w }}px;height:{{ p.h }}px;border-radius:3px;background:{{ p.color }};--dx:{{ p.dx }}px;animation:g4-confetti 1.6s {{ p.delay }}s cubic-bezier(.2,.6,.4,1) both"></span>
+</sc-for>
+<div role="status" style="position:absolute;top:118px;left:24px;right:24px;background:#FFFFFF;border:2px solid #FFC800;border-radius:20px;box-shadow:0 5px 0 #E5A800;padding:14px 16px;display:flex;align-items:center;gap:12px;animation:g4-toast 3s ease-out both">
+<svg width="44" height="44" viewBox="0 0 24 24"><path d="M7 2h4l2 6H9z" fill="#1CB0F6"></path><path d="M17 2h-4l-2 6h4z" fill="#1899D6"></path><circle cx="12" cy="15" r="7" fill="#FFC800" stroke="#E5A800" stroke-width="1.6"></circle><path d="m12 11.5 1.1 2.2 2.4.3-1.8 1.7.5 2.4-2.2-1.2-2.2 1.2.5-2.4-1.8-1.7 2.4-.3z" fill="#FFFFFF"></path></svg>
+<div><p style="margin:0;font-size:16px;font-weight:800;color:#E08600">バッジ獲得！</p><p style="margin:2px 0 0;font-size:13px">たんけん家　3つの画面をすべて見た</p></div>
+</div>
+</div>
+</sc-if>
+
+<nav aria-label="メインナビゲーション" style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:#FFFFFF;border-top:2px solid #E5E5E5;padding:8px 12px 28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<sc-for list="{{ navF }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:2px solid {{ item.border }};border-radius:16px;background:{{ item.bg }};cursor:pointer;font:inherit;transition:background .2s,border-color .2s" style-active="transform:scale(0.94)">
+<span style="display:flex;animation:{{ item.anim }}">
+<sc-if value="{{ item.isCloset }}"><svg width="30" height="30" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3.5" fill="#58CC02" stroke="#3E8E00" stroke-width="1.4"></rect><path d="M12 3v18" stroke="#3E8E00" stroke-width="1.4"></path><circle cx="10" cy="12" r="1.1" fill="#FFFFFF"></circle><circle cx="14" cy="12" r="1.1" fill="#FFFFFF"></circle><rect x="6" y="5" width="3.5" height="2" rx="1" fill="#89E219"></rect></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="30" height="30" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="19" height="14" rx="4" fill="#1CB0F6" stroke="#1899D6" stroke-width="1.4"></rect><path d="M8 6.8 9.5 4h5L16 6.8z" fill="#1CB0F6" stroke="#1899D6" stroke-width="1.4" stroke-linejoin="round"></path><circle cx="12" cy="13.5" r="4" fill="#FFFFFF"></circle><circle cx="12" cy="13.5" r="2.2" fill="#1899D6"></circle><circle cx="18" cy="9.6" r="1" fill="#FFC800"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="30" height="30" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.5" fill="#FFC800" stroke="#E5A800" stroke-width="1.4"></circle><path d="M3.5 21c.5-4.5 4-7.5 8.5-7.5s8 3 8.5 7.5z" fill="#FF9600" stroke="#E08600" stroke-width="1.4" stroke-linejoin="round"></path></svg></sc-if>
+</span>
+<span style="font-size:11px;font-weight:800;color:{{ item.color }}">{{ item.label }}</span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+</div>
+<p class="dv-next">次の例: 「<a class="dv-oid" href="#4a">4a</a> のキャラをもっと大きく」 · 「バッジの種類を増やした一覧画面を見せて」 · 「<a class="dv-oid" href="#4a">4a</a> のPC幅レイアウトを見せて」</p>
+</section>
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">ファッションEC風 — 白基調・商品写真が主役（検索・カテゴリ・お気に入りが操作できます）</span></div>
+<p style="margin:0 0 28px;max-width:720px;font:12px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55)">3画面・下部ナビ・「服を登録する」の導線はそのままです。クローゼットの検索とカテゴリは実際に絞り込み、結果に合わせて空状態の文言が変わります。登録データはまだ無いため、グリッドは「表示イメージ」と明記した枠だけで示しています。ハートは押すと切り替わります。</p>
+<div class="dv-opts">
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>白 × #222 / 角丸4px / Noto Sans JP</div>
+<div class="z3" style="width:390px;height:844px;position:relative;overflow:hidden;border-radius:44px;border:1px solid #E5E5E5;background:#FFFFFF;color:#222222;font-family:'Noto Sans JP',system-ui,sans-serif">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:100px">
+
+<sc-if value="{{ eCloset }}" hint-placeholder-val="{{ true }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border-bottom:1px solid #EEEEEE;padding-top:50px">
+<div style="padding:0 16px 10px;display:flex;align-items:center;justify-content:center"><span style="font-size:15px;font-weight:600;letter-spacing:.24em">PITARI</span></div>
+<div style="padding:0 16px 4px">
+<label style="height:40px;display:flex;align-items:center;gap:8px;padding:0 12px;background:#F5F5F5;border-radius:6px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#777777" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+<input value="{{ eQuery }}" onChange="{{ eOnQuery }}" aria-label="クローゼット内を検索" placeholder="クローゼット内を検索" style="flex:1;min-width:0;height:100%;border:0;background:transparent;font:inherit;font-size:14px;color:#222222;outline:none">
+<sc-if value="{{ eHasQuery }}" hint-placeholder-val="{{ false }}"><button onClick="{{ eClearQuery }}" aria-label="検索語を消去" style="width:28px;height:28px;border:0;border-radius:9999px;background:#DDDDDD;color:#222;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12"></path><path d="M18 6 6 18"></path></svg></button></sc-if>
+</label>
+</div>
+<div class="z3-scroll" role="tablist" aria-label="カテゴリ" style="display:flex;overflow-x:auto;scrollbar-width:none;padding:0 8px">
+<sc-for list="{{ eCats }}" as="c" hint-placeholder-count="7">
+<button role="tab" aria-selected="{{ c.active }}" onClick="{{ c.go }}" style="flex:none;height:44px;padding:0 12px;border:0;background:none;cursor:pointer;font:inherit;font-size:13px;font-weight:{{ c.weight }};color:{{ c.color }};box-shadow:inset 0 -2px 0 {{ c.bar }};transition:color .15s,box-shadow .15s">{{ c.label }}</button>
+</sc-for>
+</div>
+</header>
+<div style="padding:12px 16px 0;display:flex;align-items:baseline;justify-content:space-between">
+<span style="font-size:12px;color:#777777">{{ eCatLabel }}</span>
+<span style="font-size:12px;font-weight:600">0件</span>
+</div>
+<div style="padding:40px 24px 36px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;animation:z3-in .25s ease-out both">
+<span style="width:64px;height:64px;border-radius:9999px;background:#F5F5F5;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#222222" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg></span>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="margin:0;font-size:15px;font-weight:600;text-wrap:pretty">{{ eEmptyTitle }}</p>
+<p style="margin:0;font-size:13px;line-height:1.7;color:#666666;text-wrap:pretty">{{ eEmptyText }}</p>
+</div>
+<button onClick="{{ eGoCapture }}" style="margin-top:6px;width:100%;max-width:280px;height:48px;border:0;border-radius:4px;background:#222222;color:#FFFFFF;font:inherit;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s,transform .1s" style-hover="opacity:.85" style-active="transform:scale(0.98)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg>服を登録する</button>
+</div>
+<div style="border-top:8px solid #F5F5F5;padding:16px 16px 24px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;flex-direction:column;gap:2px">
+<span style="font-size:13px;font-weight:600">登録後の表示イメージ</span>
+<span style="font-size:11px;color:#777777">登録データではありません</span>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:12px;row-gap:24px">
+<sc-for list="{{ eSamples }}" as="s" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="position:relative;width:100%;aspect-ratio:3/4;background:#F5F5F5;border-radius:4px;display:flex;align-items:center;justify-content:center">
+<span style="font-size:11px;color:#999999">服の写真</span>
+<button onClick="{{ s.toggle }}" aria-pressed="{{ s.fav }}" aria-label="お気に入り" style="position:absolute;right:4px;bottom:4px;width:44px;height:44px;border:0;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s" style-active="transform:scale(0.85)">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="{{ s.fill }}" stroke="{{ s.stroke }}" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.7 8 3.6 4.5 7.1 4.5c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.5 0 5.4 3.5 4.3 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"></path></svg>
+</button>
+</div>
+<div style="display:flex;flex-direction:column;gap:2px;padding:0 2px">
+<span style="font-size:12px;font-weight:700;letter-spacing:.02em">ブランド名</span>
+<span style="font-size:12px;color:#666666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">アイテム名</span>
+<span style="font-size:11px;color:#999999">カテゴリ</span>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ eCapture }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border-bottom:1px solid #EEEEEE;padding:50px 16px 0;height:94px;box-sizing:border-box;display:flex;align-items:center;justify-content:center"><h1 style="margin:0;font-size:16px;font-weight:600">撮影</h1></header>
+<div style="padding:20px 16px;display:flex;flex-direction:column;gap:16px;animation:z3-in .25s ease-out both">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="align-self:flex-start;font-size:11px;font-weight:600;padding:3px 8px;border:1px solid #222222;border-radius:4px">準備中</span>
+<p style="margin:0;font-size:13px;line-height:1.7;color:#666666">服を撮影して、クローゼットに登録します。</p>
+</div>
+<div style="position:relative;width:100%;aspect-ratio:3/4;background:#F5F5F5;border-radius:4px;display:flex;align-items:center;justify-content:center">
+<div style="position:absolute;top:16px;left:16px;width:24px;height:24px;border-top:2px solid #BBBBBB;border-left:2px solid #BBBBBB"></div>
+<div style="position:absolute;top:16px;right:16px;width:24px;height:24px;border-top:2px solid #BBBBBB;border-right:2px solid #BBBBBB"></div>
+<div style="position:absolute;bottom:16px;left:16px;width:24px;height:24px;border-bottom:2px solid #BBBBBB;border-left:2px solid #BBBBBB"></div>
+<div style="position:absolute;bottom:16px;right:16px;width:24px;height:24px;border-bottom:2px solid #BBBBBB;border-right:2px solid #BBBBBB"></div>
+<span style="font-size:12px;color:#999999">カメラのプレビュー領域</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="margin:0;font-size:15px;font-weight:600">撮影機能は現在準備中です</p>
+<p style="margin:0;font-size:13px;line-height:1.7;color:#666666;text-wrap:pretty">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ eAvatar }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.96);backdrop-filter:blur(4px);border-bottom:1px solid #EEEEEE;padding:50px 16px 0;height:94px;box-sizing:border-box;display:flex;align-items:center;justify-content:center"><h1 style="margin:0;font-size:16px;font-weight:600">アバター</h1></header>
+<div style="padding:20px 16px;display:flex;flex-direction:column;gap:16px;animation:z3-in .25s ease-out both">
+<div style="display:flex;flex-direction:column;gap:8px">
+<span style="align-self:flex-start;font-size:11px;font-weight:600;padding:3px 8px;border:1px solid #222222;border-radius:4px">準備中</span>
+<p style="margin:0;font-size:13px;line-height:1.7;color:#666666">体型を調整したアバターに、登録した服を着せられます。</p>
+</div>
+<div style="width:100%;aspect-ratio:3/4;background:#F5F5F5;border-radius:4px;display:flex;align-items:center;justify-content:center">
+<span style="font-size:12px;color:#999999">3Dアバターの表示領域</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="margin:0;font-size:15px;font-weight:600">アバター機能は現在準備中です</p>
+<p style="margin:0;font-size:13px;line-height:1.7;color:#666666;text-wrap:pretty">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</sc-if>
+</div>
+
+<nav aria-label="メインナビゲーション" style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:#FFFFFF;border-top:1px solid #EEEEEE;padding:4px 8px 30px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<sc-for list="{{ navE }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;cursor:pointer;color:{{ item.color }};font:inherit;transition:color .15s">
+<sc-if value="{{ item.isCloset }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ item.sw }}" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ item.sw }}" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="{{ item.sw }}" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M5.5 19.5c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"></path></svg></sc-if>
+<span style="font-size:10px;font-weight:{{ item.weight }}">{{ item.label }}</span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+</div>
+<p class="dv-next">次の例: 「<a class="dv-oid" href="#3a">3a</a> のカテゴリをチップ型にして」 · 「<a class="dv-oid" href="#3a">3a</a> のPC幅レイアウトを見せて」 · 「お気に入りだけ表示するフィルタを追加」</p>
+</section>
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">島のくらしアプリ風 — 世界観を統一した1案（ナビで操作できます）</span></div>
+<p style="margin:0 0 28px;max-width:720px;font:12px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55)">画面構成・文言・導線は <a class="dv-oid" href="#1a">1a</a>〜<a class="dv-oid" href="#1c">1c</a> と同じです。背景の紙の質感、布のステッチ、木のハンガーラック、方眼のレシピカードで素材感を出しました。ボタンは押し込める立体感があり、選択中のタブは跳ねて持ち上がり、上にカーソルが揺れます。</p>
+<div class="dv-opts">
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>クリーム × ミント / 丸ゴシック</div>
+<div class="pt" style="width:390px;height:844px;position:relative;overflow:hidden;border-radius:46px;border:6px solid #E9DFC8;box-sizing:border-box;background-color:#F7F3E8;background-image:radial-gradient(rgba(91,74,63,.07) 1.3px,transparent 1.6px);background-size:18px 18px;color:#5B4A3F;font-family:'Zen Maru Gothic','M PLUS Rounded 1c',sans-serif">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:160px">
+<header style="position:sticky;top:0;z-index:2;background:rgba(247,243,232,.92);backdrop-filter:blur(6px);padding:50px 20px 14px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:8px">
+<span style="width:28px;height:28px;border-radius:9999px;background:#A8D5BA;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 #86BB9C;animation:pt-sway 3.2s ease-in-out infinite"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19c0-8 5-13.5 14-14-.4 9.2-5.6 14-14 14z"></path><path d="M5 19l7.5-7.5"></path></svg></span>
+<span style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:17px;letter-spacing:.02em">Pitari</span>
+</div>
+<div style="align-self:flex-start;display:flex;align-items:center;gap:10px;background:#FFFDF5;border-radius:9999px;padding:8px 20px 8px 8px;box-shadow:0 3px 0 rgba(91,74,63,.12),0 8px 18px rgba(91,74,63,.06)">
+<span style="width:36px;height:36px;border-radius:9999px;background:{{ dTab.color }};box-shadow:0 2px 0 {{ dTab.shade }};display:flex;align-items:center;justify-content:center;transition:background .3s">
+<sc-if value="{{ dCloset }}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg></sc-if>
+<sc-if value="{{ dCapture }}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></sc-if>
+<sc-if value="{{ dAvatar }}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M5.5 19.5c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"></path></svg></sc-if>
+</span>
+<h1 style="margin:0;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:22px;letter-spacing:.02em">{{ dTab.label }}</h1>
+</div>
+</header>
+
+<sc-if value="{{ dCloset }}" hint-placeholder-val="{{ true }}">
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:18px;animation:pt-pop .45s cubic-bezier(.34,1.4,.64,1) both">
+<p style="margin:0;padding:0 4px;font-size:14px;line-height:1.8;font-weight:500">撮影して登録した服が、ここに並びます。</p>
+<div style="background:#FFFDF5;border-radius:30px;padding:10px;box-shadow:0 4px 0 rgba(91,74,63,.08),0 12px 26px rgba(91,74,63,.07)">
+<div style="border:2px dashed #E6DCC4;border-radius:22px;padding:18px 14px 22px;display:flex;flex-direction:column;gap:18px">
+<div style="position:relative;padding-top:6px">
+<div style="height:10px;border-radius:9999px;background:repeating-linear-gradient(90deg,#C99D74 0 22px,#BF9269 22px 26px,#CFA67F 26px 44px);box-shadow:inset 0 -2px 0 rgba(91,74,63,.18),0 2px 0 rgba(91,74,63,.08)"></div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:-4px">
+<div style="display:flex;flex-direction:column;align-items:center"><svg width="34" height="22" viewBox="0 0 34 22" fill="none" stroke="#B89B7E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2v5"></path><path d="M17 7 3 19h28L17 7"></path></svg><div style="width:100%;aspect-ratio:3/4;margin-top:-2px;border-radius:16px;background:#F7F3E8;border:2px dashed #E3D8BF;box-sizing:border-box"></div></div>
+<div style="display:flex;flex-direction:column;align-items:center"><svg width="34" height="22" viewBox="0 0 34 22" fill="none" stroke="#B89B7E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2v5"></path><path d="M17 7 3 19h28L17 7"></path></svg><div style="width:100%;aspect-ratio:3/4;margin-top:-2px;border-radius:16px;background:#F7F3E8;border:2px dashed #E3D8BF;box-sizing:border-box"></div></div>
+<div style="display:flex;flex-direction:column;align-items:center"><svg width="34" height="22" viewBox="0 0 34 22" fill="none" stroke="#B89B7E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2v5"></path><path d="M17 7 3 19h28L17 7"></path></svg><div style="width:100%;aspect-ratio:3/4;margin-top:-2px;border-radius:16px;background:#F7F3E8;border:2px dashed #E3D8BF;box-sizing:border-box"></div></div>
+</div>
+</div>
+<div style="text-align:center;display:flex;flex-direction:column;gap:6px">
+<p style="margin:0;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:17px">まだ服が登録されていません</p>
+<p style="margin:0;font-size:13px;line-height:1.8;text-wrap:pretty">最初の1着を撮影して、<br>クローゼットに追加しましょう。</p>
+</div>
+<button onClick="{{ dGoCapture }}" style="height:58px;border:0;border-radius:9999px;background:#F3A683;color:#4A3A30;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:17px;letter-spacing:.04em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 5px 0 #D98A66,0 10px 18px rgba(217,138,102,.25);transition:transform .12s ease-out,box-shadow .12s ease-out" style-hover="transform:translateY(-1px)" style-active="transform:translateY(4px);box-shadow:0 1px 0 #D98A66">
+<span style="width:32px;height:32px;border-radius:9999px;background:#FFFDF5;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></span>服を登録する</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dCapture }}" hint-placeholder-val="{{ false }}">
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:18px;animation:pt-pop .45s cubic-bezier(.34,1.4,.64,1) both">
+<p style="margin:0;padding:0 4px;font-size:14px;line-height:1.8;font-weight:500">服を撮影して、クローゼットに登録します。</p>
+<div style="position:relative;background-color:#FFFDF5;background-image:linear-gradient(rgba(168,213,186,.28) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(168,213,186,.28) 1.5px,transparent 1.5px);background-size:22px 22px;background-position:-1px -1px;border-radius:30px;padding:22px 20px 24px;box-shadow:0 4px 0 rgba(91,74,63,.08),0 12px 26px rgba(91,74,63,.07);display:flex;flex-direction:column;gap:18px">
+<span style="position:absolute;top:-10px;right:22px;transform:rotate(4deg);background:#F6D98B;border-radius:12px;padding:6px 14px;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:13px;box-shadow:0 3px 0 #D9B967">準備中</span>
+<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:24px;background:rgba(247,243,232,.85);border:2.5px dashed #A8D5BA;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">
+<div style="position:absolute;top:16px;left:16px;width:26px;height:26px;border-top:4px solid #86BB9C;border-left:4px solid #86BB9C;border-top-left-radius:14px"></div>
+<div style="position:absolute;top:16px;right:16px;width:26px;height:26px;border-top:4px solid #86BB9C;border-right:4px solid #86BB9C;border-top-right-radius:14px"></div>
+<div style="position:absolute;bottom:16px;left:16px;width:26px;height:26px;border-bottom:4px solid #86BB9C;border-left:4px solid #86BB9C;border-bottom-left-radius:14px"></div>
+<div style="position:absolute;bottom:16px;right:16px;width:26px;height:26px;border-bottom:4px solid #86BB9C;border-right:4px solid #86BB9C;border-bottom-right-radius:14px"></div>
+<span style="width:56px;height:56px;border-radius:9999px;background:#F6D98B;box-shadow:0 3px 0 #D9B967;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></span>
+<span style="font-size:12px;font-weight:700;color:#7D6D61">カメラのプレビュー領域</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="margin:0;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:17px">撮影機能は現在準備中です</p>
+<p style="margin:0;font-size:13px;line-height:1.8;text-wrap:pretty">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ dAvatar }}" hint-placeholder-val="{{ false }}">
+<div style="padding:4px 20px 0;display:flex;flex-direction:column;gap:18px;animation:pt-pop .45s cubic-bezier(.34,1.4,.64,1) both">
+<p style="margin:0;padding:0 4px;font-size:14px;line-height:1.8;font-weight:500">体型を調整したアバターに、登録した服を着せられます。</p>
+<div style="position:relative;background:#FFFDF5;border-radius:30px;padding:10px;box-shadow:0 4px 0 rgba(91,74,63,.08),0 12px 26px rgba(91,74,63,.07)">
+<span style="position:absolute;top:-10px;right:22px;z-index:1;transform:rotate(4deg);background:#F6D98B;border-radius:12px;padding:6px 14px;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:13px;box-shadow:0 3px 0 #D9B967">準備中</span>
+<div style="border:2px dashed #E6DCC4;border-radius:22px;padding:14px 14px 20px;display:flex;flex-direction:column;gap:18px">
+<div style="position:relative;width:100%;aspect-ratio:3/4;border-radius:22px;overflow:hidden;background:linear-gradient(#EAF4EC 0%,#F7F3E8 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+<div style="width:96px;height:180px;border-radius:9999px;border:2.5px dashed #C9BBA4;box-sizing:border-box;margin-bottom:28px"></div>
+<span style="position:absolute;top:18px;left:0;right:0;text-align:center;font-size:12px;font-weight:700;color:#7D6D61">3Dアバターの表示領域</span>
+<div style="position:absolute;left:12%;right:12%;bottom:30px;height:46px;border-radius:50%;background:#A8D5BA;box-shadow:inset 0 -6px 0 #86BB9C"></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<p style="margin:0;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;font-size:17px">アバター機能は現在準備中です</p>
+<p style="margin:0;font-size:13px;line-height:1.8;text-wrap:pretty">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+
+<nav aria-label="メインナビゲーション" style="position:absolute;left:14px;right:14px;bottom:24px;z-index:3;background:#FFFDF5;border:2px solid #EFE6D2;border-radius:34px;padding:14px 6px 12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));box-shadow:0 5px 0 rgba(91,74,63,.1),0 14px 30px rgba(91,74,63,.12)">
+<sc-for list="{{ navD }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="position:relative;min-height:76px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;border:0;background:none;cursor:pointer;color:#5B4A3F;padding:0;-webkit-tap-highlight-color:transparent">
+<sc-if value="{{ item.active }}"><span style="position:absolute;top:-22px;left:50%;margin-left:-8px">{{ item.cursor }}</span></sc-if>
+<span style="width:48px;height:48px;border-radius:9999px;display:flex;align-items:center;justify-content:center;background:{{ item.circle }};box-shadow:0 {{ item.lift }} 0 {{ item.circleShade }};transform:{{ item.transform }};transition:transform .4s cubic-bezier(.34,1.8,.64,1),background .25s,box-shadow .25s">
+<sc-if value="{{ item.isCloset }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.6a2 2 0 1 1 2-2"></path><path d="M12 7.6v1.1L3.7 14.9a1.6 1.6 0 0 0 .9 2.9h14.8a1.6 1.6 0 0 0 .9-2.9L12 8.7"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.6c0-1.1.9-2 2-2h1.8l1.5-2.1h4.4l1.5 2.1h1.8c1.1 0 2 .9 2 2v8.4c0 1.1-.9 2-2 2h-11c-1.1 0-2-.9-2-2z"></path><circle cx="12" cy="12.7" r="3.1"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5B4A3F" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M5.5 19.5c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"></path></svg></sc-if>
+</span>
+<span style="font-family:'M PLUS Rounded 1c',sans-serif;font-weight:{{ item.weight }};font-size:12px;padding:2px 10px;border-radius:9999px;background:{{ item.pill }};color:{{ item.text }};transition:background .25s">{{ item.label }}</span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+</div>
+<p class="dv-next">次の例: 「<a class="dv-oid" href="#2a">2a</a> のPC幅レイアウトを見せて」 · 「ハンガーラックの木目をもっと濃く」 · 「選択中のタブのカーソルを葉っぱにして」</p>
+</section>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Pitari 画面の骨組み — 3案（各モックは下部ナビで操作できます）</span></div>
+<p style="margin:0 0 28px;max-width:720px;font:12px/1.6 system-ui,sans-serif;color:rgba(0,0,0,.55)">前提: 390×844 のスマホ幅で表示。PCでは同じ列を最大幅 480px で中央寄せする想定。服データは未接続なので架空の服は出さず、写真が入る 3:4 の枠だけを示しています。撮影・アバターは「準備中」と明示し、押しても動かないボタンは置いていません。</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>エディトリアル・グリッド（仕様に忠実）</div>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:44px">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:110px">
+<sc-if value="{{ aCloset }}" hint-placeholder-val="{{ true }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.95);backdrop-filter:blur(4px);border-bottom:1px solid #F1F5F9;padding:56px 24px 16px">
+<h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.025em">クローゼット</h1>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.6;color:#64748B">撮影して登録した服が、ここに並びます。</p>
+</header>
+<div style="padding:24px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;row-gap:32px">
+<button onClick="{{ aGoCapture }}" style="display:flex;flex-direction:column;gap:10px;padding:0;border:0;background:none;text-align:left;cursor:pointer;transition:transform .15s" style-active="transform:scale(0.95)">
+<div style="width:100%;aspect-ratio:3/4;background:#000000;color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>
+<span style="font-size:13px;font-weight:600">服を登録する</span>
+</div>
+<span style="font-size:12px;color:#64748B">撮影画面へ進みます</span>
+</button>
+<div style="display:flex;flex-direction:column;gap:10px"><div style="width:100%;aspect-ratio:3/4;background:#F8FAFC;border:1px dashed #E2E8F0;box-sizing:border-box"></div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><div style="width:100%;aspect-ratio:3/4;background:#F8FAFC;border:1px dashed #E2E8F0;box-sizing:border-box"></div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><div style="width:100%;aspect-ratio:3/4;background:#F8FAFC;border:1px dashed #E2E8F0;box-sizing:border-box"></div></div>
+</div>
+<div style="padding:0 24px 24px">
+<p style="margin:0;font-size:14px;font-weight:600">まだ服が登録されていません</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">最初の1着を撮影して、クローゼットに追加しましょう。</p>
+</div>
+</sc-if>
+<sc-if value="{{ aCapture }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.95);backdrop-filter:blur(4px);border-bottom:1px solid #F1F5F9;padding:56px 24px 16px">
+<div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.025em">撮影</h1><span style="background:#000;color:#fff;font-size:10px;font-weight:700;padding:4px 8px;letter-spacing:.04em">準備中</span></div>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.6;color:#64748B">服を撮影して、クローゼットに登録します。</p>
+</header>
+<div style="padding:24px;display:flex;flex-direction:column;gap:20px">
+<div style="width:100%;aspect-ratio:3/4;background:#F8FAFC;border:1px solid #F1F5F9;box-sizing:border-box;position:relative;display:flex;align-items:center;justify-content:center">
+<div style="position:absolute;top:20px;left:20px;width:28px;height:28px;border-top:1.5px solid #94A3B8;border-left:1.5px solid #94A3B8"></div>
+<div style="position:absolute;top:20px;right:20px;width:28px;height:28px;border-top:1.5px solid #94A3B8;border-right:1.5px solid #94A3B8"></div>
+<div style="position:absolute;bottom:20px;left:20px;width:28px;height:28px;border-bottom:1.5px solid #94A3B8;border-left:1.5px solid #94A3B8"></div>
+<div style="position:absolute;bottom:20px;right:20px;width:28px;height:28px;border-bottom:1.5px solid #94A3B8;border-right:1.5px solid #94A3B8"></div>
+<span style="font-size:12px;color:#94A3B8">カメラのプレビュー領域</span>
+</div>
+<div>
+<p style="margin:0;font-size:14px;font-weight:600">撮影機能は現在準備中です</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ aAvatar }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.95);backdrop-filter:blur(4px);border-bottom:1px solid #F1F5F9;padding:56px 24px 16px">
+<div style="display:flex;align-items:center;gap:10px"><h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.025em">アバター</h1><span style="background:#000;color:#fff;font-size:10px;font-weight:700;padding:4px 8px;letter-spacing:.04em">準備中</span></div>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.6;color:#64748B">体型を調整したアバターに、登録した服を着せられます。</p>
+</header>
+<div style="padding:24px;display:flex;flex-direction:column;gap:20px">
+<div style="width:100%;aspect-ratio:3/4;background:linear-gradient(#F8FAFC 0 78%,#F1F5F9 78% 100%);border:1px solid #F1F5F9;box-sizing:border-box;display:flex;align-items:center;justify-content:center">
+<span style="font-size:12px;color:#94A3B8">3Dアバターの表示領域</span>
+</div>
+<div>
+<p style="margin:0;font-size:14px;font-weight:600">アバター機能は現在準備中です</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</sc-if>
+</div>
+<nav aria-label="メインナビゲーション" style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:#FFFFFF;border-top:1px solid #F1F5F9;padding:8px 12px 34px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<sc-for list="{{ navA }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;cursor:pointer;color:{{ item.color }};transition:transform .15s,color .2s" style-active="transform:scale(0.95)">
+<sc-if value="{{ item.isCloset }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></sc-if>
+<span style="font-size:10px;font-weight:500">{{ item.label }}</span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>マガジン・ヒーロー（大きな1枠＋上線インジケーター）</div>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#FFFFFF;border:1px solid #E2E8F0;border-radius:44px">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:110px">
+<sc-if value="{{ bCloset }}" hint-placeholder-val="{{ true }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.95);backdrop-filter:blur(4px);padding:56px 24px 12px">
+<p style="margin:0;font-size:11px;font-weight:500;letter-spacing:.24em;color:#64748B">PITARI</p>
+</header>
+<div style="padding:8px 24px 0">
+<h1 style="margin:0;font-size:34px;line-height:1.2;font-weight:600;letter-spacing:-0.025em">クローゼット</h1>
+<p style="margin:10px 0 0;font-size:14px;line-height:1.7;color:#64748B;text-wrap:pretty">撮影して登録した服が、ここに並びます。</p>
+</div>
+<div style="padding:28px 24px 0;display:flex;flex-direction:column;gap:20px">
+<div style="width:100%;aspect-ratio:3/4;background:#F8FAFC;border:1px solid #F1F5F9;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-end;padding:24px">
+<p style="margin:0;font-size:12px;color:#94A3B8">00 着</p>
+<p style="margin:6px 0 0;font-size:18px;font-weight:600;letter-spacing:-0.01em">まだ服が登録されていません</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B">最初の1着を撮影して、追加しましょう。</p>
+</div>
+<button onClick="{{ bGoCapture }}" style="height:52px;border:0;border-radius:9999px;background:#000000;color:#FFFFFF;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s" style-active="transform:scale(0.95)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg>服を登録する</button>
+</div>
+</sc-if>
+<sc-if value="{{ bCapture }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.95);backdrop-filter:blur(4px);padding:56px 24px 12px">
+<p style="margin:0;font-size:11px;font-weight:500;letter-spacing:.24em;color:#64748B">PITARI</p>
+</header>
+<div style="padding:8px 24px 0">
+<h1 style="margin:0;font-size:34px;line-height:1.2;font-weight:600;letter-spacing:-0.025em">撮影</h1>
+<p style="margin:10px 0 0;font-size:14px;line-height:1.7;color:#64748B;text-wrap:pretty">服を撮影して、クローゼットに登録します。</p>
+</div>
+<div style="padding:28px 24px 0">
+<div style="width:100%;aspect-ratio:3/4;background:#F8FAFC;border:1px solid #F1F5F9;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;padding:24px">
+<span style="align-self:flex-start;background:#000;color:#fff;font-size:10px;font-weight:700;padding:4px 8px;letter-spacing:.04em">準備中</span>
+<div>
+<p style="margin:0;font-size:18px;font-weight:600;letter-spacing:-0.01em">撮影機能は現在準備中です</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ bAvatar }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(255,255,255,.95);backdrop-filter:blur(4px);padding:56px 24px 12px">
+<p style="margin:0;font-size:11px;font-weight:500;letter-spacing:.24em;color:#64748B">PITARI</p>
+</header>
+<div style="padding:8px 24px 0">
+<h1 style="margin:0;font-size:34px;line-height:1.2;font-weight:600;letter-spacing:-0.025em">アバター</h1>
+<p style="margin:10px 0 0;font-size:14px;line-height:1.7;color:#64748B;text-wrap:pretty">体型を調整したアバターに、登録した服を着せられます。</p>
+</div>
+<div style="padding:28px 24px 0">
+<div style="width:100%;aspect-ratio:3/4;background:#F8FAFC;border:1px solid #F1F5F9;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;padding:24px">
+<span style="align-self:flex-start;background:#000;color:#fff;font-size:10px;font-weight:700;padding:4px 8px;letter-spacing:.04em">準備中</span>
+<div>
+<p style="margin:0;font-size:18px;font-weight:600;letter-spacing:-0.01em">アバター機能は現在準備中です</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+<nav aria-label="メインナビゲーション" style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:#FFFFFF;border-top:1px solid #F1F5F9;padding:0 12px 34px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<sc-for list="{{ navB }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" style="position:relative;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:0;background:none;cursor:pointer;color:{{ item.color }};transition:transform .15s,color .2s" style-active="transform:scale(0.95)">
+<span style="position:absolute;top:-1px;left:50%;width:32px;margin-left:-16px;height:2px;background:{{ item.bar }}"></span>
+<sc-if value="{{ item.isCloset }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></sc-if>
+<span style="font-size:10px;font-weight:500">{{ item.label }}</span>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>フローティング・ドック（番号付き見出し＋黒ピル選択）</div>
+<div style="width:390px;height:844px;position:relative;overflow:hidden;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:44px">
+<div style="position:absolute;inset:0;overflow-y:auto;padding-bottom:130px">
+<sc-if value="{{ cCloset }}" hint-placeholder-val="{{ true }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(248,250,252,.95);backdrop-filter:blur(4px);padding:56px 20px 16px;display:flex;align-items:baseline;justify-content:space-between">
+<h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.025em">クローゼット</h1>
+<span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums">01 / 03</span>
+</header>
+<div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+<p style="margin:0 0 4px;font-size:13px;line-height:1.6;color:#64748B">撮影して登録した服が、ここに並びます。</p>
+<div style="background:#FFFFFF;border:1px solid #F1F5F9;padding:20px;display:flex;flex-direction:column;gap:20px">
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<div style="aspect-ratio:3/4;background:#F8FAFC;border:1px dashed #E2E8F0"></div>
+<div style="aspect-ratio:3/4;background:#F8FAFC;border:1px dashed #E2E8F0"></div>
+<div style="aspect-ratio:3/4;background:#F8FAFC;border:1px dashed #E2E8F0"></div>
+</div>
+<div>
+<p style="margin:0;font-size:15px;font-weight:600">まだ服が登録されていません</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">服を撮影すると、写真がこの棚に並びます。</p>
+</div>
+<button onClick="{{ cGoCapture }}" style="align-self:flex-start;height:48px;padding:0 22px;border:0;border-radius:9999px;background:#000;color:#fff;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:transform .15s" style-active="transform:scale(0.95)">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>服を登録する</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ cCapture }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(248,250,252,.95);backdrop-filter:blur(4px);padding:56px 20px 16px;display:flex;align-items:baseline;justify-content:space-between">
+<h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.025em">撮影</h1>
+<span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums">02 / 03</span>
+</header>
+<div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+<p style="margin:0 0 4px;font-size:13px;line-height:1.6;color:#64748B">服を撮影して、クローゼットに登録します。</p>
+<div style="background:#FFFFFF;border:1px solid #F1F5F9;padding:20px;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:flex-start;border:1px solid #F1F5F9;background:#F8FAFC;color:#64748B;border-radius:9999px;font-size:12px;font-weight:500;padding:6px 12px">準備中</span>
+<div style="aspect-ratio:3/4;background:#F1F5F9;display:flex;align-items:center;justify-content:center"><span style="font-size:12px;color:#94A3B8">カメラのプレビュー領域</span></div>
+<div>
+<p style="margin:0;font-size:15px;font-weight:600">撮影機能は現在準備中です</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">カメラでの撮影と服の登録は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{ cAvatar }}" hint-placeholder-val="{{ false }}">
+<header style="position:sticky;top:0;z-index:2;background:rgba(248,250,252,.95);backdrop-filter:blur(4px);padding:56px 20px 16px;display:flex;align-items:baseline;justify-content:space-between">
+<h1 style="margin:0;font-size:24px;font-weight:600;letter-spacing:-0.025em">アバター</h1>
+<span style="font-size:12px;color:#94A3B8;font-variant-numeric:tabular-nums">03 / 03</span>
+</header>
+<div style="padding:0 20px;display:flex;flex-direction:column;gap:12px">
+<p style="margin:0 0 4px;font-size:13px;line-height:1.6;color:#64748B">体型を調整したアバターに、登録した服を着せられます。</p>
+<div style="background:#FFFFFF;border:1px solid #F1F5F9;padding:20px;display:flex;flex-direction:column;gap:16px">
+<span style="align-self:flex-start;border:1px solid #F1F5F9;background:#F8FAFC;color:#64748B;border-radius:9999px;font-size:12px;font-weight:500;padding:6px 12px">準備中</span>
+<div style="aspect-ratio:3/4;background:#F1F5F9;display:flex;align-items:center;justify-content:center"><span style="font-size:12px;color:#94A3B8">3Dアバターの表示領域</span></div>
+<div>
+<p style="margin:0;font-size:15px;font-weight:600">アバター機能は現在準備中です</p>
+<p style="margin:6px 0 0;font-size:13px;line-height:1.7;color:#64748B;text-wrap:pretty">3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。</p>
+</div>
+</div>
+</div>
+</sc-if>
+</div>
+<nav aria-label="メインナビゲーション" style="position:absolute;left:20px;right:20px;bottom:34px;z-index:3;background:#FFFFFF;border:1px solid #F1F5F9;border-radius:9999px;padding:6px;display:flex;gap:4px;box-shadow:0 4px 16px rgba(15,23,42,.06)">
+<sc-for list="{{ navC }}" as="item" hint-placeholder-count="3">
+<button onClick="{{ item.go }}" aria-current="{{ item.current }}" aria-label="{{ item.label }}" style="flex:{{ item.flex }};min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:9999px;background:{{ item.bg }};cursor:pointer;color:{{ item.fg }};transition:flex .3s ease-out,background .2s,transform .15s" style-active="transform:scale(0.95)">
+<sc-if value="{{ item.isCloset }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path></svg></sc-if>
+<sc-if value="{{ item.isCapture }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg></sc-if>
+<sc-if value="{{ item.isAvatar }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg></sc-if>
+<sc-if value="{{ item.active }}"><span style="font-size:13px;font-weight:600">{{ item.label }}</span></sc-if>
+</button>
+</sc-for>
+</nav>
+</div>
+</div>
+
+</div>
+<p class="dv-next">次の例: 「<a class="dv-oid" href="#1a">1a</a> のグリッドに <a class="dv-oid" href="#1c">1c</a> のドックを組み合わせて」 · 「<a class="dv-oid" href="#1b">1b</a> のPC幅レイアウトを見せて」 · 「アクセントを1色だけ足して」</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { a: 'closet', b: 'closet', c: 'closet', d: 'closet', e: 'closet', eCat: 'すべて', eQuery: '', eFav: [false, false], f: 'closet', fVisited: ['closet'], fBadge: false, fToast: false, fHop: 0, fLineI: 0, g: 'closet', gDir: 'r', gView: 'grid', gLiked: false, gSaved: false, gLikeN: 0, gSaveN: 0, gBurstOn: false, gSheet: false, h: 'closet', i: 'closet', j: 'closet' };
+  trio() {
+    const s = this.state;
+    const L = { closet: 'クローゼット', capture: '撮影', avatar: 'アバター' };
+    const N = { closet: '01', capture: '02', avatar: '03' };
+    const mk = (v, st) => ['closet', 'capture', 'avatar'].map(k => {
+      const on = s[v] === k, x = on ? st.on : st.off;
+      return { key: k, label: L[k], num: N[k], current: on ? 'page' : undefined, isCloset: k === 'closet', isCapture: k === 'capture', isAvatar: k === 'avatar', go: () => this.setState({ [v]: k }), ...x };
+    });
+    return {
+      hTitle: L[s.h], hNo: N[s.h], iTitle: L[s.i], jTitle: L[s.j],
+      navH: mk('h', { on: { color: '#1F1D1A', bar: '#7B2D26' }, off: { color: '#8C857A', bar: 'transparent' } }),
+      navI: mk('i', { on: { color: '#2B2A28', chipBg: '#F2C230', chipBorder: '#2B2A28' }, off: { color: '#6B655C', chipBg: 'transparent', chipBorder: 'transparent' } }),
+      navJ: mk('j', { on: { color: '#E8D8B8', dot: '#E8D8B8', glow: '0 0 10px #E8D8B8' }, off: { color: '#8A857D', dot: 'transparent', glow: 'none' } })
+    };
+  }
+  snsGo(k) {
+    const O = ['closet', 'capture', 'avatar'];
+    this.setState(st => st.g === k ? null : { g: k, gDir: O.indexOf(k) > O.indexOf(st.g) ? 'r' : 'l', gSheet: false });
+  }
+  sns() {
+    const s = this.state;
+    const L = { closet: 'クローゼット', capture: '撮影', avatar: 'アバター' };
+    const navG = ['closet', 'capture', 'avatar'].map(k => {
+      const on = s.g === k;
+      return { key: k, label: L[k], current: on ? 'page' : undefined, isCloset: k === 'closet', isCapture: k === 'capture', isAvatar: k === 'avatar',
+        go: () => this.snsGo(k), sw: on ? 2.4 : 1.7, fill: on ? '#111111' : 'none', ring: on ? '2px solid #111111' : '2px solid transparent' };
+    });
+    const gViews = [['grid', 'グリッド表示'], ['feed', 'フィード表示']].map(([k, l]) => {
+      const on = s.gView === k;
+      return { key: k, label: l, active: on, isGrid: k === 'grid', isFeed: k === 'feed', go: () => this.setState({ gView: k }), color: on ? '#111111' : '#B5B5B5', bar: on ? '#111111' : 'transparent' };
+    });
+    const pl = s.gLikeN % 2 ? 'A' : 'B', ps = s.gSaveN % 2 ? 'A' : 'B';
+    return { navG, gViews, gGrid: s.gView === 'grid', gFeed: s.gView === 'feed',
+      gAnim: `s5-${s.gDir} .32s cubic-bezier(.2,.8,.2,1) both`,
+      gGoCapture: () => this.snsGo('capture'),
+      gLiked: s.gLiked, gSaved: s.gSaved, gHeartColor: s.gLiked ? '#FF3040' : '#111111', gHeartFill: s.gLiked ? '#FF3040' : 'none', gSaveFill: s.gSaved ? '#111111' : 'none',
+      gLikeAnim: s.gLikeN ? `s5-pop${pl} .35s ease-out` : 'none', gSaveAnim: s.gSaveN ? `s5-pop${ps} .35s ease-out` : 'none',
+      gToggleLike: () => this.setState(st => ({ gLiked: !st.gLiked, gLikeN: st.gLikeN + 1 })),
+      gToggleSave: () => this.setState(st => ({ gSaved: !st.gSaved, gSaveN: st.gSaveN + 1 })),
+      gDoubleTap: () => { clearTimeout(this._b); this.setState(st => ({ gLiked: true, gLikeN: st.gLikeN + 1, gBurstOn: true })); this._b = setTimeout(() => this.setState({ gBurstOn: false }), 800); },
+      gBurstOn: s.gBurstOn, gSheet: s.gSheet,
+      gOpenSheet: () => this.setState({ gSheet: true }), gCloseSheet: () => this.setState({ gSheet: false }) };
+  }
+  gameGo(k) {
+    this.setState(st => {
+      const v = st.fVisited.includes(k) ? st.fVisited : [...st.fVisited, k];
+      const unlock = v.length === 3 && !st.fBadge;
+      if (unlock) { clearTimeout(this._t); this._t = setTimeout(() => this.setState({ fToast: false }), 3000); }
+      return { f: k, fVisited: v, fBadge: st.fBadge || unlock, fToast: unlock ? true : st.fToast, fHop: st.fHop + 1, fLineI: 0 };
+    });
+  }
+  componentWillUnmount() { clearTimeout(this._t); clearTimeout(this._b); }
+  game() {
+    const s = this.state;
+    const L = { closet: 'クローゼット', capture: '撮影', avatar: 'アバター' };
+    const LINES = {
+      closet: ['まだクローゼットは空っぽ！最初の1着を登録しよう', '写真を撮ると、ここに服が並ぶよ', 'いっしょにクローゼットを育てよう！'],
+      capture: ['撮影はもうすぐできるようになるよ！', '準備ができたら、ここで服を撮れるよ'],
+      avatar: ['体型を変えて、服を着せられるようになるよ！', 'アバターは今つくっているところ！']
+    };
+    const lines = LINES[s.f];
+    const parity = s.fHop % 2 ? 'A' : 'B';
+    const navF = ['closet', 'capture', 'avatar'].map(k => {
+      const on = s.f === k;
+      return { key: k, label: L[k], current: on ? 'page' : undefined, isCloset: k === 'closet', isCapture: k === 'capture', isAvatar: k === 'avatar',
+        go: () => this.gameGo(k), bg: on ? '#DDF4FF' : 'transparent', border: on ? '#84D8FF' : 'transparent', color: on ? '#1480B3' : '#777777',
+        anim: on ? `g4-bounce${parity} .5s cubic-bezier(.34,1.6,.64,1) both` : 'none' };
+    });
+    const cols = ['#58CC02', '#FFC800', '#1CB0F6', '#FF9600', '#CE82FF', '#FF4B4B'];
+    const fConfetti = Array.from({ length: 22 }, (_, i) => ({ key: i, left: 8 + (i * 41) % 84, w: 6 + (i % 3) * 2, h: 10 + (i % 4) * 2, color: cols[i % cols.length], dx: ((i * 37) % 120) - 60, delay: (i % 6) * 0.05 }));
+    const b = s.fBadge;
+    return { navF, fConfetti, fToast: s.fToast,
+      fLine: lines[s.fLineI % lines.length],
+      fHopAnim: `g4-hop${parity} .6s ease-out`,
+      fTapMascot: () => this.setState(st => ({ fHop: st.fHop + 1, fLineI: st.fLineI + 1 })),
+      fGoCapture: () => this.gameGo('capture'),
+      fVisitedCount: s.fVisited.length, fPct: Math.round(s.fVisited.length / 3 * 100),
+      fBadgeLabel: b ? 'バッジ：たんけん家（獲得済み）' : 'バッジ：たんけん家（未獲得）',
+      fBadgeBorder: b ? '#FFC800' : '#E5E5E5', fBadgeBg: b ? '#FFF7D6' : '#F7F7F7',
+      fRibbonA: b ? '#1CB0F6' : '#D5D5D5', fRibbonB: b ? '#1899D6' : '#C4C4C4', fMedal: b ? '#FFC800' : '#E5E5E5', fMedalEdge: b ? '#E5A800' : '#CECECE' };
+  }
+  zozo() {
+    const s = this.state;
+    const L = { closet: 'クローゼット', capture: '撮影', avatar: 'アバター' };
+    const navE = ['closet', 'capture', 'avatar'].map(k => {
+      const on = s.e === k;
+      return { key: k, label: L[k], current: on ? 'page' : undefined, isCloset: k === 'closet', isCapture: k === 'capture', isAvatar: k === 'avatar',
+        go: () => this.setState({ e: k }), color: on ? '#222222' : '#999999', weight: on ? 700 : 400, sw: on ? 2.2 : 1.6 };
+    });
+    const eCats = ['すべて', 'トップス', 'ボトムス', 'アウター', 'ワンピース', 'シューズ', '小物'].map(c => {
+      const on = s.eCat === c;
+      return { key: c, label: c, active: on, go: () => this.setState({ eCat: c }), color: on ? '#222222' : '#777777', weight: on ? 700 : 400, bar: on ? '#222222' : 'transparent' };
+    });
+    const q = s.eQuery.trim();
+    const eEmptyTitle = q ? `「${q}」に一致する服はありません` : s.eCat === 'すべて' ? 'まだ服が登録されていません' : `${s.eCat}はまだ登録されていません`;
+    const eEmptyText = q ? '別のキーワードで検索するか、服を登録してください。' : '服を撮影して、クローゼットに追加しましょう。';
+    const eSamples = s.eFav.map((f, i) => ({ key: i, fav: f, fill: f ? '#222222' : 'rgba(255,255,255,.9)', stroke: '#222222',
+      toggle: () => this.setState(st => ({ eFav: st.eFav.map((v, j) => j === i ? !v : v) })) }));
+    return { navE, eCats, eEmptyTitle, eEmptyText, eSamples, eQuery: s.eQuery, eHasQuery: !!s.eQuery,
+      eCatLabel: q ? `「${q}」の検索結果` : s.eCat,
+      eOnQuery: e => this.setState({ eQuery: e.target.value }), eClearQuery: () => this.setState({ eQuery: '' }) };
+  }
+  nav(v) {
+    const L = { closet: 'クローゼット', capture: '撮影', avatar: 'アバター' };
+    const cur = this.state[v];
+    return ['closet', 'capture', 'avatar'].map(k => {
+      const on = cur === k;
+      return {
+        key: k, label: L[k], active: on, current: on ? 'page' : undefined,
+        isCloset: k === 'closet', isCapture: k === 'capture', isAvatar: k === 'avatar',
+        go: () => this.setState({ [v]: k }),
+        color: on ? '#000000' : '#94A3B8',
+        bar: on ? '#000000' : 'transparent',
+        bg: on ? '#000000' : 'transparent',
+        fg: on ? '#FFFFFF' : '#94A3B8',
+        flex: on ? '2 1 0' : '1 1 0'
+      };
+    });
+  }
+  navD() {
+    const T = {
+      closet: { label: 'クローゼット', color: '#A8D5BA', shade: '#86BB9C' },
+      capture: { label: '撮影', color: '#F6D98B', shade: '#D9B967' },
+      avatar: { label: 'アバター', color: '#F3A683', shade: '#D98A66' }
+    };
+    const cur = this.state.d;
+    return ['closet', 'capture', 'avatar'].map(k => {
+      const on = cur === k, t = T[k];
+      return {
+        key: k, label: t.label, active: on, current: on ? 'page' : undefined,
+        isCloset: k === 'closet', isCapture: k === 'capture', isAvatar: k === 'avatar',
+        go: () => this.setState({ d: k }),
+        circle: on ? t.color : '#F1EBDD',
+        circleShade: on ? t.shade : '#E2D8C3',
+        lift: on ? '4px' : '2px',
+        transform: on ? 'translateY(-4px) scale(1.1)' : 'none',
+        pill: on ? '#F6D98B' : 'transparent',
+        text: on ? '#5B4A3F' : '#7D6D61',
+        weight: on ? 800 : 700,
+        cursor: React.createElement('span', { key: 'cur', style: { display: 'block', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '10px solid #F3A683', borderRadius: 3, filter: 'drop-shadow(0 2px 0 #D98A66)', animation: 'pt-bob 1.1s ease-in-out infinite' } })
+      };
+    });
+  }
+  renderVals() {
+    const s = this.state;
+    const r = {};
+    const TT = { closet: { label: 'クローゼット', color: '#A8D5BA', shade: '#86BB9C' }, capture: { label: '撮影', color: '#F6D98B', shade: '#D9B967' }, avatar: { label: 'アバター', color: '#F3A683', shade: '#D98A66' } };
+    r.dTab = TT[s.d];
+    r.navD = this.navD();
+    Object.assign(r, this.zozo(), this.game(), this.sns(), this.trio());
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'].forEach(v => {
+      r[v + 'Closet'] = s[v] === 'closet';
+      r[v + 'Capture'] = s[v] === 'capture';
+      r[v + 'Avatar'] = s[v] === 'avatar';
+      r[v + 'GoCapture'] = () => this.setState({ [v]: 'capture' });
+    });
+    return { ...r, navA: this.nav('a'), navB: this.nav('b'), navC: this.nav('c') };
+  }
+}
+</script>
+</body>
+</html>
