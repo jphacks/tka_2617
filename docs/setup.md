@@ -55,6 +55,33 @@ lefthook が、staged のファイルを Prettier で整形し、ESLint で検�
 3. `pnpm --filter @pitari/api db:types` で型を作り直す
 4. [docs/er.md](er.md) を更新する
 
+## webをVercelにデプロイする
+
+GitHubとVercelはつないでいないので、手元のMacからVercelのCLIで出す（[ADR 0004](adr/0004-deploy-web-with-vercel-cli.md)）。今はwebだけを出している。
+
+1. mainの最新に切り替える。CLIは手元のファイルをそのまま送るので、commitしていない変更も載ってしまう
+
+   ```bash
+   git switch main && git pull
+   ```
+
+2. リポジトリのルートで、本番に出す
+
+   ```bash
+   npx vercel --prod
+   ```
+
+   初めてのときだけ、ログインとプロジェクトの設定を聞かれる。
+   - ログインは「Continue with GitHub」
+   - 「Link to existing project?」は、まだ無ければ`n`。プロジェクトの名前は`pitari`
+   - **「In which directory is your code located?」は`./apps/web`**
+   - Gitのリポジトリとつなぐか聞かれたら`n`（orgの許可が無いため）
+
+3. 表示された本番のURLを開いて確かめる。スマホで試すときも本番のURLを使う（`--prod`なしで出したお試しのURLは、Vercelにログインしないと見られない）
+
+- `.env`などの秘密のファイルは、ルートの`.vercelignore`で送らないようにしてある。秘密のファイルを足したら、`.vercelignore`にも足す
+- Vercelでのインストールは、`apps/web/vercel.json`でスクリプトを動かさないようにしてある。送ったファイルには`.git`が無く、`lefthook install`が失敗するため
+
 ## 参考文献
 
 - [【Lefthook】pre-commitで自動修正されたコードをステージングする方法（Qiita）](https://qiita.com/P-man_Brown/items/66b2349c529474033f64)：`stage_fixed` の使い方
