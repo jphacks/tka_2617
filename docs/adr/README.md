@@ -18,6 +18,7 @@
 - [0001 web と api を分け、ブラウザに DB のキーを渡さない](0001-separate-web-and-api.md)
 - [0002 ログインはまだ作らず、デモ用の1ユーザーで進める](0002-no-login-yet.md)
 - [0003 スマホ向けのアプリはPWAで作る](0003-pwa.md)
+- [0004 webはVercelに、手元のCLIからデプロイする](0004-deploy-web-with-vercel-cli.md)
 
 ## 参考文献
 
