@@ -43,7 +43,31 @@
 
    web は http://localhost:3000 、api は http://localhost:3001 で動く。http://localhost:3000/api/health が `{"ok":true}` を返せば、web から api までつながっている。
 
-## commit するとき
+## 服の採寸を開発するとき
+
+Python推論サービスは別起動。依存の隔離・モデルの配置・画面の操作は[推論サービスのREADME](../apps/inference/README.md)を参照する。採寸画面は`http://localhost:3000/capture`。
+
+既存のローカルDBに新しいmigrationだけを適用する場合は`supabase migration up --local`を使う。`db reset`は既存のローカルデータを消すため、保存済みデータが必要な環境では実行しない。
+
+## スマホで撮影する
+
+PCとスマホを同じWi-Fiに接続する。PCでAPI・Python推論・Supabaseを起動したまま、webをLAN向けに起動する。すでに3000番でwebが動いていれば、そのwebだけ停止してから実行する。
+
+```powershell
+npx --yes pnpm@10.18.0 --filter @pitari/web exec next dev --hostname 0.0.0.0
+```
+
+PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを確認する。スマホのSafariまたはChromeから`http://PCのIPv4アドレス:3000/capture`を開く。スマホでlocalhostを使うとスマホ自身を参照するため、PCへ接続できない。
+
+「写真を選ぶ・撮影」をタップすると、対応する端末で背面カメラまたは撮影方法の選択画面が開く。撮影を確定し、「寸法を測定」を押す。推論はPCで実行するため、PCをスリープさせない。保存画像もweb経由で取得するので、スマホからStorageのポートへ接続する必要はない。
+
+画面が開かない場合は、PCの同じURLでも開けるか確認する。PCだけ開ける場合はWindowsファイアウォールのTCP3000の受信許可と、Wi-Fiの端末間通信制限を確認する。ファイアウォール全体を無効化しない。受信許可は信頼できるネットワーク・ローカルサブネットに限定する。ログイン未実装のため、ルーターのポート開放やインターネット公開は行わない。
+
+現在は端末の撮影機能を使うfile入力方式。web画面内に動画のカメラプレビューを埋め込むgetUserMedia方式は未実装で、その方式には原則HTTPSが必要。capture属性の挙動はOS・ブラウザに依存する。
+
+参考：[MDNのcapture属性](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture)、[getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)。
+
+## commit前の確認
 
 lefthook が、staged のファイルを Prettier で整形し、ESLint で検査する。整形の結果は自動で staged に戻る。lint エラーがあると commit できない。
 

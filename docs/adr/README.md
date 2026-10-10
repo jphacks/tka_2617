@@ -19,6 +19,11 @@
 - [0002 ログインはまだ作らず、デモ用の1ユーザーで進める](0002-no-login-yet.md)
 - [0003 スマホ向けのアプリはPWAで作る](0003-pwa.md)
 - [0004 webはVercelに、手元のCLIからデプロイする](0004-deploy-web-with-vercel-cli.md)
+- [0005 ローカルCPUでA4基準の服採寸を行う](0005-local-garment-measurement.md)
+- [0006 採寸を共通の撮影画面へ統合する](0006-integrate-capture-with-app-shell.md)
+- [0007 真上撮影では写真を変形せず採寸する](0007-flat-photo-measurement.md)
+- [0008 スマホから保存画像をweb経由で取得する](0008-mobile-image-access.md)
+- [0009 ランドマークの編集を隠し、寸法名付き矢印で示す](0009-measurement-arrows.md)
 
 ## 参考文献
 
