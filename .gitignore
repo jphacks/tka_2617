@@ -19,3 +19,12 @@ next-env.d.ts
 CLAUDE.local.md
 
 *.pem
+
+# 推論の仮想環境・取得済みモデル・検証画像は共有しない
+.venv/
+__pycache__/
+*.pyc
+apps/inference/models/*
+!apps/inference/models/.gitkeep
+apps/inference/.cache/
+.tools/

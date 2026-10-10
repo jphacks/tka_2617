@@ -1,6 +1,6 @@
 # Pitari
 
-服の写真とDeepFashion2のランドマークを保存し、体型を変えられる.glbアバターに着せるクローゼットアプリ。推論の実行場所は未定。
+服の写真とDeepFashion2のランドマークを保存し、体型を変えられる.glbアバターに着せるクローゼットアプリ。推論は`apps/inference`でローカルCPUを使い、apiから呼ぶ。導入は[推論サービスのREADME](apps/inference/README.md)。
 
 ## 構成とコマンド
 
