@@ -80,6 +80,7 @@ GitHubとVercelはつないでいないので、手元のMacからVercelのCLI�
 3. 表示された本番のURLを開いて確かめる。スマホで試すときも本番のURLを使う（`--prod`なしで出したお試しのURLは、Vercelにログインしないと見られない）
 
 - `.env`などの秘密のファイルは、ルートの`.vercelignore`で送らないようにしてある。秘密のファイルを足したら、`.vercelignore`にも足す
+- Vercelでのインストールは、`apps/web/vercel.json`でスクリプトを動かさないようにしてある。送ったファイルには`.git`が無く、`lefthook install`が失敗するため
 - 本番のURLは、チームの外に広めない（[ADR 0002](adr/0002-no-login-yet.md)）
 
 ## 参考文献
