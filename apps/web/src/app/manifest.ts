@@ -16,9 +16,9 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
-      // Androidは機種ごとに丸や角丸に切り抜くので、絵を中央に寄せた同じ画像を使う
+      // Androidは機種ごとに丸や角丸に切り抜くので、袖が欠けないよう絵を87.5%に縮めた画像を使う
       {
-        src: "/icons/icon-512.png",
+        src: "/icons/icon-maskable-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
