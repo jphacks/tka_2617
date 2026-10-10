@@ -1,69 +1,49 @@
-# ER 図
+# ER図
 
-最低限の ER 図。要件は変わる前提なので、足すかもしれないデータは [requirements-candidates.md](requirements-candidates.md) に置いてある。まだ migration は無い。
+初期テーブルは`supabase/migrations/20261010000100_garment_measurements.sql`、透過画像の追加は`20261010000200_garment_cutouts.sql`。アバターとコーデのテーブルはまだ作っていない。
 
 ```mermaid
 erDiagram
-  profiles ||--o| avatars : "体型"
   profiles ||--o{ garments : "持っている服"
   garments ||--o{ garment_images : "写真"
-  profiles ||--o{ outfits : "コーデ"
-  outfits ||--o{ outfit_garments : "含む服"
-  garments ||--o{ outfit_garments : "使われる"
-
   profiles {
     uuid id PK
     text display_name
     timestamptz created_at
   }
-  avatars {
-    uuid id PK
-    uuid profile_id FK, UK
-    numeric height_cm "NULL 可"
-    numeric weight_kg "NULL 可"
-    timestamptz created_at
-    timestamptz updated_at
-  }
   garments {
     uuid id PK
     uuid profile_id FK
-    text category "DeepFashion2 の13種類"
-    text name "NULL 可"
+    text category "Tシャツ・パンツ"
+    text name
+    jsonb measurements "確定したcm値、未測定はnull"
+    text measurement_version
     timestamptz created_at
     timestamptz updated_at
   }
   garment_images {
     uuid id PK
     uuid garment_id FK
-    text storage_key "非公開バケットのキー"
+    text storage_key UK
+    text role "original・measurement・cutout"
     int width_px
     int height_px
-    jsonb bbox "NULL 可"
-    jsonb landmarks "NULL 可"
-    text model_version "NULL 可"
+    jsonb points "この画像上のランドマーク"
+    float pixels_per_cm "縮尺不明ならnull"
+    jsonb paper_corners "この画像上のA4四隅"
+    text model_version
     timestamptz created_at
-  }
-  outfits {
-    uuid id PK
-    uuid profile_id FK
-    text name
-    timestamptz created_at
-  }
-  outfit_garments {
-    uuid outfit_id PK, FK
-    uuid garment_id PK, FK
   }
 ```
 
-- `profiles`：今は `DEMO_PROFILE_ID` の1行だけ。この行は `supabase/seed.sql` で入れる（無いと、服などの登録が外部キーで失敗する）。ログインを入れたら、`id` を Supabase Auth のユーザー ID と同じ値にする
-- `garments.category`：`short_sleeve_top` / `long_sleeve_top` / `short_sleeve_outwear` / `long_sleeve_outwear` / `vest` / `sling` / `shorts` / `trousers` / `skirt` / `short_sleeve_dress` / `long_sleeve_dress` / `vest_dress` / `sling_dress`
-- `garment_images.bbox`・`landmarks`：画像の座標なので、服ではなく画像に持たせる。推論に失敗しても保存できるよう NULL を許す。形式は [API 一覧](api.md#共通の型)
-- RLS：全テーブルで有効にし、ポリシーは付けない。ブラウザ用のキーでは何も読めず、api だけが secret key で触れる
-- Storage：バケットは非公開。画像は api が期限付きの URL を発行して返す
-- `outfits`・`outfit_garments`：任意。後回しにしてよい
+- profilesのデモ用1行を`supabase/seed.sql`で用意する。apiはDEMO_PROFILE_IDだけを使用する。
+- categoryはshort_sleeve_top・trousers。measurementsは[API一覧](api.md)の共通型。
+- 画像は服1着につき各roleを1枚ずつ保存できる。現在のv2ではランドマーク・A4四隅ともmeasurement画像に保存する。cutoutは表示用PNGでpoints・paper_cornersは空配列、pixels_per_cmはnull。旧v1ではA4四隅はoriginal画像にある。
+- 元画像とはブラウザで向き・縮小・EXIF除去を確定した画像であり、カメラの元ファイルとは異なる。
+- 全テーブルでRLSを有効にし、公開ポリシーは設けない。apiのsecret keyだけがDBを操作する。
+- Storageは非公開のgarmentsバケット。JPEG・PNGを許可し、1枚8MiBまで。apiが期限付きURLを発行する。
+- Storageの画像はDBの外部キー削除では消えないため、削除サービスが両方を処理する。
 
-## 参考文献
+## 今後の設計候補
 
-- [Supabase: Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)：RLS を有効にしてポリシーが無ければ、publishable key では何も読めない
-- [SupabaseのANON_KEYとSERVICE_ROLE_KEYの違いをちゃんと理解する（Zenn）](https://zenn.dev/seekseep/articles/supabase-anon-key-vs-service-role-key)
-- [DeepFashion2（GitHub）](https://github.com/switchablenorms/DeepFashion2)
+アバターはprofilesと1対1、コーデはprofilesと1対多、コーデと服は中間テーブルで多対多を想定する。体型・テクスチャの要件は[要件候補](requirements-candidates.md)を参照。
