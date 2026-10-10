@@ -5,6 +5,7 @@
 ## 構成とコマンド
 
 - ブラウザ→`apps/web`（Next.js、画面とBFF）→`apps/api`（Hono）→Supabase。DBとStorageに触れるのはapiだけ。
+- 画面はスマホ向けのPWA（[ADR](docs/adr/0003-pwa.md)）。ネイティブのアプリは作らない。
 - 各アプリのルール： [web](apps/web/AGENTS.md)、[api](apps/api/AGENTS.md)。
 - 開発：`pnpm install`、`pnpm dev`。確認：`pnpm lint`、`pnpm typecheck`、`pnpm build`。整形：`pnpm format`。
 - ローカルDB：`supabase start`。DB型生成：`pnpm --filter @pitari/api db:types`。

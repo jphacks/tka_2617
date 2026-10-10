@@ -15,11 +15,17 @@ export const metadata: Metadata = {
   title: "Pitari",
   description:
     "部屋の服を撮影してクローゼットに保存し、体型を変えられるアバターに着せるアプリ",
+  // iPhoneでホーム画面に追加したときの名前と、上のステータスバーの色
+  appleWebApp: {
+    title: "Pitari",
+    statusBarStyle: "default",
+  },
 };
 
 // iPhoneのホームバーやノッチの分をenv(safe-area-inset-*)で空けるため
 export const viewport: Viewport = {
   viewportFit: "cover",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
