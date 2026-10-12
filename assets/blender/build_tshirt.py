@@ -5,7 +5,7 @@
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background --python assets/blender/build_tshirt.py
 
 出力:
-  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover、元の裾からの深さ _below_hem）
+  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover）
   apps/web/public/models/tshirt_male.glb               Tシャツ（体型キー 3 個＋身長キー 2 個＋サイズキー 4 個）
   apps/web/public/models/tshirt_male_base.json         体型ごとの基準寸法（cm）
   apps/web/public/models/tshirt_male_height.json       標準の身長と、体型・身長ごとの基準寸法とキーの効き方 M、体の身幅
@@ -193,7 +193,6 @@ def main():
     keep = pt.bake_body(body)
     pt.simple_material(body, "skin", (0.80, 0.64, 0.55, 1.0))
     pt.set_point_attribute(body, "_cover", pt.cover_weights(body, shirt, lm))
-    pt.set_point_attribute(body, "_below_hem", pt.below_hem(body, shirt, lm))
     body.shape_key_add(name="Basis", from_mix=False)
     for b, (body_co, _) in shapes.items():
         pt.set_key_from_world(body, pt.build_key(b), body_co[keep])

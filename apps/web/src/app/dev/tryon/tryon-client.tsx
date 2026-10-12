@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
-import type { AntiClipMode, Benchmark } from "@/app/dev/tryon/tryon-scene";
+import type { Benchmark } from "@/app/dev/tryon/tryon-scene";
 import {
   BUILD_LABELS,
   BUILDS,
@@ -32,13 +32,6 @@ const TryOnScene = dynamic(() => import("@/app/dev/tryon/tryon-scene"), {
 
 // Blenderが書き出した表。小さいので、取りに行かずにバンドルに入れる
 const heightTable = HeightTableSchema.parse(tshirtHeightJson);
-
-const ANTI_CLIP_MODES: [AntiClipMode, string][] = [
-  ["none", "なし"],
-  ["shrink", "A：服の下の体を縮める"],
-  ["push", "E：服を体の外へ押し出す（試作）"],
-  ["both", "A＋E"],
-];
 
 /** 確認用の服データ（チーム共通の形式・仮） */
 const SAMPLE_GARMENT = GarmentSchema.parse({
@@ -76,7 +69,6 @@ export default function TryOnClient() {
   const [input, setInput] = useState<Inputs>(() =>
     toInputs(tshirtMeasurements(SAMPLE_GARMENT)),
   );
-  const [mode, setMode] = useState<AntiClipMode>("push");
   const [pushStats, setPushStats] = useState<PushStats | null>(null);
   const [benchmarkRequest, setBenchmarkRequest] = useState(0);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
@@ -136,7 +128,6 @@ export default function TryOnClient() {
           <TryOnScene
             bodyMorphs={bodyMorphs}
             shirtMorphs={shirtMorphs}
-            mode={mode}
             showShirt={status !== "tooSmall"}
             onPushStats={setPushStats}
             benchmarkRequest={benchmarkRequest}
@@ -271,37 +262,14 @@ export default function TryOnClient() {
           </div>
         </fieldset>
 
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="mb-2 text-[15px] font-semibold">
-            突き抜け対策
-          </legend>
-          {ANTI_CLIP_MODES.map(([m, label]) => (
-            <label key={m} className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="mode"
-                value={m}
-                checked={mode === m}
-                onChange={() => {
-                  setMode(m);
-                }}
-                className="accent-main"
-              />
-              {label}
-            </label>
-          ))}
-          {pushStats &&
-            status !== "tooSmall" &&
-            (mode === "push" || mode === "both") && (
-              <p className="text-xs text-muted tabular-nums">
-                押し出し{pushStats.pushed}頂点・最大
-                {pushStats.maxCm.toFixed(2)}cm・{pushStats.ms.toFixed(1)}ms
-              </p>
-            )}
-        </fieldset>
-
         <section className="flex flex-col gap-2">
           <h2 className="text-[15px] font-semibold">計算時間</h2>
+          {pushStats && status !== "tooSmall" && (
+            <p className="text-xs text-muted tabular-nums">
+              服を体の外へ押し出した頂点{pushStats.pushed}・最大
+              {pushStats.maxCm.toFixed(2)}cm・{pushStats.ms.toFixed(1)}ms
+            </p>
+          )}
           <button
             type="button"
             onClick={() => {

@@ -26,7 +26,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 
 | ファイル                      | 中身                                                                                                                                                         |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `avatar_male.glb`             | 体。体型キー3個＋身長キー2個＋頂点属性`_cover`（服の下の重み0〜1）・`_below_hem`（元の裾からの深さm）                                                        |
+| `avatar_male.glb`             | 体。体型キー3個＋身長キー2個＋頂点属性`_cover`（服の下の重み0〜1。1は服で完全に覆われる所）                                                                  |
 | `tshirt_male.glb`             | Tシャツ。体型キー3個＋身長キー2個＋サイズキー4個                                                                                                             |
 | `tshirt_male_height.json`     | 標準の身長（`standard_cm`）と、体型・身長（150、160、標準、185、195cm）ごとの基準寸法、キーの効き方`m`（4項目×4キー）、体の身幅`body_width`。webはこれを使う |
 | `tshirt_male_base.json`       | 標準の身長での体型ごとの基準寸法（cm）。webは使っていない                                                                                                    |
@@ -49,9 +49,9 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
   - 実測の身長差が±20cmになるマクロを探して体を作り、mhcloでTシャツを着せ直して、1/20倍で1cmキーにする（`HEIGHT_SPAN_CM`）
   - 入力できる身長は150〜195cm。体型キーと身長キーは足し合わせて使う（近似）
 - TシャツはMPFBの`male_casualsuit06`の先頭2822頂点（後ろはジーンズなので削除）。体型ごとの形はmhcloで着せ直して作る
-- 突き抜け対策は「服の下の体を縮める」：ブラウザのシェーダーで 体−＝法線×重み×2.5cm（`COVER_SHRINK`とwebの`COVER_SHRINK_M`を合わせる）
-  - 重み＝max(`_cover`、裾の下の重み)。裾の下の重みは、`_below_hem`（元の裾から何m下か、胴の真下だけ）が「着丈キーで伸びた分」以内なら1、その下3cmで0へ
-  - 同じ式を`verify_sizes.cover_weight`とwebの`apps/web/src/lib/cover-shrink.ts`に持っている。変えるときは両方
+- 突き抜け対策は「服を体の外へ押し出す」だけにする（[ADR 0007](../../docs/adr/0007-push-shirt-out-only.md)）。体は変形させない
+  - 体から8mm未満の服の頂点を外へ押し出してなだらかに広げ、服で完全に覆われる体（`_cover`が0.99以上）が服の外へ出ていれば、その面の頂点をさらに外へ足す
+  - 同じ計算をwebの`apps/web/src/lib/push-out.ts`と`verify_sizes.push_out_e`に持っている。変えるときは両方
 
 ## 寸法の定義（`pitari_tshirt.measure`）
 
@@ -75,6 +75,5 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - 体型キー：`buildKeyValues(build)`（選んだ体型だけ1、体とTシャツの両方に入れる）
 - 身長キー：`heightKeyValues(身長, table)`（体とTシャツの両方に入れる）
 - サイズキー：`fitAt(build, 身長, table)`で前後の身長の基準寸法とMを直線で補間し、`sizeKeyValues(実寸, fit, table)`がM（4×4）×キー＝（実寸−その体型・身長の基準寸法）を解く。同じ計算を`verify_sizes.fit_at`と`key_values`に持っている
-- 体の縮めは`src/lib/cover-shrink.ts`の`applyCoverShrink`（`onBeforeCompile`でmorphの後に動かす）
-- 服を体の外へ押し出す試作は`src/lib/push-out.ts`（three-mesh-bvh）。押し出したあと、服で完全に覆われる体（`_cover`が0.99以上）の頂点が服の外へ出ていれば、その面の頂点をさらに外へ足す。同じ計算を`verify_sizes.push_out_e`に持っていて、押し出した後の寸法のずれを出す（合否には使わない）
+- 服の押し出しは`src/lib/push-out.ts`（three-mesh-bvh）。スマホでは1回0.3〜0.4秒かかるので、入力が止まってから（0.3秒後に）計算する。検証スクリプトは押し出した後の寸法のずれを出す（合否には使わない）
 - 確認ページは`/dev/tryon`（`src/app/dev/tryon/`）

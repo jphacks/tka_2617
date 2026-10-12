@@ -707,9 +707,8 @@ def bake_body(body):
     return keep
 
 
-COVER_SHRINK = 0.025        # ブラウザで服の下の体を内側へ縮める量（m）。web 側の定数と合わせる
-COVER_NECK_FADE = 0.03      # 襟から内側 3cm は縮めない→縮めるへ徐々に
-COVER_OUT_FADE = 0.03       # 裾・袖口の外側 3cm までなだらかに縮める
+COVER_NECK_FADE = 0.03      # 襟から内側 3cm で、重みを 0 から 1 へ徐々に上げる
+COVER_OUT_FADE = 0.03       # 裾・袖口の外側 3cm まで、重みをなだらかに 0 へ下げる
 
 
 def _kdtree(pts):
@@ -724,7 +723,8 @@ COVER_RAY = 0.08            # 体の法線の向き 8cm 以内に Tシャツが�
 
 
 def cover_weights(body, shirt, lm):
-    """体の頂点ごとの「服の下」重み（0〜1）。ブラウザで 体 −= 法線 × 重み × COVER_SHRINK にする。
+    """体の頂点ごとの「服の下」重み（0〜1）。1 は服で完全に覆われる所。
+    ブラウザの押し出し（push-out.ts）は、1 の所の体が服の外へ出ていないかを確かめる。
     体の頂点から法線の向き（外）に COVER_RAY 以内で Tシャツに当たる頂点を 1 とし、
     襟の近くは 0 へ、裾・袖口の外側へはなだらかに 0 へ"""
     B = world_coords(body); S = world_coords(shirt, "Basis")
@@ -745,34 +745,6 @@ def cover_weights(body, shirt, lm):
             w[i] = _smooth01(1 - d / COVER_OUT_FADE)
     log(f"avatar: 服の下の重み >0 の頂点 {int((w > 0).sum())}（=1: {int((w >= 0.999).sum())}）")
     return w
-
-
-BELOW_HEM_RANGE = 0.25      # 裾の下 25cm までを記録（着丈 +20cm でも足りるように）
-BELOW_HEM_MARGIN = 0.03     # 裾の輪郭より 3cm 外までを「胴の真下」とみなす
-BELOW_HEM_NONE = 1.0        # 対象外の頂点に入れる値
-
-
-def below_hem(body, shirt, lm):
-    """体の頂点ごとの「元の裾から何 m 下か」。胴の真下（上から見て裾の輪郭の内側）だけ。
-    ブラウザで着丈キーを伸ばしたとき、伸びた裾の下の体も縮めるのに使う（手や腕は対象外）"""
-    B = world_coords(body); S = world_coords(shirt, "Basis")
-    hem = S[lm["hem"]]
-    z_hem = hem[:, 2].mean()
-    c = hem[:, :2].mean(0)
-    # 裾の輪郭を中心からの角度ごとの半径で表し、MARGIN だけ広げる
-    ang = np.arctan2(hem[:, 1] - c[1], hem[:, 0] - c[0])
-    rad = np.linalg.norm(hem[:, :2] - c, axis=1)
-    order = np.argsort(ang)
-    ang, rad = ang[order], rad[order]
-    a = np.arctan2(B[:, 1] - c[1], B[:, 0] - c[0])
-    r = np.linalg.norm(B[:, :2] - c, axis=1)
-    r_hem = np.interp(a, ang, rad, period=2 * np.pi) + BELOW_HEM_MARGIN
-    d = z_hem - B[:, 2]
-    out = np.full(len(B), BELOW_HEM_NONE)
-    inside = (r <= r_hem) & (d > 0) & (d < BELOW_HEM_RANGE)
-    out[inside] = d[inside]
-    log(f"avatar: 裾の下の頂点 {int(inside.sum())}")
-    return out
 
 
 def set_point_attribute(obj, name, values):

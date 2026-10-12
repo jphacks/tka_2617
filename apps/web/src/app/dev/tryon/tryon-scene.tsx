@@ -6,12 +6,6 @@ import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Mesh, type Object3D } from "three";
 import { setMorph } from "@/lib/morph";
 import {
-  applyCoverShrink,
-  COVER_SHRINK_M,
-  hemExtension,
-  type CoverUniforms,
-} from "@/lib/cover-shrink";
-import {
   buildBodyBVH,
   shirtTopology,
   updatePush,
@@ -21,8 +15,8 @@ import {
 const AVATAR_URL = "/models/avatar_male.glb";
 const TSHIRT_URL = "/models/tshirt_male.glb";
 
-/** 突き抜け対策：none / shrink（A：体を縮める） / push（E：服を押し出す） / both */
-export type AntiClipMode = "none" | "shrink" | "push" | "both";
+// 入力のたびに押し出しを計算すると、スマホでは1回0.3〜0.4秒止まる。入力が止まってから計算する
+const PUSH_DELAY_MS = 300;
 
 /** 計算時間の計測結果（ms）。体のBVHは体型・身長が変わるたび、押し出しは服・体が変わるたびに計算する */
 export type Benchmark = {
@@ -45,7 +39,6 @@ type Props = {
   bodyMorphs: Record<string, number>;
   /** Tシャツのmorph（体型キー＋サイズキー） */
   shirtMorphs: Record<string, number>;
-  mode: AntiClipMode;
   /** 服が小さすぎるときはfalse。体だけを表示する */
   showShirt: boolean;
   onPushStats?: (s: PushStats) => void;
@@ -73,7 +66,6 @@ function firstMesh(root: Object3D): Mesh {
 function Models({
   bodyMorphs,
   shirtMorphs,
-  mode,
   showShirt,
   onPushStats,
   benchmarkRequest,
@@ -85,28 +77,6 @@ function Models({
   const shirtMesh = useMemo(() => firstMesh(shirt.scene), [shirt.scene]);
   const topo = useMemo(() => shirtTopology(shirtMesh), [shirtMesh]);
 
-  // シェーダーに渡すuniform（同じオブジェクトのvalueを書き換えて切り替える）
-  const uniforms = useRef<CoverUniforms>({
-    shrink: { value: COVER_SHRINK_M },
-    hemExt: { value: 0 },
-  });
-
-  useEffect(() => {
-    if (applyCoverShrink(avatar.scene, uniforms.current) === 0)
-      console.warn("avatar に _cover / _below_hem 属性がありません");
-  }, [avatar.scene]);
-
-  const shrinkOn = mode === "shrink" || mode === "both";
-  const pushOn = mode === "push" || mode === "both";
-
-  useEffect(() => {
-    uniforms.current.shrink.value = shrinkOn ? COVER_SHRINK_M : 0;
-    // 寸法が未入力のときはサイズキーが無い
-    const sizeLength =
-      "size_length" in shirtMorphs ? shirtMorphs.size_length : 0;
-    uniforms.current.hemExt.value = hemExtension(sizeLength);
-  }, [shrinkOn, shirtMorphs]);
-
   useEffect(() => {
     applyMorphs(avatar.scene, bodyMorphs);
   }, [avatar.scene, bodyMorphs]);
@@ -114,21 +84,26 @@ function Models({
     applyMorphs(shirt.scene, shirtMorphs);
   }, [shirt.scene, shirtMorphs]);
 
-  // 体のBVHは体型が変わったときだけ作り直す（morphを当てた後なので上のeffectより後に置く）
+  // 体のBVHは体型・身長が変わったときだけ作り直す（morphを当てた後なので上のeffectより後に置く）
   const bodyBVH = useRef<ReturnType<typeof buildBodyBVH> | null>(null);
+  const bvhMorphs = useRef<Record<string, number> | null>(null);
   useEffect(() => {
-    bodyBVH.current?.geometry.dispose();
-    bodyBVH.current = buildBodyBVH(bodyMesh);
-  }, [bodyMesh, bodyMorphs]);
-
-  useEffect(() => {
-    if (!bodyBVH.current || !showShirt) return;
-    const stats = updatePush(shirtMesh, bodyBVH.current, topo, pushOn);
-    onPushStats?.(stats);
+    if (!showShirt) return;
+    const timer = setTimeout(() => {
+      if (!bodyBVH.current || bvhMorphs.current !== bodyMorphs) {
+        bodyBVH.current?.geometry.dispose();
+        bodyBVH.current = buildBodyBVH(bodyMesh);
+        bvhMorphs.current = bodyMorphs;
+      }
+      onPushStats?.(updatePush(shirtMesh, bodyBVH.current, topo));
+    }, PUSH_DELAY_MS);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [
+    bodyMesh,
     shirtMesh,
     topo,
-    pushOn,
     showShirt,
     shirtMorphs,
     bodyMorphs,
@@ -143,10 +118,8 @@ function Models({
       const t0 = performance.now();
       buildBodyBVH(bodyMesh).geometry.dispose();
       bvhMs.push(performance.now() - t0);
-      pushMs.push(updatePush(shirtMesh, bodyBVH.current, topo, true).ms);
+      pushMs.push(updatePush(shirtMesh, bodyBVH.current, topo).ms);
     }
-    // 計測で書き換えた押し出しを、今の設定に戻す
-    updatePush(shirtMesh, bodyBVH.current, topo, pushOn && showShirt);
     onBenchmark?.({
       runs: BENCHMARK_RUNS,
       bodyBvhMedianMs: median(bvhMs),

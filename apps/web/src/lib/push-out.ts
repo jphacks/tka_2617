@@ -10,7 +10,7 @@ import {
 import { MeshBVH } from "three-mesh-bvh";
 
 /**
- * 突き抜け対策E（試作）：服の頂点が体の内側（または体からOFFSET未満）にあれば、体の外へ押し出す。
+ * 突き抜け対策：服の頂点が体の内側（または体からOFFSET未満）にあれば、体の外へ押し出す。
  * morph targetをCPUで合成して今の形を求め、体のBVHで最寄り点を探して押し出し量を決める。
  * 押し出したあと、服で覆われる体の頂点が服の外へ出ていれば、その近くの服の頂点をさらに外へ足す。
  * 押し出し量は服のシェーダーに頂点属性pushOffsetとして渡し、morphの後に足す。
@@ -128,16 +128,10 @@ export function updatePush(
   shirt: Mesh,
   body: BodyCollider,
   topo: Topology,
-  enabled: boolean,
 ): PushStats {
   const t0 = performance.now();
   const attr = ensurePushAttribute(shirt);
   const out = attr.array as Float32Array;
-  out.fill(0);
-  if (!enabled) {
-    attr.needsUpdate = true;
-    return { ms: 0, pushed: 0, maxCm: 0 };
-  }
 
   shirt.updateWorldMatrix(true, false);
   const pos = morphedPositions(shirt);

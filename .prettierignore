@@ -10,3 +10,6 @@ docs/design_handoff_app_shell/support.js
 
 # Blenderのスクリプトが書き出した計測データなので整形しない
 apps/web/src/lib/tshirt-measure.json
+
+# Blenderの生成スクリプトが書き出すので整形しない（整形すると、生成し直すたびに差分が出る）
+apps/web/public/models/*.json

@@ -21,6 +21,7 @@
 - [0004 webはVercelに、手元のCLIからデプロイする](0004-deploy-web-with-vercel-cli.md)
 - [0005 3D表示にReact Three Fiberとdreiを使う](0005-3d-with-react-three-fiber.md)
 - [0006 服の寸法からシェイプキーの値をブラウザで計算する](0006-solve-shape-keys-in-browser.md)
+- [0007 服が体に突き抜けるのは、服を体の外へ押し出して防ぐ](0007-push-shirt-out-only.md)
 
 ## 参考文献
 

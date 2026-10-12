@@ -3,8 +3,8 @@
 
 ブラウザと同じ計算（M × size_* = 実寸 − 基準寸法。基準寸法と M はその体型・身長の値を補間）でキーの値を出し、
 その形の Tシャツをメッシュ上で計測して、入力した実寸との差を確かめる。
-あわせて指定の組み合わせで、体へのめり込みを数えて画像を書き出す。
-突き抜け対策 E（web の push-out.ts）で服を押し出した後の寸法も、入力とのずれとして出す（合否には使わない）。
+あわせて指定の組み合わせで、突き抜け対策（web の push-out.ts）と同じ計算で服を押し出し、
+押し出した後の寸法の入力とのずれ（合否には使わない）、体へのめり込みを出して画像を書き出す。
 
 実行（pitari/ で、build_tshirt.py の後に）:
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background assets/blender/out/build.blend --python assets/blender/verify_sizes.py
@@ -109,22 +109,6 @@ def bvh_of(P, polys):
     return BVHTree.FromPolygons([Vector(p) for p in P], polys)
 
 
-HEM_FADE = 0.03            # web の HEM_FADE_M と同じ
-
-
-def cover_weight(cover, below, size_length):
-    """ブラウザのシェーダーと同じ重み：max(_cover, 裾の下の重み)。
-    裾の下の重みは、着丈キーで伸びた分（ext）まで 1、その下 HEM_FADE で 0 へ"""
-    ext = max(size_length, 0.0) * 0.01
-    t = np.clip((below - ext) / HEM_FADE, 0, 1)
-    return np.maximum(cover, 1 - t * t * (3 - 2 * t))
-
-
-def shrink_body(P, polys, weight):
-    """ブラウザのシェーダーと同じ：体 −= 法線 × 重み × COVER_SHRINK"""
-    return P - pt.vertex_normals(P, polys) * (weight * pt.COVER_SHRINK)[:, None]
-
-
 def penetration(shirt_P, body_P, shirt_polys, body_polys, cover):
     """(a) 体の内側に入った Tシャツの頂点 (b) Tシャツの外に出た体の頂点（服の下の重み > 0 の範囲）"""
     body_bvh, shirt_bvh = bvh_of(body_P, body_polys), bvh_of(shirt_P, shirt_polys)
@@ -203,7 +187,7 @@ def push_out_e(S, body_P, body_polys, shirt_polys, cover):
 
 
 def render_case(name, shirt_P, body_P, shirt, body):
-    """ブラウザと同じ形（体は服の下を縮めた状態）で、正面・斜め・背面を描く"""
+    """ブラウザと同じ形（服は体の外へ押し出した状態）で、正面・斜め・背面を描く"""
     os.makedirs(RENDERS, exist_ok=True)
     tmp = []
     for src, P in ((shirt, shirt_P), (body, body_P)):
@@ -261,8 +245,6 @@ def main():
     body_polys = pt.polys_of(body)
     cover = np.empty(len(body.data.vertices), dtype=np.float32)
     body.data.attributes["_cover"].data.foreach_get("value", cover)
-    below = np.empty(len(body.data.vertices), dtype=np.float32)
-    body.data.attributes["_below_hem"].data.foreach_get("value", below)
 
     ok, _ = check_accuracy(shirt, lm, polys, base, corr, height)
 
@@ -274,17 +256,16 @@ def main():
         target = {p: base_b[p] + o for p, o in zip(pt.SIZE_PARTS, off)}
         k = key_values(target, base_b, M)
         S = pt.mixed_coords(shirt, pt.build_values(b, k, h))
-        w = cover_weight(cover, below, k["length"])
-        Bd = shrink_body(pt.mixed_coords(body, pt.build_values(b, None, h)), body_polys, w)
+        Bd = pt.mixed_coords(body, pt.build_values(b, None, h))
         got = pt.measure(S, lm, polys)
-        a, c = penetration(S, Bd, polys, body_polys, w)
-        Se = push_out_e(S, pt.mixed_coords(body, pt.build_values(b, None, h)), body_polys, polys, cover)
+        Se = push_out_e(S, Bd, body_polys, polys, cover)
         got_e = pt.measure(Se, lm, polys)
+        a, c = penetration(Se, Bd, polys, body_polys, cover)
         pt.log(f"[{name}] キー {', '.join(f'{p} {v:+.2f}' for p, v in k.items())}")
         pt.log(f"  実測 {', '.join(f'{p} {got[p]:.2f}' for p in pt.SIZE_PARTS)}（目標 {', '.join(f'{target[p]:.2f}' for p in pt.SIZE_PARTS)}）")
-        pt.log(f"  体の内側に入った Tシャツの頂点: {a} / Tシャツから出た体の頂点: {c}")
-        pt.log(f"  E で押し出した後の入力とのずれ {', '.join(f'{p} {got_e[p] - target[p]:+.2f}' for p in pt.SIZE_PARTS)}")
-        for path in render_case(name, S, Bd, shirt, body):
+        pt.log(f"  押し出した後の入力とのずれ {', '.join(f'{p} {got_e[p] - target[p]:+.2f}' for p in pt.SIZE_PARTS)}")
+        pt.log(f"  押し出した後、体の内側に入った Tシャツの頂点: {a} / Tシャツから出た体の頂点: {c}")
+        for path in render_case(name, Se, Bd, shirt, body):
             pt.log("  画像:", path)
 
     pt.log("合格" if ok else "不合格")
