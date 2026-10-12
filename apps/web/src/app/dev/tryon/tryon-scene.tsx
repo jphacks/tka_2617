@@ -1,7 +1,14 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef } from "react";
-import { Canvas } from "@react-three/fiber";
+import {
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  type ComponentRef,
+  type RefObject,
+} from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Mesh, type Object3D } from "three";
 import { setMorph } from "@/lib/morph";
@@ -35,6 +42,8 @@ function median(values: number[]) {
 }
 
 type Props = {
+  /** 身長÷標準の身長。体の大きさに合わせてカメラを動かす */
+  heightScale: number;
   /** 体のmorph（体型キー） */
   bodyMorphs: Record<string, number>;
   /** Tシャツのmorph（体型キー＋サイズキー） */
@@ -70,7 +79,7 @@ function Models({
   onPushStats,
   benchmarkRequest,
   onBenchmark,
-}: Props) {
+}: Omit<Props, "heightScale">) {
   const avatar = useGLTF(AVATAR_URL);
   const shirt = useGLTF(TSHIRT_URL);
   const bodyMesh = useMemo(() => firstMesh(avatar.scene), [avatar.scene]);
@@ -139,16 +148,40 @@ function Models({
   );
 }
 
-export default function TryOnScene(props: Props) {
+const CAMERA_POSITION = [0, 1.3, 2.4] as const;
+const CAMERA_TARGET = [0, 1.15, 0] as const;
+
+/** 体は身長に比例して大きくなるので、カメラの位置と注視点も同じ比率で動かす */
+function CameraRig({
+  scale,
+  controls,
+}: {
+  scale: number;
+  controls: RefObject<ComponentRef<typeof OrbitControls> | null>;
+}) {
+  const camera = useThree((state) => state.camera);
+  useEffect(() => {
+    const [px, py, pz] = CAMERA_POSITION;
+    const [tx, ty, tz] = CAMERA_TARGET;
+    camera.position.set(px * scale, py * scale, pz * scale);
+    controls.current?.target.set(tx * scale, ty * scale, tz * scale);
+    controls.current?.update();
+  }, [camera, controls, scale]);
+  return null;
+}
+
+export default function TryOnScene({ heightScale, ...props }: Props) {
+  const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   return (
-    <Canvas camera={{ position: [0, 1.3, 2.4], fov: 35 }}>
+    <Canvas camera={{ position: [...CAMERA_POSITION], fov: 35 }}>
       <ambientLight intensity={0.6} />
       <directionalLight position={[2, 3, 2]} intensity={1.6} />
       <directionalLight position={[-2, 2, -2]} intensity={0.6} />
       <Suspense fallback={null}>
         <Models {...props} />
       </Suspense>
-      <OrbitControls target={[0, 1.15, 0]} />
+      <OrbitControls ref={controls} target={[...CAMERA_TARGET]} />
+      <CameraRig scale={heightScale} controls={controls} />
     </Canvas>
   );
 }

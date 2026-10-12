@@ -126,6 +126,7 @@ export default function TryOnClient() {
       <main className="flex flex-col gap-5 px-4 py-5 text-[13px]">
         <div className="relative aspect-3/4 w-full touch-none overflow-hidden rounded bg-[#e9e9ee]">
           <TryOnScene
+            heightScale={heightCm / heightTable.standard_cm}
             bodyMorphs={bodyMorphs}
             shirtMorphs={shirtMorphs}
             showShirt={status !== "tooSmall"}
