@@ -22,6 +22,8 @@
 - [0005 3D表示にReact Three Fiberとdreiを使う](0005-3d-with-react-three-fiber.md)
 - [0006 服の寸法からシェイプキーの値をブラウザで計算する](0006-solve-shape-keys-in-browser.md)
 - [0007 服が体に突き抜けるのは、服を体の外へ押し出して防ぐ](0007-push-shirt-out-only.md)
+- [0008 身長はBlenderで作った身長キーで変え、基準寸法とキーの効き方は身長ごとの表で持つ](0008-height-keys-and-tables.md)
+- [0009 アバターの体は、体重ではなく4つの体型から選ぶ](0009-build-instead-of-weight.md)
 
 ## 参考文献
 

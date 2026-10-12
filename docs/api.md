@@ -31,7 +31,7 @@
 | PATCH    | `/v1/garments/:id` | 名前とカテゴリを変える                       | 未実装                 |
 | DELETE   | `/v1/garments/:id` | 服を消す（画像も消す）                       | 未実装                 |
 | GET      | `/v1/avatar`       | アバターの設定を取る                         | 未実装                 |
-| PUT      | `/v1/avatar`       | 身長と体重を保存する                         | 未実装                 |
+| PUT      | `/v1/avatar`       | 身長と体型を保存する                         | 未実装                 |
 | GET      | `/v1/outfits`      | コーデの一覧（任意）                         | 未実装                 |
 | POST     | `/v1/outfits`      | コーデを保存する（任意）                     | 未実装                 |
 | DELETE   | `/v1/outfits/:id`  | コーデを消す（任意）                         | 未実装                 |
@@ -74,8 +74,10 @@
 
 ### `GET /v1/avatar` / `PUT /v1/avatar`
 
-- 入力（PUT）：`{ heightCm: number, weightKg: number }`
-- 出力：`{ heightCm: number | null, weightKg: number | null }`
+- 入力（PUT）：`{ heightCm: number, build: Build }`
+- 出力：`{ heightCm: number | null, build: Build | null }`
+- `heightCm`は150〜195。3Dモデルで身長を変えられる範囲（[ADR 0008](adr/0008-height-keys-and-tables.md)）
+- 体重は持たない。体型は`build`の4種類から選ぶ（[ADR 0009](adr/0009-build-instead-of-weight.md)）
 
 ### `GET /v1/outfits` / `POST /v1/outfits` / `DELETE /v1/outfits/:id`（任意）
 
@@ -85,6 +87,7 @@
 ## 共通の型
 
 - `Category`：DeepFashion2 の13種類。値の一覧は [ER 図](er.md) を参照
+- `Build`：体型。`slim`（細身）／`standard`（標準）／`broad`（がっしり）／`chubby`（ぽっちゃり）
 - `BBox`：`[x1, y1, x2, y2]`（左上と右下）
 - `Landmarks`：`[x, y, v][]`。DeepFashion2 の `[x1, y1, v1, x2, y2, v2, ...]` を3つずつ区切ったもの。点の数と順番はカテゴリごとに DeepFashion2 の定義に従う
   - `v`：`2` 見えている / `1` 隠れている / `0` ラベルなし
