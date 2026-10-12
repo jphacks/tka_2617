@@ -1,0 +1,7 @@
+# VercelのCLIは、標準では.env.localしか外さず、.envや.gitignoreに書いたものも送ってしまう。
+# 秘密の値と、手元でしか使わないものを送らない（docs/adr/0004-deploy-web-with-vercel-cli.md）
+.env
+.env.*
+*.pem
+.pnpm-store
+supabase/.temp
