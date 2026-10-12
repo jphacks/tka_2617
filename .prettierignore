@@ -7,3 +7,6 @@ README.md
 # Claude Designが書き出したデザインの資料で、自動生成されたファイルなので整形しない
 docs/design_handoff_app_shell/*.html
 docs/design_handoff_app_shell/support.js
+
+# Blenderのスクリプトが書き出した計測データなので整形しない
+apps/web/src/lib/tshirt-measure.json

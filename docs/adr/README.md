@@ -19,6 +19,8 @@
 - [0002 ログインはまだ作らず、デモ用の1ユーザーで進める](0002-no-login-yet.md)
 - [0003 スマホ向けのアプリはPWAで作る](0003-pwa.md)
 - [0004 webはVercelに、手元のCLIからデプロイする](0004-deploy-web-with-vercel-cli.md)
+- [0005 3D表示にReact Three Fiberとdreiを使う](0005-3d-with-react-three-fiber.md)
+- [0006 服の寸法からシェイプキーの値をブラウザで計算する](0006-solve-shape-keys-in-browser.md)
 
 ## 参考文献
 
