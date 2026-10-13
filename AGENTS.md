@@ -6,7 +6,7 @@
 
 - ブラウザ→`apps/web`（Next.js、画面とBFF）→`apps/api`（Hono）→Supabase。DBとStorageに触れるのはapiだけ。
 - 画面はスマホ向けのPWA（[ADR](docs/adr/0003-pwa.md)）。ネイティブのアプリは作らない。
-- 各アプリのルール： [web](apps/web/AGENTS.md)、[api](apps/api/AGENTS.md)。
+- 各アプリのルール： [web](apps/web/AGENTS.md)、[api](apps/api/AGENTS.md)。3Dモデルを作るBlenderのスクリプトは`assets/blender/`（[ルール](assets/blender/AGENTS.md)）。
 - 開発：`pnpm install`、`pnpm dev`。確認：`pnpm lint`、`pnpm typecheck`、`pnpm build`。整形：`pnpm format`。
 - ローカルDB：`supabase start`。DB型生成：`pnpm --filter @pitari/api db:types`。
 - 必要なときに読む：[初回セットアップ](docs/setup.md)、[API一覧](docs/api.md)、[ER図](docs/er.md)、[候補要件](docs/requirements-candidates.md)、[ADR](docs/adr/README.md)。
