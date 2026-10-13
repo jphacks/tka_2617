@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
+import { AvatarViewer } from "@/components/avatar-viewer";
 
 export const metadata: Metadata = {
   title: "アバター | Pitari",
 };
 
-// アバターの表示と体型の調整は#15で作る。今は準備中であることだけを出す
+// アバターの表示と体型の調整は#15で作る。今はTシャツのモデルだけを表示する
 export default function AvatarPage() {
   return (
     <>
@@ -24,16 +25,14 @@ export default function AvatarPage() {
           </p>
         </div>
 
-        <div className="flex aspect-3/4 w-full items-center justify-center rounded bg-surface">
-          <span className="text-xs text-muted">3Dアバターの表示領域</span>
-        </div>
+        <AvatarViewer />
 
         <div className="flex flex-col gap-1.5">
           <h2 className="text-[15px] font-semibold">
             アバター機能は現在準備中です
           </h2>
           <p className="text-[13px] leading-[1.7] text-pretty text-description">
-            3Dアバターの表示と体型の調整は、今後のアップデートで使えるようになります。
+            今はTシャツのモデルだけを表示しています。アバターの表示と体型の調整は、今後のアップデートで使えるようになります。
           </p>
         </div>
       </main>

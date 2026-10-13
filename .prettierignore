@@ -11,3 +11,6 @@ docs/design_handoff_app_shell/support.js
 apps/inference/.venv/
 apps/inference/models/
 apps/inference/.cache/
+
+# Blenderのスクリプトが書き出した計測データなので整形しない
+apps/web/src/lib/tshirt-measure.json
