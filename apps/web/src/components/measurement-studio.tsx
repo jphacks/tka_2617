@@ -13,6 +13,9 @@ import type {
 import { preparePhoto, jpegFile } from "@/lib/photo";
 import { requestJson } from "@/lib/request";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
+import { MeasurementProgress } from "@/components/measurement-progress";
+import type { MeasurementProgressState } from "@/lib/measurement-progress";
+import { GarmentMeasurements } from "@/components/garment-measurements";
 import { MeasurementImage } from "@/components/measurement-image";
 import type { AdjustmentMode } from "@/components/measurement-image";
 
@@ -52,10 +55,9 @@ export function MeasurementStudio() {
   >({});
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [progress, setProgress] = useState<{
-    percent: number;
-    label: string;
-  } | null>(null);
+  const [progress, setProgress] = useState<MeasurementProgressState | null>(
+    null,
+  );
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [garments, setGarments] = useState<GarmentView[]>([]);
@@ -66,6 +68,21 @@ export function MeasurementStudio() {
   const category = editing?.category ?? result?.category;
   const fields =
     category && definitions ? definitions.definitions[category] : [];
+
+  function showProgress(
+    percent: number,
+    nextPercent: number,
+    label: string,
+    estimatedMs = 10000,
+  ) {
+    setProgress({
+      percent,
+      nextPercent,
+      label,
+      estimatedMs,
+      startedAt: performance.now(),
+    });
+  }
 
   async function work(action: () => Promise<void>) {
     setBusy(true);
@@ -167,14 +184,14 @@ export function MeasurementStudio() {
 
   async function analyze() {
     await work(async () => {
-      setProgress({ percent: 0, label: "A4を認識中" });
+      showProgress(0, 25, "写真を確認しています", 5000);
       await loadDefinitions();
       setOverrides({});
       setEditing(null);
       setValues({ ...emptyMeasurements });
       let next = await detect("paper");
       setResult(next);
-      setProgress({ percent: 25, label: "服を認識中" });
+      showProgress(25, 50, "服を見つけています", 20000);
       const garment = await detect("garment", next);
       next = {
         ...next,
@@ -187,7 +204,7 @@ export function MeasurementStudio() {
         setMode("bbox");
         return;
       }
-      setProgress({ percent: 50, label: "寸法を測定中" });
+      showProgress(50, 75, "サイズを測っています", 15000);
       const landmarks = await detect("landmarks", next);
       next = {
         ...next,
@@ -198,11 +215,11 @@ export function MeasurementStudio() {
       };
       setResult(next);
       applyValues(next.measurements, false);
-      setProgress({ percent: 75, label: "背景を切り抜き中" });
+      showProgress(75, 100, "仕上げています", 5000);
       next = await cutout(next);
       setResult(next);
       setMode("dimensions");
-      setProgress({ percent: 100, label: "完了" });
+      showProgress(100, 100, "測定できました");
       await new Promise((resolve) => setTimeout(resolve, 300));
     });
   }
@@ -229,7 +246,7 @@ export function MeasurementStudio() {
         };
       }
       if (adjustedMode === "bbox" && next.category) {
-        setProgress({ percent: 0, label: "寸法を更新中" });
+        showProgress(0, 50, "サイズを測っています", 15000);
         const data = await detect("landmarks", next);
         updated = {
           ...updated,
@@ -242,7 +259,7 @@ export function MeasurementStudio() {
       updated = await recalculate(updated, preserveManual);
       setResult(updated);
       if (updated.bbox && updated.category) {
-        setProgress({ percent: 50, label: "切り抜きを更新中" });
+        showProgress(50, 100, "仕上げています", 5000);
         updated = await cutout(updated);
       }
       setResult(updated);
@@ -279,6 +296,7 @@ export function MeasurementStudio() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, measurements: values }),
         });
+        setEditing({ ...editing, measurements: { ...values } });
       } else {
         if (!result?.category || !result.bbox)
           throw new Error("服の種類と範囲を指定してください");
@@ -322,52 +340,20 @@ export function MeasurementStudio() {
           measurements: values,
         });
       }
-      setMessage("保存しました");
+      setMessage(
+        editing
+          ? "名前・寸法を更新しました"
+          : Object.values(values).some((value) => value !== null)
+            ? "服と寸法をクローゼットに登録しました"
+            : "服を登録しました。寸法はあとから入力できます。",
+      );
       await loadGarments();
     });
   }
 
   return (
     <main className="mx-auto w-full px-4 py-5 text-main" aria-busy={busy}>
-      {progress && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-label="寸法を測定中"
-        >
-          <div
-            className="min-w-56 rounded-2xl bg-white px-8 py-7 text-center shadow-xl"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-valuenow={progress.percent}
-            aria-label={progress.label}
-          >
-            <div
-              className="flex h-12 items-center justify-center gap-3"
-              aria-hidden="true"
-            >
-              {[0, 1, 2].map((index) => (
-                <span
-                  key={index}
-                  className="size-3 rounded-full bg-main motion-safe:animate-bounce"
-                  style={{
-                    animationDelay: `${String(index * 160)}ms`,
-                    animationDuration: "900ms",
-                  }}
-                />
-              ))}
-            </div>
-            <p className="mt-2 text-2xl font-semibold tabular-nums">
-              {progress.percent}%
-            </p>
-            <p className="mt-2 text-sm text-description" aria-live="polite">
-              {progress.label}
-            </p>
-          </div>
-        </div>
-      )}
+      {progress && <MeasurementProgress progress={progress} />}
       {error && (
         <p
           role="alert"
@@ -647,6 +633,10 @@ export function MeasurementStudio() {
                 {garment.name ||
                   (garment.category === "trousers" ? "パンツ" : "Tシャツ")}
               </h3>
+              <GarmentMeasurements
+                category={garment.category}
+                measurements={garment.measurements}
+              />
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   className={secondary}

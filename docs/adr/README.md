@@ -27,6 +27,7 @@
 - [0010 スマホから保存画像をweb経由で取得する](0010-mobile-image-access.md)
 - [0011 ランドマークの編集を隠し、寸法名付き矢印で示す](0011-measurement-arrows.md)
 - [0012 服の写真をモデル固定のUVテンプレートで貼る](0012-uv-template-for-photo-texture.md)
+- [0013 採寸中は細かな進捗の目安と経過時間を表示する](0013-measurement-progress-estimate.md)
 
 ## 参考文献
 

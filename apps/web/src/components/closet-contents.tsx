@@ -6,6 +6,7 @@ import type { GarmentView } from "@pitari/api";
 import { CameraIcon, HangerIcon } from "@/components/icons";
 import { requestJson } from "@/lib/request";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
+import { GarmentMeasurements } from "@/components/garment-measurements";
 
 export function ClosetContents() {
   const [garments, setGarments] = useState<GarmentView[] | null>(null);
@@ -98,6 +99,10 @@ export function ClosetContents() {
                 <p className="mt-1 text-xs text-description">
                   {garment.category === "trousers" ? "パンツ" : "Tシャツ"}
                 </p>
+                <GarmentMeasurements
+                  category={garment.category}
+                  measurements={garment.measurements}
+                />
               </article>
             );
           })}
