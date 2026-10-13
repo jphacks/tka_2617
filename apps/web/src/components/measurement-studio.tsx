@@ -36,11 +36,11 @@ const emptyMeasurements: Measurements = {
   inseamCm: null,
   hemWidthCm: null,
 };
-const button =
-  "min-h-11 rounded bg-main px-4 py-2.5 text-sm font-medium text-white disabled:opacity-40 hover:opacity-85";
-const secondary =
-  "min-h-11 rounded border border-stone-300 bg-white px-3 py-2 text-sm hover:bg-stone-100 disabled:opacity-40";
-const field = "rounded border border-stone-300 bg-white p-2 text-main";
+const focusRing =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main";
+const button = `min-h-12 rounded bg-main px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-85 active:scale-[0.98] disabled:opacity-40 ${focusRing}`;
+const secondary = `min-h-11 rounded border border-main bg-white px-3 py-2 text-sm font-semibold transition hover:bg-surface active:scale-[0.98] disabled:opacity-40 ${focusRing}`;
+const field = `rounded-md bg-surface px-3 py-2 text-sm text-main ${focusRing}`;
 
 export function MeasurementStudio() {
   const [definitions, setDefinitions] = useState<DefinitionResponse | null>(

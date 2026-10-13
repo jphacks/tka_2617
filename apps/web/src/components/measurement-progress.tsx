@@ -33,7 +33,7 @@ export function MeasurementProgress({
       aria-modal="true"
       aria-label="服の測定"
     >
-      <div className="w-full max-w-80 rounded-2xl bg-white px-6 py-7 text-center shadow-xl">
+      <div className="w-full max-w-80 rounded bg-white px-6 py-7 text-center">
         <div
           className="mx-auto size-8 rounded-full border-2 border-line border-t-main motion-safe:animate-spin"
           aria-hidden="true"
