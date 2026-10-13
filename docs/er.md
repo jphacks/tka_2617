@@ -47,3 +47,5 @@ erDiagram
 ## 今後の設計候補
 
 アバターはprofilesと1対1、コーデはprofilesと1対多、コーデと服は中間テーブルで多対多を想定する。体型・テクスチャの要件は[要件候補](requirements-candidates.md)を参照。
+
+アバターを保存する場合の候補は`height_cm`（150〜195）と`build`（`slim`・`standard`・`broad`・`chubby`）。体重は持たない（[ADR 0008](adr/0008-height-keys-and-tables.md)、[ADR 0009](adr/0009-build-instead-of-weight.md)）。これらの列・テーブルは未作成で、上のER図には含めない。

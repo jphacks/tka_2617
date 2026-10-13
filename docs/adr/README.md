@@ -21,13 +21,16 @@
 - [0004 webはVercelに、手元のCLIからデプロイする](0004-deploy-web-with-vercel-cli.md)
 - [0005 3D表示にReact Three Fiberとdreiを使う](0005-3d-with-react-three-fiber.md)
 - [0006 服の寸法からシェイプキーの値をブラウザで計算する](0006-solve-shape-keys-in-browser.md)
-- [0007 ローカルCPUでA4基準の服採寸を行う](0007-local-garment-measurement.md)
-- [0008 採寸を共通の撮影画面へ統合する](0008-integrate-capture-with-app-shell.md)
-- [0009 真上撮影では写真を変形せず採寸する](0009-flat-photo-measurement.md)
-- [0010 スマホから保存画像をweb経由で取得する](0010-mobile-image-access.md)
-- [0011 ランドマークの編集を隠し、寸法名付き矢印で示す](0011-measurement-arrows.md)
-- [0012 服の写真をモデル固定のUVテンプレートで貼る](0012-uv-template-for-photo-texture.md)
-- [0013 採寸中は細かな進捗の目安と経過時間を表示する](0013-measurement-progress-estimate.md)
+- [0007 服が体に突き抜けるのは、服を体の外へ押し出して防ぐ](0007-push-shirt-out-only.md)
+- [0008 身長はBlenderで作った身長キーで変え、基準寸法とキーの効き方は身長ごとの表で持つ](0008-height-keys-and-tables.md)
+- [0009 アバターの体は、体重ではなく4つの体型から選ぶ](0009-build-instead-of-weight.md)
+- [0010 ローカルCPUでA4基準の服採寸を行う](0010-local-garment-measurement.md)
+- [0011 採寸を共通の撮影画面へ統合する](0011-integrate-capture-with-app-shell.md)
+- [0012 真上撮影では写真を変形せず採寸する](0012-flat-photo-measurement.md)
+- [0013 スマホから保存画像をweb経由で取得する](0013-mobile-image-access.md)
+- [0014 ランドマークの編集を隠し、寸法名付き矢印で示す](0014-measurement-arrows.md)
+- [0015 服の写真をモデル固定のUVテンプレートで貼る](0015-uv-template-for-photo-texture.md)
+- [0016 採寸中は細かな進捗の目安と経過時間を表示する](0016-measurement-progress-estimate.md)
 
 ## 参考文献
 

@@ -4,7 +4,7 @@
 
 `POST /v1/detections`のoptionsは`{ category: "auto" | "short_sleeve_top" | "trousers", stage: "paper" | "garment" | "landmarks" | "cutout" | "all", paperCorners?: [number, number][], bbox?: [number, number, number, number] }`。stage省略時はall。画像を遠近補正せず、A4の長辺を29.7cm、短辺を21cmとして縮尺を自動計算する。四隅・bbox・ランドマークはすべて送信画像の座標。
 
-画面の1回の操作からpaper→garment→landmarks→cutoutを順に呼び、完了した工程に応じて0・25・50・75・100%を表示する。残り時間の予測値ではない。返却値に`cutoutBase64`（透過PNGまたはnull）と`cutoutWidthPx`・`cutoutHeightPx`（null可）を追加する。
+画面の1回の操作からpaper→garment→landmarks→cutoutを順に呼び、工程の切り替わりと経過時間から進捗の目安を1%刻みで表示する。推論内部の実測割合や残り時間の予測値ではなく、100%は全処理の完了後だけ表示する。返却値に`cutoutBase64`（透過PNGまたはnull）と`cutoutWidthPx`・`cutoutHeightPx`（null可）を追加する。
 
 保存APIは追加のmultipartファイル`cutoutImage`（RGBAのPNG、8MiB以下）を受け取る。画像roleは`cutout`を追加し、クローゼットでは優先表示する。切り抜きは表示専用で、測定点を持たない。新規保存のmeasurementVersionは`df2-a4-flat-midpoint-v2`。従来の補正済みデータはそのまま読める。v2ではmeasurement画像にA4四隅も保存し、originalImageは不要。
 
@@ -113,6 +113,13 @@ PATCHの入力は`{ name?, measurements? }`、成功は`200 { id }`。寸法オ�
 ## 後続の設計候補
 
 `GET/PUT /v1/avatar`、`GET/POST /v1/outfits`、`DELETE /v1/outfits/:id`は未実装。[要件候補](requirements-candidates.md)で検討する。
+
+### アバター設定の候補（未実装）
+
+- `PUT /v1/avatar`の入力候補：`{ heightCm: number, build: Build }`。
+- `GET /v1/avatar`の出力候補：`{ heightCm: number | null, build: Build | null }`。
+- `heightCm`は150〜195。3Dモデルで身長を変えられる範囲（[ADR 0008](adr/0008-height-keys-and-tables.md)）。
+- `Build`は`slim`（細身）・`standard`（標準）・`broad`（がっしり）・`chubby`（ぽっちゃり）。体重は持たない（[ADR 0009](adr/0009-build-instead-of-weight.md)）。
 
 ## 参考文献
 
