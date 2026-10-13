@@ -12,8 +12,10 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import { Mesh, type Object3D } from "three";
 import { setMorph } from "@/lib/morph";
+import { stackHems } from "@/lib/hem-stack";
 import {
   buildBodyBVH,
+  buildGarmentCollider,
   shirtTopology,
   updatePush,
   type PushStats,
@@ -21,6 +23,9 @@ import {
 
 const AVATAR_URL = "/models/avatar_male.glb";
 const TSHIRT_URL = "/models/tshirt_male.glb";
+const TROUSERS_URL = "/models/trousers_male.glb";
+// ズボンで覆われる体の印（_cover）はまだ無いので、頂点の間から体が出ていないかは確かめない
+const NO_COVERED = new Uint32Array(0);
 
 // 入力のたびに押し出しを計算すると、スマホでは1回0.3〜0.4秒止まる。入力が止まってから計算する
 const PUSH_DELAY_MS = 300;
@@ -50,6 +55,10 @@ type Props = {
   shirtMorphs: Record<string, number>;
   /** 服が小さすぎるときはfalse。体だけを表示する */
   showShirt: boolean;
+  /** ズボンのmorph（体型キー＋身長キー＋サイズキー） */
+  trouserMorphs: Record<string, number>;
+  /** ズボンを着ないとき、小さすぎるときはfalse */
+  showTrousers: boolean;
   onPushStats?: (s: PushStats) => void;
   /** 増えるたびに、今の服と体で計算時間をBENCHMARK_RUNS回測る */
   benchmarkRequest: number;
@@ -76,15 +85,23 @@ function Models({
   bodyMorphs,
   shirtMorphs,
   showShirt,
+  trouserMorphs,
+  showTrousers,
   onPushStats,
   benchmarkRequest,
   onBenchmark,
 }: Omit<Props, "heightScale">) {
   const avatar = useGLTF(AVATAR_URL);
   const shirt = useGLTF(TSHIRT_URL);
+  const trousers = useGLTF(TROUSERS_URL);
   const bodyMesh = useMemo(() => firstMesh(avatar.scene), [avatar.scene]);
   const shirtMesh = useMemo(() => firstMesh(shirt.scene), [shirt.scene]);
+  const trouserMesh = useMemo(
+    () => firstMesh(trousers.scene),
+    [trousers.scene],
+  );
   const topo = useMemo(() => shirtTopology(shirtMesh), [shirtMesh]);
+  const trouserTopo = useMemo(() => shirtTopology(trouserMesh), [trouserMesh]);
 
   useEffect(() => {
     applyMorphs(avatar.scene, bodyMorphs);
@@ -92,19 +109,33 @@ function Models({
   useEffect(() => {
     applyMorphs(shirt.scene, shirtMorphs);
   }, [shirt.scene, shirtMorphs]);
+  useEffect(() => {
+    applyMorphs(trousers.scene, trouserMorphs);
+  }, [trousers.scene, trouserMorphs]);
 
   // 体のBVHは体型・身長が変わったときだけ作り直す（morphを当てた後なので上のeffectより後に置く）
   const bodyBVH = useRef<ReturnType<typeof buildBodyBVH> | null>(null);
   const bvhMorphs = useRef<Record<string, number> | null>(null);
   useEffect(() => {
-    if (!showShirt) return;
+    if (!showShirt && !showTrousers) return;
     const timer = setTimeout(() => {
       if (!bodyBVH.current || bvhMorphs.current !== bodyMorphs) {
         bodyBVH.current?.geometry.dispose();
         bodyBVH.current = buildBodyBVH(bodyMesh);
         bvhMorphs.current = bodyMorphs;
       }
-      onPushStats?.(updatePush(shirtMesh, bodyBVH.current, topo));
+      if (showTrousers) {
+        updatePush(trouserMesh, bodyBVH.current, trouserTopo, {
+          covered: NO_COVERED,
+          prepare: stackHems,
+        });
+      }
+      if (showShirt) {
+        // Tシャツはズボンの上に着るので、押し出したズボンの外へも押し出す
+        const layers = showTrousers ? [buildGarmentCollider(trouserMesh)] : [];
+        onPushStats?.(updatePush(shirtMesh, bodyBVH.current, topo, { layers }));
+        for (const layer of layers) layer.geometry.dispose();
+      }
     }, PUSH_DELAY_MS);
     return () => {
       clearTimeout(timer);
@@ -112,9 +143,13 @@ function Models({
   }, [
     bodyMesh,
     shirtMesh,
+    trouserMesh,
     topo,
+    trouserTopo,
     showShirt,
+    showTrousers,
     shirtMorphs,
+    trouserMorphs,
     bodyMorphs,
     onPushStats,
   ]);
@@ -144,12 +179,14 @@ function Models({
     <>
       <primitive object={avatar.scene} />
       {showShirt && <primitive object={shirt.scene} />}
+      {showTrousers && <primitive object={trousers.scene} />}
     </>
   );
 }
 
-const CAMERA_POSITION = [0, 1.3, 2.4] as const;
-const CAMERA_TARGET = [0, 1.15, 0] as const;
+// ズボンの裾まで見えるよう、全身が枠に収まる位置にする
+const CAMERA_POSITION = [0, 1.0, 3.6] as const;
+const CAMERA_TARGET = [0, 0.88, 0] as const;
 
 /** 体は身長に比例して大きくなるので、カメラの位置と注視点も同じ比率で動かす */
 function CameraRig({
@@ -188,3 +225,4 @@ export default function TryOnScene({ heightScale, ...props }: Props) {
 
 useGLTF.preload(AVATAR_URL);
 useGLTF.preload(TSHIRT_URL);
+useGLTF.preload(TROUSERS_URL);

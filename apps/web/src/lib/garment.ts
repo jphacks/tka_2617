@@ -126,7 +126,7 @@ export type HeightTable = z.infer<typeof HeightTableSchema>;
 /** 身長キーの値：標準の身長より高ければheight_up、低ければheight_down（1.0 = 1cm） */
 export function heightKeyValues(
   heightCm: number,
-  table: HeightTable,
+  table: { standard_cm: number },
 ): Record<string, number> {
   const delta = heightCm - table.standard_cm;
   return { height_up: Math.max(delta, 0), height_down: Math.max(-delta, 0) };
@@ -135,9 +135,14 @@ export function heightKeyValues(
 /** その体型・身長での基準寸法とキーの効き方M、体の身幅（cm） */
 export type Fit = { base: Measurements; m: number[][]; bodyWidth: number };
 
-/** 前後の身長の基準寸法とMを直線で補間する（範囲の外は端の値） */
-export function fitAt(build: Build, heightCm: number, table: HeightTable): Fit {
-  const samples = table.builds[build];
+/**
+ * 身長の昇順に並んだ表から、heightCmの前後の行と、その間の割合を返す（範囲の外は端の行）。
+ * mix(a, b)は、前後の行の値を直線で補間する
+ */
+export function heightBlend<T extends { height_cm: number }>(
+  samples: T[],
+  heightCm: number,
+) {
   const last = samples.length - 1;
   const h = Math.min(
     Math.max(heightCm, samples[0].height_cm),
@@ -150,7 +155,12 @@ export function fitAt(build: Build, heightCm: number, table: HeightTable): Fit {
   const lo = samples[i];
   const hi = samples[i + 1];
   const t = (h - lo.height_cm) / (hi.height_cm - lo.height_cm);
-  const mix = (a: number, b: number) => a * (1 - t) + b * t;
+  return { lo, hi, mix: (a: number, b: number) => a * (1 - t) + b * t };
+}
+
+/** 前後の身長の基準寸法とMを直線で補間する（範囲の外は端の値） */
+export function fitAt(build: Build, heightCm: number, table: HeightTable): Fit {
+  const { lo, hi, mix } = heightBlend(table.builds[build], heightCm);
   return {
     base: Object.fromEntries(
       MEASUREMENT_KEYS.map((p) => [p, mix(lo.base[p], hi.base[p])]),
@@ -179,8 +189,8 @@ export function fitStatus(target: Measurements, fit: Fit): FitStatus {
 
 /* ---------------------------------------------------------------- サイズキー */
 
-/** 4×4の連立方程式A x = b（ガウスの消去法） */
-function solve4(A: number[][], b: number[]): number[] {
+/** 連立方程式A x = b（ガウスの消去法） */
+export function solveLinear(A: number[][], b: number[]): number[] {
   const n = b.length;
   const M = A.map((row, i) => [...row, b[i]]);
   for (let c = 0; c < n; c++) {
@@ -207,7 +217,7 @@ export function sizeKeyValues(
   fit: Fit,
   table: HeightTable,
 ): Record<string, number> {
-  const k = solve4(
+  const k = solveLinear(
     MEASUREMENT_KEYS.map((p) => fit.m[table.parts.indexOf(p)]),
     MEASUREMENT_KEYS.map((p) => target[p] - fit.base[p]),
   );

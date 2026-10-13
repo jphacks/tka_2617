@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
+import trousersHeightJson from "@/../public/models/trousers_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import type { Benchmark } from "@/app/dev/tryon/tryon-scene";
 import {
@@ -24,6 +25,17 @@ import {
   type Measurements,
 } from "@/lib/garment";
 import type { PushStats } from "@/lib/push-out";
+import {
+  TROUSER_KEYS,
+  TROUSER_LABELS,
+  TROUSER_STRETCH_RATIO,
+  trouserFitAt,
+  trouserFitStatus,
+  trouserKeyValues,
+  trouserMeasurements,
+  TrouserTableSchema,
+  type TrouserMeasurements,
+} from "@/lib/trousers";
 
 // three.jsはブラウザでだけ動かす
 const TryOnScene = dynamic(() => import("@/app/dev/tryon/tryon-scene"), {
@@ -32,6 +44,7 @@ const TryOnScene = dynamic(() => import("@/app/dev/tryon/tryon-scene"), {
 
 // Blenderが書き出した表。小さいので、取りに行かずにバンドルに入れる
 const heightTable = HeightTableSchema.parse(tshirtHeightJson);
+const trouserTable = TrouserTableSchema.parse(trousersHeightJson);
 
 /** 確認用の服データ（チーム共通の形式・仮） */
 const SAMPLE_GARMENT = GarmentSchema.parse({
@@ -53,12 +66,54 @@ const SAMPLE_GARMENT = GarmentSchema.parse({
   measurementVersion: "df2-a4-midpoint-v1",
 });
 
+const SAMPLE_TROUSERS = GarmentSchema.parse({
+  id: "22222222-2222-4222-8222-222222222222",
+  name: "ジーンズ",
+  category: "trousers",
+  measurements: {
+    shoulderWidthCm: null,
+    sleeveLengthCm: null,
+    bodyWidthCm: null,
+    bodyLengthCm: null,
+    waistCm: 84,
+    hipCm: 104,
+    thighWidthCm: 30,
+    riseCm: 22,
+    inseamCm: 76,
+    hemWidthCm: 19,
+  },
+  measurementVersion: "df2-a4-flat-midpoint-v2",
+});
+
 type Inputs = Record<keyof Measurements, string>;
+type TrouserInputs = Record<keyof TrouserMeasurements, string>;
 
 function toInputs(m: Measurements, digits = 0): Inputs {
   return Object.fromEntries(
     MEASUREMENT_KEYS.map((k) => [k, m[k].toFixed(digits)]),
   ) as Inputs;
+}
+
+function toTrouserInputs(m: TrouserMeasurements, digits = 0): TrouserInputs {
+  return Object.fromEntries(
+    TROUSER_KEYS.map((k) => [k, m[k].toFixed(digits)]),
+  ) as TrouserInputs;
+}
+
+/** 入力の文字を寸法にする。空欄や数値でないものがあればnull */
+function parseInputs<K extends string>(
+  keys: readonly K[],
+  input: Record<K, string>,
+): Record<K, number> | null {
+  const ok = keys.every(
+    (k) => input[k].trim() !== "" && Number.isFinite(Number(input[k])),
+  );
+  return ok
+    ? (Object.fromEntries(keys.map((k) => [k, Number(input[k])])) as Record<
+        K,
+        number
+      >)
+    : null;
 }
 
 export default function TryOnClient() {
@@ -69,21 +124,19 @@ export default function TryOnClient() {
   const [input, setInput] = useState<Inputs>(() =>
     toInputs(tshirtMeasurements(SAMPLE_GARMENT)),
   );
+  const [wearTrousers, setWearTrousers] = useState(true);
+  const [trouserInput, setTrouserInput] = useState<TrouserInputs>(() =>
+    toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
+  );
   const [pushStats, setPushStats] = useState<PushStats | null>(null);
   const [benchmarkRequest, setBenchmarkRequest] = useState(0);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
 
-  // 入力を4項目の寸法にする（空欄や数値でないものは不正）
-  const target = useMemo<Measurements | null>(() => {
-    const ok = MEASUREMENT_KEYS.every(
-      (k) => input[k].trim() !== "" && Number.isFinite(Number(input[k])),
-    );
-    return ok
-      ? (Object.fromEntries(
-          MEASUREMENT_KEYS.map((k) => [k, Number(input[k])]),
-        ) as Measurements)
-      : null;
-  }, [input]);
+  const target = useMemo(() => parseInputs(MEASUREMENT_KEYS, input), [input]);
+  const trouserTarget = useMemo(
+    () => parseInputs(TROUSER_KEYS, trouserInput),
+    [trouserInput],
+  );
 
   // 範囲外や数値でない身長は、標準の身長で表示する
   const heightValue = Number(heightInput);
@@ -102,6 +155,20 @@ export default function TryOnClient() {
     [fit, target],
   );
   const status = target ? fitStatus(target, fit) : null;
+  const trouserFit = useMemo(
+    () => trouserFitAt(build, heightCm, trouserTable),
+    [build, heightCm],
+  );
+  const trouserSize = useMemo(
+    () =>
+      trouserTarget
+        ? trouserKeyValues(trouserTarget, trouserFit, trouserTable)
+        : null,
+    [trouserFit, trouserTarget],
+  );
+  const trouserStatus = trouserTarget
+    ? trouserFitStatus(trouserTarget, trouserFit)
+    : null;
 
   const bodyMorphs = useMemo(
     () => ({
@@ -114,6 +181,14 @@ export default function TryOnClient() {
     () => ({ ...bodyMorphs, ...(size ?? {}) }),
     [bodyMorphs, size],
   );
+  const trouserMorphs = useMemo(
+    () => ({ ...bodyMorphs, ...(trouserSize ?? {}) }),
+    [bodyMorphs, trouserSize],
+  );
+  const tooSmall = [
+    status === "tooSmall" ? "Tシャツ" : null,
+    wearTrousers && trouserStatus === "tooSmall" ? "ズボン" : null,
+  ].filter((name) => name !== null);
 
   return (
     <>
@@ -130,13 +205,15 @@ export default function TryOnClient() {
             bodyMorphs={bodyMorphs}
             shirtMorphs={shirtMorphs}
             showShirt={status !== "tooSmall"}
+            trouserMorphs={trouserMorphs}
+            showTrousers={wearTrousers && trouserStatus !== "tooSmall"}
             onPushStats={setPushStats}
             benchmarkRequest={benchmarkRequest}
             onBenchmark={setBenchmark}
           />
-          {status === "tooSmall" && (
+          {tooSmall.length > 0 && (
             <p className="absolute inset-x-4 top-4 rounded bg-white/90 px-3 py-2 text-center text-[13px] font-semibold">
-              この服は小さすぎます
+              {tooSmall.join("と")}が小さすぎます
             </p>
           )}
         </div>
@@ -188,7 +265,9 @@ export default function TryOnClient() {
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-2 text-[15px] font-semibold">実寸（cm）</legend>
+          <legend className="mb-2 text-[15px] font-semibold">
+            Tシャツの実寸（cm）
+          </legend>
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="text-xs text-description">
@@ -259,6 +338,104 @@ export default function TryOnClient() {
               className="rounded border border-main px-3 py-1.5 text-xs font-semibold"
             >
               服データ「{SAMPLE_GARMENT.name}」
+            </button>
+          </div>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-[15px] font-semibold">
+            ズボンの実寸（cm）
+          </legend>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={wearTrousers}
+              onChange={(e) => {
+                setWearTrousers(e.target.checked);
+              }}
+              className="accent-main"
+            />
+            ズボンを着る
+          </label>
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="text-xs text-description">
+                <th className="px-1 py-0.5 font-normal"></th>
+                <th className="px-1 py-0.5 font-normal">入力</th>
+                <th className="px-1 py-0.5 font-normal">基準</th>
+                <th className="px-1 py-0.5 font-normal">キー</th>
+              </tr>
+            </thead>
+            <tbody className="tabular-nums">
+              {TROUSER_KEYS.map((k) => (
+                <tr key={k}>
+                  <td className="px-1 py-0.5">{TROUSER_LABELS[k]}</td>
+                  <td className="px-1 py-0.5">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step={0.5}
+                      value={trouserInput[k]}
+                      aria-label={TROUSER_LABELS[k]}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setTrouserInput((s) => ({ ...s, [k]: value }));
+                      }}
+                      className="w-20 rounded border border-line px-2 py-1 text-right text-base"
+                    />
+                  </td>
+                  <td className="px-1 py-0.5">
+                    {trouserFit.base[k].toFixed(1)}
+                  </td>
+                  <td className="px-1 py-0.5">
+                    {trouserSize ? trouserSize[`size_${k}`].toFixed(2) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!trouserTarget && (
+            <p className="text-red-600">数値を入力してください</p>
+          )}
+          {trouserStatus === "tight" && (
+            <p>
+              <span className="rounded border border-main px-2 py-0.5 text-[11px] font-semibold">
+                タイト
+              </span>
+            </p>
+          )}
+          {trouserStatus === "tooSmall" && (
+            <p className="text-red-600">
+              ウエスト・ヒップ・わたり幅のどれかが体より
+              {Math.round(TROUSER_STRETCH_RATIO * 100)}
+              %以上小さいので、着せずに表示しています
+            </p>
+          )}
+          <p className="text-xs text-muted tabular-nums">
+            体のウエスト{trouserFit.body.waist.toFixed(1)}cm・ヒップ
+            {trouserFit.body.hip.toFixed(1)}cm・太もも
+            {trouserFit.body.thigh.toFixed(1)}cm
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setTrouserInput(toTrouserInputs(trouserFit.base, 1));
+              }}
+              className="rounded border border-main px-3 py-1.5 text-xs font-semibold"
+            >
+              この体型の基準寸法にする
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setTrouserInput(
+                  toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
+                );
+              }}
+              className="rounded border border-main px-3 py-1.5 text-xs font-semibold"
+            >
+              服データ「{SAMPLE_TROUSERS.name}」
             </button>
           </div>
         </fieldset>
