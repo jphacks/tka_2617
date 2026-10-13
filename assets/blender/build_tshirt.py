@@ -29,60 +29,6 @@ OUT = os.path.join(HERE, "out")
 D = 10.0                    # +10cm の形を作ってから 0.1 倍で 1cm キーにする
 
 
-def capture_builds():
-    """標準以外の体型ごとに体を作り、mhclo で Tシャツを着せ直して形だけ取り出す"""
-    shapes = {}
-    for b in pt.BUILDS:
-        if b == "standard":
-            continue
-        body = pt.create_body(pt.macros_for(b))
-        shirt = pt.add_shirt(body)
-        shapes[b] = (pt.body_mix_coords(body), pt.world_coords(shirt))
-        pt.remove_objects([shirt, body])
-        pt.log(f"{b}: 体と Tシャツの形を取得")
-    return shapes
-
-
-def capture_heights():
-    """標準体型で身長を ±HEIGHT_SPAN_CM 変えた体を作り、mhclo で Tシャツを着せ直して形だけ取り出す。
-    マクロ height の値は、実測の身長差が ±HEIGHT_SPAN_CM になるよう探す"""
-    def measure_height(macro):
-        body = pt.create_body({**pt.macros_for("standard"), "height": macro})
-        h = pt.body_height_cm(body)
-        pt.remove_objects([body])
-        return h
-
-    def solve_macro(target_cm, x1):
-        """身長差が target_cm になるマクロの差をセカント法で探す。
-        MPFB の中でマクロの値が丸められ、同じ身長が続くことがあるので、そこで止める"""
-        x0, f0 = 0.0, 0.0
-        f1 = measure_height(0.5 + x1) - standard_cm
-        for _ in range(8):
-            if abs(f1 - target_cm) < 0.01 or f1 == f0:
-                break
-            x0, f0, x1 = x1, f1, x1 + (target_cm - f1) * (x1 - x0) / (f1 - f0)
-            f1 = measure_height(0.5 + x1) - standard_cm
-        return x1
-
-    standard_cm = measure_height(0.5)
-    shapes = {}
-    for d, sign in pt.HEIGHT_DIRECTIONS.items():
-        dx = solve_macro(sign * pt.HEIGHT_SPAN_CM, sign * 0.1)
-        body = pt.create_body({**pt.macros_for("standard"), "height": 0.5 + dx})
-        got = pt.body_height_cm(body) - standard_cm
-        shirt = pt.add_shirt(body)
-        shapes[d] = (pt.body_mix_coords(body), pt.world_coords(shirt))
-        pt.remove_objects([shirt, body])
-        pt.log(f"{pt.height_key(d)}: マクロ height {0.5 + dx:.4f}, 身長差 {got:+.2f}cm")
-    pt.log(f"標準の身長 {standard_cm:.2f}cm")
-    return standard_cm, shapes
-
-
-def height_key_world(B, P):
-    """±HEIGHT_SPAN_CM の形 P から、1cm あたりのキーの形（ワールド座標）を作る"""
-    return B + (P - B) / pt.HEIGHT_SPAN_CM
-
-
 def make_size_key(shirt, part, lm, polys, bvh):
     """part の +10cm の形を作り（体から押し出した後の実測で +10.00cm になるよう倍率を探す）、
     0.1 倍で size_part にする"""
@@ -157,8 +103,8 @@ def height_table(shirt, body, lm, polys, standard_cm):
 
 def main():
     pt.clear_scene()
-    shapes = capture_builds()
-    standard_cm, height_shapes = capture_heights()
+    shapes = pt.capture_builds(pt.add_shirt)
+    standard_cm, height_shapes = pt.capture_heights(pt.add_shirt)
 
     body = pt.create_body(pt.macros_for("standard"))
     shirt = pt.add_shirt(body)
@@ -175,7 +121,7 @@ def main():
         pt.set_key_from_world(shirt, pt.build_key(b), shirt_co)
     std_shirt = pt.world_coords(shirt, "Basis")
     for d, (_, shirt_co) in height_shapes.items():
-        pt.set_key_from_world(shirt, pt.height_key(d), height_key_world(std_shirt, shirt_co))
+        pt.set_key_from_world(shirt, pt.height_key(d), pt.height_key_world(std_shirt, shirt_co))
     for part in pt.SIZE_PARTS:
         make_size_key(shirt, part, lm, polys, bvh)
 
@@ -197,7 +143,7 @@ def main():
     for b, (body_co, _) in shapes.items():
         pt.set_key_from_world(body, pt.build_key(b), body_co[keep])
     for d, (body_co, _) in height_shapes.items():
-        pt.set_key_from_world(body, pt.height_key(d), height_key_world(std_body[keep], body_co[keep]))
+        pt.set_key_from_world(body, pt.height_key(d), pt.height_key_world(std_body[keep], body_co[keep]))
     pt.write_json(os.path.join(MODELS, "tshirt_male_height.json"),
                   height_table(shirt, body, lm, polys, standard_cm))
     moved = np.linalg.norm(pt.world_coords(body) - std_body[keep], axis=1).max()

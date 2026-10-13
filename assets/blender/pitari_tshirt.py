@@ -769,6 +769,62 @@ def export_glb(obj, path):
     log("GLB:", path)
 
 
+# ---------------------------------------------------------------- 体型・身長ごとの服の形
+
+def capture_builds(dress):
+    """標準以外の体型ごとに体を作り、mhclo で服を着せ直して形だけ取り出す（dress は服を着せる関数）"""
+    shapes = {}
+    for b in BUILDS:
+        if b == "standard":
+            continue
+        body = create_body(macros_for(b))
+        garment = dress(body)
+        shapes[b] = (body_mix_coords(body), world_coords(garment))
+        remove_objects([garment, body])
+        log(f"{b}: 体と服の形を取得")
+    return shapes
+
+
+def capture_heights(dress):
+    """標準体型で身長を ±HEIGHT_SPAN_CM 変えた体を作り、mhclo で服を着せ直して形だけ取り出す。
+    マクロ height の値は、実測の身長差が ±HEIGHT_SPAN_CM になるよう探す"""
+    def measure_height(macro):
+        body = create_body({**macros_for("standard"), "height": macro})
+        h = body_height_cm(body)
+        remove_objects([body])
+        return h
+
+    def solve_macro(target_cm, x1):
+        """身長差が target_cm になるマクロの差をセカント法で探す。
+        MPFB の中でマクロの値が丸められ、同じ身長が続くことがあるので、そこで止める"""
+        x0, f0 = 0.0, 0.0
+        f1 = measure_height(0.5 + x1) - standard_cm
+        for _ in range(8):
+            if abs(f1 - target_cm) < 0.01 or f1 == f0:
+                break
+            x0, f0, x1 = x1, f1, x1 + (target_cm - f1) * (x1 - x0) / (f1 - f0)
+            f1 = measure_height(0.5 + x1) - standard_cm
+        return x1
+
+    standard_cm = measure_height(0.5)
+    shapes = {}
+    for d, sign in HEIGHT_DIRECTIONS.items():
+        dx = solve_macro(sign * HEIGHT_SPAN_CM, sign * 0.1)
+        body = create_body({**macros_for("standard"), "height": 0.5 + dx})
+        got = body_height_cm(body) - standard_cm
+        garment = dress(body)
+        shapes[d] = (body_mix_coords(body), world_coords(garment))
+        remove_objects([garment, body])
+        log(f"{height_key(d)}: マクロ height {0.5 + dx:.4f}, 身長差 {got:+.2f}cm")
+    log(f"標準の身長 {standard_cm:.2f}cm")
+    return standard_cm, shapes
+
+
+def height_key_world(B, P):
+    """±HEIGHT_SPAN_CM の形 P から、1cm あたりのキーの形（ワールド座標）を作る"""
+    return B + (P - B) / HEIGHT_SPAN_CM
+
+
 def write_json(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as fp:
