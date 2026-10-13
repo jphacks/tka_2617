@@ -29,23 +29,16 @@ OUT = os.path.join(HERE, "out")
 D = 10.0                    # +10cm の形を作ってから 0.1 倍で 1cm キーにする
 
 
-def make_size_key(shirt, part, lm, polys, bvh):
-    """part の +10cm の形を作り（体から押し出した後の実測で +10.00cm になるよう倍率を探す）、
-    0.1 倍で size_part にする"""
+def make_size_key(shirt, part, lm, polys):
+    """part の +10cm の形を作り（実測で +10.00cm になるよう倍率を探す）、0.1 倍で size_part にする。
+    体からの押し出しはキーに入れない（ブラウザの push-out.ts が毎回押し出す）。
+    入れると、キーをマイナスで使ったときに押し出しが逆向きにかかり、裾などが頂点ごとにばらばらに内側へ引かれる"""
     B = pt.world_coords(shirt, "Basis")
     disp = pt.DISPLACEMENTS[part]
-    edges = [tuple(e.vertices) for e in shirt.data.edges]
     base = pt.measure(B, lm, polys)[part]
-    # 元から体に近い所（襟など）の押し出しはキーに入れない。キーを重ねたときに足し算で膨らむため
-    base_push = pt.push_out(B, bvh, edges) - B
 
     def shape(k):
-        S = pt.push_out(B + disp(B, lm, k), bvh, edges) - base_push
-        if part == "width":
-            # 身幅は水平の変化だけにする。押し出しで脇の近くが上下に動くと、
-            # 脇の高さで切る身幅の計測が値の大きい所で飛ぶため
-            S[:, 2] = B[:, 2]
-        return S
+        return B + disp(B, lm, k)
 
     def gain(k):
         return pt.measure(shape(k), lm, polys)[part] - base
@@ -110,20 +103,19 @@ def main():
     shirt = pt.add_shirt(body)
     shirt.shape_key_add(name="Basis", from_mix=False)
     std_body = pt.body_mix_coords(body)
-    bvh = pt.body_bvh(body, std_body, pt.helper_keep_mask(body))
 
     lm = pt.find_landmarks(shirt)
     polys = pt.polys_of(shirt)
     pt.write_json(os.path.join(OUT, "tshirt_landmarks.json"), lm)
 
-    # Tシャツ：体型キー（mhclo で着せ直した形）→ サイズキー（標準体型の上で作り、体の外へ押し出す）
+    # Tシャツ：体型キー（mhclo で着せ直した形）→ サイズキー（標準体型の上で、形を伸ばす・広げるだけ）
     for b, (_, shirt_co) in shapes.items():
         pt.set_key_from_world(shirt, pt.build_key(b), shirt_co)
     std_shirt = pt.world_coords(shirt, "Basis")
     for d, (_, shirt_co) in height_shapes.items():
         pt.set_key_from_world(shirt, pt.height_key(d), pt.height_key_world(std_shirt, shirt_co))
     for part in pt.SIZE_PARTS:
-        make_size_key(shirt, part, lm, polys, bvh)
+        make_size_key(shirt, part, lm, polys)
 
     base, corr = base_and_correction(shirt, lm, polys)
     pt.write_json(os.path.join(MODELS, "tshirt_male_base.json"), base)

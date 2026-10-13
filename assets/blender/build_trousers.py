@@ -31,18 +31,15 @@ def measure(P, lm, polys):
     return tr.measure_trousers(P, lm, polys)[0]
 
 
-def make_size_key(jeans, part, lm, polys, bvh):
-    """part の +10cm の形を作り（体から押し出した後の実測で +10.00cm になるよう倍率を探す）、
-    0.1 倍で size_part にする"""
+def make_size_key(jeans, part, lm, polys):
+    """part の +10cm の形を作り（実測で +10.00cm になるよう倍率を探す）、0.1 倍で size_part にする。
+    体からの押し出しはキーに入れない（理由は build_tshirt.make_size_key と同じ）"""
     B = pt.world_coords(jeans, "Basis")
     disp = tr.DISPLACEMENTS[part]
-    edges = [tuple(e.vertices) for e in jeans.data.edges]
     base = measure(B, lm, polys)[part]
-    # 元から体に近い所の押し出しはキーに入れない。キーを重ねたときに足し算で膨らむため
-    base_push = pt.push_out(B, bvh, edges) - B
 
     def shape(k):
-        return pt.push_out(B + disp(B, lm, k), bvh, edges) - base_push
+        return B + disp(B, lm, k)
 
     def gain(k):
         return measure(shape(k), lm, polys)[part] - base
@@ -92,20 +89,19 @@ def main():
     jeans = tr.add_jeans(body)
     jeans.shape_key_add(name="Basis", from_mix=False)
     std_body = pt.body_mix_coords(body)
-    bvh = pt.body_bvh(body, std_body, pt.helper_keep_mask(body))
 
     lm = tr.find_trouser_landmarks(jeans)
     polys = pt.polys_of(jeans)
     pt.write_json(os.path.join(OUT, "trousers_landmarks.json"), lm)
 
-    # ジーンズ：体型キー → 身長キー（mhclo で着せ直した形）→ サイズキー（標準体型の上で作り、体の外へ押し出す）
+    # ジーンズ：体型キー → 身長キー（mhclo で着せ直した形）→ サイズキー（標準体型の上で、形を伸ばす・広げるだけ）
     for b, (_, co) in shapes.items():
         pt.set_key_from_world(jeans, pt.build_key(b), co)
     std_jeans = pt.world_coords(jeans, "Basis")
     for d, (_, co) in height_shapes.items():
         pt.set_key_from_world(jeans, pt.height_key(d), pt.height_key_world(std_jeans, co))
     for part in tr.TROUSER_PARTS:
-        make_size_key(jeans, part, lm, polys, bvh)
+        make_size_key(jeans, part, lm, polys)
 
     mw = jeans.matrix_world.copy()
     jeans.parent = None

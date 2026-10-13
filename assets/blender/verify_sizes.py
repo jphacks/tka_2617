@@ -45,6 +45,7 @@ CASES = [
     ("chubby_width-6", "chubby", (0, -6, 0, 0)),        # お腹が出る体型で小さいサイズ
     ("chubby_length+7_width-6", "chubby", (7, -6, -1, 1)),   # 丈を伸ばすと腰が裾から出やすい
     ("standard_base", "standard", (0, 0, 0, 0)),
+    ("standard_length-6", "standard", (-6, 0, 0, 0)),   # 着丈を短くしたとき、裾より下の体で裾が引っ張られないか
     ("standard_width-16", "standard", (0, -16, 0, 0)),    # E で押し出したときの寸法のずれを見る
 ]
 # 身長を変えた組み合わせ（名前, 体型, 身長 cm, 基準寸法からの差）
@@ -131,11 +132,13 @@ PUSH_OFFSET = 0.008       # web の PUSH_OFFSET_M と同じ
 PUSH_SMOOTH_ITERS = 4
 PUSH_COVERED_MIN = 0.99   # web の COVERED_MIN と同じ
 PUSH_TIP_SEARCH = 0.03    # web の TIP_SEARCH_M と同じ
+PUSH_ABOVE = 0.002        # web の LAYER_ABOVE_M と同じ
+PUSH_RIM_SMOOTH_ITERS = 3 # web の RIM_SMOOTH_ITERS と同じ
 
 
 def push_out_e(S, body_P, body_polys, shirt_polys, cover):
     """web の updatePush と同じ計算：体から PUSH_OFFSET 未満の服の頂点を外へ押し出し、なだらかに広げ、
-    服で覆われる体の頂点が服の外へ出ていれば、その面の頂点を外へ足す。押し出した後の形を返す"""
+    服で覆われる体の頂点が服の外へ出ていれば、その面の頂点を外へ足し、縁に沿ってならす。押し出した後の形を返す"""
     keys = {}
     weld = np.array([keys.setdefault(tuple(np.round(p, 5)), len(keys)) for p in S])
     count = len(keys)
@@ -176,6 +179,9 @@ def push_out_e(S, body_P, body_polys, shirt_polys, cover):
         loc, n, idx, _ = shirt_bvh.find_nearest(Vector(bp), PUSH_TIP_SEARCH)
         if loc is None:
             continue
+        # 一番近い服の点より下にある体（着丈を短くして裾より下に出た所）は比べない
+        if loc.z - bp[2] > PUSH_ABOVE:
+            continue
         out = (Vector(bp) - loc).dot(n)
         if out <= -PUSH_OFFSET / 2:
             continue
@@ -183,7 +189,25 @@ def push_out_e(S, body_P, body_polys, shirt_polys, cover):
         for j in faces[idx]:
             if np.linalg.norm(v) > np.linalg.norm(extra[j]):
                 extra[j] = v
-    return S + (disp + extra)[weld]
+    disp = disp + extra
+
+    # 縁（面1つにしか使われていない辺）の押し出し量を、縁に沿った両隣とならす
+    edge_use = {}
+    for f in faces:
+        for k in range(len(f)):
+            e = tuple(sorted((f[k], f[(k + 1) % len(f)])))
+            edge_use[e] = edge_use.get(e, 0) + 1
+    rim = [[] for _ in range(count)]
+    for (a, b), used in edge_use.items():
+        if used == 1:
+            rim[a].append(b); rim[b].append(a)
+    for _ in range(PUSH_RIM_SMOOTH_ITERS):
+        nxt = disp.copy()
+        for j in range(count):
+            if len(rim[j]) >= 2:
+                nxt[j] = 0.5 * disp[j] + 0.5 * disp[rim[j]].mean(axis=0)
+        disp = nxt
+    return S + disp[weld]
 
 
 def render_case(name, shirt_P, body_P, shirt, body):

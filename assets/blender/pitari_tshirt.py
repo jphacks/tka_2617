@@ -647,12 +647,6 @@ def helper_keep_mask(body):
     return keep
 
 
-def body_bvh(body, P, keep):
-    """helper を除いた体の BVH（P は helper 込みの全頂点のワールド座標）"""
-    polys = [tuple(f.vertices) for f in body.data.polygons if keep[list(f.vertices)].all()]
-    return BVHTree.FromPolygons([Vector(p) for p in P], polys)
-
-
 def vertex_normals(P, polys):
     """面積で重み付けした頂点法線"""
     N = np.zeros_like(P)
@@ -662,30 +656,6 @@ def vertex_normals(P, polys):
             n = np.cross(P[b] - P[a], P[c] - P[a])
             N[[a, b, c]] += n
     return N / np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-12)
-
-
-PUSH_OFFSET = 0.005         # 体から最低 5mm 離す
-
-
-def push_out(P, bvh, edges, offset=PUSH_OFFSET, smooth=4):
-    """体の内側（または offset 未満）にある頂点を体の外へ押し出す。押し出し量は周りになだらかに広げる"""
-    push = np.zeros_like(P)
-    for i, p in enumerate(P):
-        loc, n, _, _ = bvh.find_nearest(Vector(p))
-        sd = (Vector(p) - loc).dot(n)
-        if sd < offset:
-            push[i] = np.array(n) * (offset - sd)
-    if not push.any():
-        return P
-    E = np.asarray(edges)
-    for _ in range(smooth):
-        acc = np.zeros_like(push); cnt = np.zeros(len(P))
-        np.add.at(acc, E[:, 0], push[E[:, 1]]); np.add.at(acc, E[:, 1], push[E[:, 0]])
-        np.add.at(cnt, E[:, 0], 1); np.add.at(cnt, E[:, 1], 1)
-        avg = acc / np.maximum(cnt, 1)[:, None]
-        bigger = np.linalg.norm(avg, axis=1) > np.linalg.norm(push, axis=1)
-        push[bigger] = 0.5 * push[bigger] + 0.5 * avg[bigger]
-    return P + push
 
 
 def bake_body(body):

@@ -6,7 +6,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 
 - `build_tshirt.py`：入口。アバターとTシャツを作り、`apps/web/public/models/`に書き出す
 - `verify_sizes.py`：サイズ合わせの検証と、確認用の画像（`out/renders/`）
-- `pitari_tshirt.py`：共通処理（生成・基準点・計測・シェイプキー・体からの押し出し・書き出し）
+- `pitari_tshirt.py`：共通処理（生成・基準点・計測・シェイプキー・書き出し）
 - `out/`：生成物（`tshirt_landmarks.json`、確認用の`build.blend`、`renders/`）。gitに入れない
 
 ## 再生成と検証（リポジトリのルートで）
@@ -40,7 +40,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - Blenderの単位はメートル。計測結果だけcm
 - サイズキーは`size_length`／`size_width`／`size_shoulder`／`size_sleeve`。値1.0＝+1cm
   - +10cmの形を作り、値0.1でNew Shape from Mixして1cmキーにする
-  - +10cmの形は標準体型の体から5mm外へ押し出す（元から体に近い所の押し出しはキーに入れない）
+  - サイズキーには体からの押し出しを入れない。押し出しはブラウザ（`push-out.ts`）が毎回するので、キーは服の形の変化だけにする
   - Blenderのスライダーは±10が上限（受け入れ済み）。glTFとブラウザ側は無制限
 - 体型は細身／標準／がっしり／ぽっちゃりの4つ。キーは`build_slim`／`build_broad`／`build_chubby`。標準体型＝Basis。同時に1つだけ1.0
   - 体型はMPFBのマクロ`weight`／`muscle`だけ変える（`pitari_tshirt.BUILD_MACROS`）。がっしり＝筋肉、ぽっちゃり＝体重

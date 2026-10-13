@@ -37,8 +37,48 @@ def add_jeans(body):
         raise RuntimeError(f"casualsuit06 の頂点数が想定外: {len(me.vertices)}")
     bm = bmesh.new(); bm.from_mesh(me); bm.verts.ensure_lookup_table()
     bmesh.ops.delete(bm, geom=[bm.verts[i] for i in range(pt.SHIRT_VERTS)], context="VERTS")
+    _refine_lower_legs(bm)
     bm.to_mesh(me); bm.free(); me.update()
     return jeans
+
+
+HEM_RINGS = 8               # 裾の輪から上へ 8 本ぶん（約 28cm、ひざの少し下まで）を細かくする
+HEM_CUTS = 2                # その範囲の縦の辺を 3 等分する（輪の間隔 約 3.5cm → 約 1.2cm）
+
+
+def _refine_lower_legs(bm):
+    """裾のたまりのしわを表せるよう、ひざから下に輪を足す。
+    範囲は高さではなく、裾の輪からメッシュのつながりをたどって決める。
+    体型・身長が変わっても同じ辺が選ばれ、頂点の並びがそろうようにするため"""
+    bm.verts.ensure_lookup_table(); bm.edges.ensure_lookup_table()
+    boundary = [e for e in bm.edges if e.is_boundary]
+    seen, loops = set(), []
+    for e in boundary:
+        if e.index in seen:
+            continue
+        comp, stack = set(), [e]
+        while stack:
+            cur = stack.pop()
+            if cur.index in seen:
+                continue
+            seen.add(cur.index)
+            comp.update(cur.verts)
+            for v in cur.verts:
+                stack.extend(x for x in v.link_edges if x.is_boundary and x.index not in seen)
+        loops.append(comp)
+    loops.sort(key=lambda vs: sum(v.co.z for v in vs) / len(vs))
+    vertical = set()
+    for hem in loops[:2]:                                  # 下の 2 つが左右の裾
+        prev, ring = set(), set(hem)
+        for _ in range(HEM_RINGS):
+            nxt = set()
+            for v in ring:
+                for e in v.link_edges:
+                    o = e.other_vert(v)
+                    if o not in ring and o not in prev:
+                        nxt.add(o); vertical.add(e)
+            prev, ring = ring, nxt
+    bmesh.ops.subdivide_edges(bm, edges=list(vertical), cuts=HEM_CUTS, use_grid_fill=True)
 
 
 def _ordered_boundary_loops(me):
