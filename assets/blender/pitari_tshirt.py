@@ -741,16 +741,25 @@ def export_glb(obj, path):
 
 # ---------------------------------------------------------------- 体型・身長ごとの服の形
 
+def _garment_coords(body, dress):
+    """体に服を着せて形を取り出し、服を消す"""
+    garments = dress(body)
+    many = isinstance(garments, list)
+    coords = [world_coords(g) for g in (garments if many else [garments])]
+    remove_objects(garments if many else [garments])
+    return coords if many else coords[0]
+
+
 def capture_builds(dress):
-    """標準以外の体型ごとに体を作り、mhclo で服を着せ直して形だけ取り出す（dress は服を着せる関数）"""
+    """標準以外の体型ごとに体を作り、mhclo で服を着せ直して形だけ取り出す（dress は服を着せる関数）。
+    dress が服のリストを返したときは、服の形もリストで返す"""
     shapes = {}
     for b in BUILDS:
         if b == "standard":
             continue
         body = create_body(macros_for(b))
-        garment = dress(body)
-        shapes[b] = (body_mix_coords(body), world_coords(garment))
-        remove_objects([garment, body])
+        shapes[b] = (body_mix_coords(body), _garment_coords(body, dress))
+        remove_objects([body])
         log(f"{b}: 体と服の形を取得")
     return shapes
 
@@ -782,9 +791,8 @@ def capture_heights(dress):
         dx = solve_macro(sign * HEIGHT_SPAN_CM, sign * 0.1)
         body = create_body({**macros_for("standard"), "height": 0.5 + dx})
         got = body_height_cm(body) - standard_cm
-        garment = dress(body)
-        shapes[d] = (body_mix_coords(body), world_coords(garment))
-        remove_objects([garment, body])
+        shapes[d] = (body_mix_coords(body), _garment_coords(body, dress))
+        remove_objects([body])
         log(f"{height_key(d)}: マクロ height {0.5 + dx:.4f}, 身長差 {got:+.2f}cm")
     log(f"標準の身長 {standard_cm:.2f}cm")
     return standard_cm, shapes

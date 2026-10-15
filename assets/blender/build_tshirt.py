@@ -5,7 +5,7 @@
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background --python assets/blender/build_tshirt.py
 
 出力:
-  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover）
+  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover、靴で隠れる所 _shoe、肌の明暗テクスチャ）
   apps/web/public/models/tshirt_male.glb               Tシャツ（体型キー 3 個＋身長キー 2 個＋サイズキー 4 個）
   apps/web/public/models/tshirt_male_base.json         体型ごとの基準寸法（cm）
   apps/web/public/models/tshirt_male_height.json       標準の身長と、体型・身長ごとの基準寸法とキーの効き方 M、体の身幅
@@ -22,6 +22,7 @@ sys.path.insert(0, HERE)
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 import pitari_tshirt as pt  # noqa: E402
+import pitari_presets as pp  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 MODELS = os.path.join(ROOT, "apps", "web", "public", "models")
@@ -103,6 +104,8 @@ def main():
     shirt = pt.add_shirt(body)
     shirt.shape_key_add(name="Basis", from_mix=False)
     std_body = pt.body_mix_coords(body)
+    # 靴を一度着せて、靴で隠れる体の頂点グループ（Delete.<靴>）だけを残す
+    pt.remove_objects([pp.add_asset(body, "shoes", pp.SHOES["sneaker"][0])])
 
     lm = pt.find_landmarks(shirt)
     polys = pt.polys_of(shirt)
@@ -127,10 +130,11 @@ def main():
     shirt.matrix_world = mw
     pt.simple_material(shirt, "tshirt", (0.92, 0.92, 0.95, 1.0))
 
-    # 体：helper を消して標準体型を Basis に → 体型キー・身長キー → 服の下の重み（_cover）
+    # 体：helper を消して標準体型を Basis に → 体型キー・身長キー → 服の下の重み（_cover）、靴で隠れる所（_shoe）
     keep = pt.bake_body(body)
-    pt.simple_material(body, "skin", (0.80, 0.64, 0.55, 1.0))
+    pp.skin_material(body)
     pt.set_point_attribute(body, "_cover", pt.cover_weights(body, shirt, lm))
+    pt.set_point_attribute(body, "_shoe", pp.vertex_group_weights(body, pp.SHOE_DELETE_GROUP))
     body.shape_key_add(name="Basis", from_mix=False)
     for b, (body_co, _) in shapes.items():
         pt.set_key_from_world(body, pt.build_key(b), body_co[keep])
