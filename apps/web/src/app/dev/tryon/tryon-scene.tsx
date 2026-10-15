@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
-import { Mesh, type Object3D } from "three";
+import { Mesh, MeshStandardMaterial, type Object3D } from "three";
 import { setMorph } from "@/lib/morph";
 import { stackHems } from "@/lib/hem-stack";
 import {
@@ -24,6 +24,8 @@ import {
 const AVATAR_URL = "/models/avatar_male.glb";
 const TSHIRT_URL = "/models/tshirt_male.glb";
 const TROUSERS_URL = "/models/trousers_male.glb";
+// 肌のテクスチャは明暗だけなので、肌の色を掛ける。色の候補は public/presets/presets.json の skinColors
+const SKIN_COLOR = "#E8CBB0";
 // ズボンで覆われる体の印（_cover）はまだ無いので、頂点の間から体が出ていないかは確かめない
 const NO_COVERED = new Uint32Array(0);
 
@@ -103,6 +105,11 @@ function Models({
   const topo = useMemo(() => shirtTopology(shirtMesh), [shirtMesh]);
   const trouserTopo = useMemo(() => shirtTopology(trouserMesh), [trouserMesh]);
 
+  useEffect(() => {
+    const material = bodyMesh.material;
+    if (material instanceof MeshStandardMaterial)
+      material.color.set(SKIN_COLOR);
+  }, [bodyMesh]);
   useEffect(() => {
     applyMorphs(avatar.scene, bodyMorphs);
   }, [avatar.scene, bodyMorphs]);
