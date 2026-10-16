@@ -18,6 +18,7 @@ export const PresetsSchema = z.object({
   face: z.object({ path: z.string() }),
   hairColors: z.array(HexColorSchema),
   skinColors: z.array(HexColorSchema),
+  sockColors: z.array(HexColorSchema),
 });
 
 export type Preset = z.infer<typeof PresetSchema>;

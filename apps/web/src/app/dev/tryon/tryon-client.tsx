@@ -208,7 +208,8 @@ export default function TryOnClient() {
   const [hairId, setHairId] = useState<string | null>(presets.hair[0].id);
   const [hairColor, setHairColor] = useState(presets.hairColors[1]);
   const [skinColor, setSkinColor] = useState(presets.skinColors[1]);
-  const [wearShoes, setWearShoes] = useState(true);
+  const [shoeId, setShoeId] = useState<string | null>(presets.shoes[0].id);
+  const [sockColor, setSockColor] = useState(presets.sockColors[0]);
   const [pushStats, setPushStats] = useState<PushStats | null>(null);
   const [benchmarkRequest, setBenchmarkRequest] = useState(0);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
@@ -300,7 +301,8 @@ export default function TryOnClient() {
             hairUrl={presets.hair.find((h) => h.id === hairId)?.path ?? null}
             faceUrl={presets.face.path}
             hairColor={hairColor}
-            shoesUrl={wearShoes ? presets.shoes[0].path : null}
+            shoe={presets.shoes.find((s) => s.id === shoeId) ?? null}
+            sockColor={sockColor}
             onPushStats={setPushStats}
             benchmarkRequest={benchmarkRequest}
             onBenchmark={setBenchmark}
@@ -399,17 +401,36 @@ export default function TryOnClient() {
             value={skinColor}
             onChange={setSkinColor}
           />
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={wearShoes}
-              onChange={(e) => {
-                setWearShoes(e.target.checked);
-              }}
-              className="accent-main"
-            />
-            {presets.shoes[0].name}を履く
-          </label>
+          <div className="flex items-center gap-3">
+            <span className="w-14 shrink-0">靴</span>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {[null, ...presets.shoes].map((s) => (
+                <label
+                  key={s?.id ?? "none"}
+                  className="flex items-center gap-1.5"
+                >
+                  <input
+                    type="radio"
+                    name="shoe"
+                    checked={shoeId === (s?.id ?? null)}
+                    onChange={() => {
+                      setShoeId(s?.id ?? null);
+                    }}
+                    className="accent-main"
+                  />
+                  {s?.name ?? "裸足"}
+                </label>
+              ))}
+            </div>
+            {shoeId !== null && (
+              <ColorChoices
+                label="靴下の色"
+                colors={presets.sockColors}
+                value={sockColor}
+                onChange={setSockColor}
+              />
+            )}
+          </div>
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">

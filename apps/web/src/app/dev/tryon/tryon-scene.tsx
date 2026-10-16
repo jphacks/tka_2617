@@ -76,8 +76,10 @@ type Props = {
   faceUrl: string;
   /** 髪の色。髪のテクスチャも明暗だけなので、この色を掛ける */
   hairColor: string;
-  /** 靴のglb。nullなら裸足 */
-  shoesUrl: string | null;
+  /** 靴下の色。靴下の材質（socks）の灰色のテクスチャに掛ける */
+  sockColor: string;
+  /** 靴（public/presets/presets.jsonのid・glb）。nullなら裸足 */
+  shoe: { id: string; path: string } | null;
   onPushStats?: (s: PushStats) => void;
   /** 増えるたびに、今の服と体で計算時間をBENCHMARK_RUNS回測る */
   benchmarkRequest: number;
@@ -143,28 +145,28 @@ const HIDE_SLEEVE_MAX = 0.85;
 function PresetModel({
   url,
   morphs,
-  color,
+  tints = {},
 }: {
   url: string;
   morphs: Record<string, number>;
-  color?: string;
+  /** 材質名の始まり → 掛ける色（髪・眉毛・まつ毛は hair、靴下は socks） */
+  tints?: Record<string, string>;
 }) {
   const gltf = useGLTF(url);
   useEffect(() => {
     applyMorphs(gltf.scene, morphs);
   }, [gltf.scene, morphs]);
   useEffect(() => {
-    if (!color) return;
-    // 色を掛けるのは髪の材質（髪・眉毛・まつ毛。名前がhair_で始まる）だけ。目は元の色のまま
     gltf.scene.traverse((o) => {
-      if (
-        o instanceof Mesh &&
-        o.material instanceof MeshStandardMaterial &&
-        o.material.name.startsWith("hair")
-      )
-        o.material.color.set(color);
+      if (!(o instanceof Mesh && o.material instanceof MeshStandardMaterial))
+        return;
+      const material = o.material;
+      const prefix = Object.keys(tints).find((p) =>
+        material.name.startsWith(p),
+      );
+      if (prefix) material.color.set(tints[prefix]);
     });
-  }, [gltf.scene, color]);
+  }, [gltf.scene, tints]);
   return <primitive object={gltf.scene} />;
 }
 
@@ -179,7 +181,8 @@ function Models({
   hairUrl,
   faceUrl,
   hairColor,
-  shoesUrl,
+  shoe,
+  sockColor,
   onPushStats,
   benchmarkRequest,
   onBenchmark,
@@ -201,19 +204,23 @@ function Models({
     const material = bodyMesh.material;
     if (material instanceof MeshStandardMaterial) hideBodyParts(material);
   }, [bodyMesh]);
+  const hairTints = useMemo(() => ({ hair: hairColor }), [hairColor]);
+  const sockTints = useMemo(() => ({ socks: sockColor }), [sockColor]);
   const armsHidden = useRef<number[]>([]);
   const updateHide = useCallback(() => {
     const hide = hideAttribute(bodyMesh);
     const h = hide.array as Float32Array;
     h.fill(0);
     const geometry = bodyMesh.geometry;
-    if (shoesUrl !== null && geometry.hasAttribute("_shoe")) {
-      const shoe = geometry.getAttribute("_shoe");
-      for (let i = 0; i < shoe.count; i++) if (shoe.getX(i) > 0.5) h[i] = 1;
+    // 靴で隠れる足は靴ごとに違う（Blenderの_shoe_<靴のid>）
+    const shoeAttr = shoe && `_shoe_${shoe.id}`;
+    if (shoeAttr && geometry.hasAttribute(shoeAttr)) {
+      const a = geometry.getAttribute(shoeAttr);
+      for (let i = 0; i < a.count; i++) if (a.getX(i) > 0.5) h[i] = 1;
     }
     for (const i of armsHidden.current) h[i] = 1;
     hide.needsUpdate = true;
-  }, [bodyMesh, shoesUrl]);
+  }, [bodyMesh, shoe]);
   useEffect(() => {
     updateHide();
   }, [updateHide]);
@@ -336,16 +343,16 @@ function Models({
       {showTrousers && <primitive object={trousers.scene} />}
       {/* 髪・靴を選び直しても、読み込み中に体と服が消えないよう、それぞれで待つ */}
       <Suspense fallback={null}>
-        <PresetModel url={faceUrl} morphs={bodyMorphs} color={hairColor} />
+        <PresetModel url={faceUrl} morphs={bodyMorphs} tints={hairTints} />
       </Suspense>
       {hairUrl && (
         <Suspense fallback={null}>
-          <PresetModel url={hairUrl} morphs={bodyMorphs} color={hairColor} />
+          <PresetModel url={hairUrl} morphs={bodyMorphs} tints={hairTints} />
         </Suspense>
       )}
-      {shoesUrl && (
+      {shoe && (
         <Suspense fallback={null}>
-          <PresetModel url={shoesUrl} morphs={bodyMorphs} />
+          <PresetModel url={shoe.path} morphs={bodyMorphs} tints={sockTints} />
         </Suspense>
       )}
     </>
