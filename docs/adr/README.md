@@ -25,6 +25,7 @@
 - [0008 身長はBlenderで作った身長キーで変え、基準寸法とキーの効き方は身長ごとの表で持つ](0008-height-keys-and-tables.md)
 - [0009 アバターの体は、体重ではなく4つの体型から選ぶ](0009-build-instead-of-weight.md)
 - [0010 髪・靴のプリセットは、骨格ではなく体と同じシェイプキーで体に合わせる](0010-presets-follow-body-with-shape-keys.md)
+- [0011 長袖は、Tシャツの袖を手首まで伸ばして作る](0011-longsleeve-from-tshirt.md)
 
 ## 参考文献
 
