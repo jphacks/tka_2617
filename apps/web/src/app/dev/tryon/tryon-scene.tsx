@@ -15,6 +15,7 @@ import {
   BufferAttribute,
   Mesh,
   MeshStandardMaterial,
+  NeutralToneMapping,
   type Object3D,
 } from "three";
 import { setMorph } from "@/lib/morph";
@@ -71,6 +72,8 @@ type Props = {
   skinColor: string;
   /** 髪のglb（public/presets/presets.json）。nullなら髪なし */
   hairUrl: string | null;
+  /** 顔のパーツ（目・眉毛・まつ毛）のglb。いつも着ける */
+  faceUrl: string;
   /** 髪の色。髪のテクスチャも明暗だけなので、この色を掛ける */
   hairColor: string;
   /** 靴のglb。nullなら裸足 */
@@ -152,8 +155,13 @@ function PresetModel({
   }, [gltf.scene, morphs]);
   useEffect(() => {
     if (!color) return;
+    // 色を掛けるのは髪の材質（髪・眉毛・まつ毛。名前がhair_で始まる）だけ。目は元の色のまま
     gltf.scene.traverse((o) => {
-      if (o instanceof Mesh && o.material instanceof MeshStandardMaterial)
+      if (
+        o instanceof Mesh &&
+        o.material instanceof MeshStandardMaterial &&
+        o.material.name.startsWith("hair")
+      )
         o.material.color.set(color);
     });
   }, [gltf.scene, color]);
@@ -169,6 +177,7 @@ function Models({
   showTrousers,
   skinColor,
   hairUrl,
+  faceUrl,
   hairColor,
   shoesUrl,
   onPushStats,
@@ -326,6 +335,9 @@ function Models({
       {showShirt && <primitive object={shirt.scene} />}
       {showTrousers && <primitive object={trousers.scene} />}
       {/* 髪・靴を選び直しても、読み込み中に体と服が消えないよう、それぞれで待つ */}
+      <Suspense fallback={null}>
+        <PresetModel url={faceUrl} morphs={bodyMorphs} color={hairColor} />
+      </Suspense>
       {hairUrl && (
         <Suspense fallback={null}>
           <PresetModel url={hairUrl} morphs={bodyMorphs} color={hairColor} />
@@ -366,14 +378,20 @@ function CameraRig({
 export default function TryOnScene({ heightScale, ...props }: Props) {
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   return (
-    <Canvas camera={{ position: [...CAMERA_POSITION], fov: 35 }}>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[2, 3, 2]} intensity={1.6} />
-      <directionalLight position={[-2, 2, -2]} intensity={0.6} />
+    // ACESのトーンマッピングは肌の中間の色を灰色寄りに沈めるので、色合いを保つNeutralにする
+    <Canvas
+      camera={{ position: [...CAMERA_POSITION], fov: 35 }}
+      gl={{ toneMapping: NeutralToneMapping }}
+    >
+      {/* 空からの白い光と、床からの暖かい照り返し。正面の光は少し暖かくする */}
+      <hemisphereLight args={["#ffffff", "#c9b6a6", 0.9]} />
+      <directionalLight position={[2, 3, 2]} intensity={1.4} color="#fff3e6" />
+      <directionalLight position={[-2, 2, -2]} intensity={0.5} />
       <Suspense fallback={null}>
         <Models {...props} />
       </Suspense>
-      <OrbitControls ref={controls} target={[...CAMERA_TARGET]} />
+      {/* ホイール・ピンチの拡大は、カーソル（指の間）の位置へ寄る */}
+      <OrbitControls ref={controls} target={[...CAMERA_TARGET]} zoomToCursor />
       <CameraRig scale={heightScale} controls={controls} />
     </Canvas>
   );

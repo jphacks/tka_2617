@@ -15,6 +15,7 @@ export const PresetsSchema = z.object({
   avatar: z.object({ path: z.string() }),
   hair: z.array(PresetSchema),
   shoes: z.array(PresetSchema),
+  face: z.object({ path: z.string() }),
   hairColors: z.array(HexColorSchema),
   skinColors: z.array(HexColorSchema),
 });

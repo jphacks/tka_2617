@@ -298,6 +298,7 @@ export default function TryOnClient() {
             showTrousers={wearTrousers && trouserStatus !== "tooSmall"}
             skinColor={skinColor}
             hairUrl={presets.hair.find((h) => h.id === hairId)?.path ?? null}
+            faceUrl={presets.face.path}
             hairColor={hairColor}
             shoesUrl={wearShoes ? presets.shoes[0].path : null}
             onPushStats={setPushStats}
