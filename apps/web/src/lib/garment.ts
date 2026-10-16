@@ -21,7 +21,7 @@ export const GarmentMeasurementsSchema = z.object({
 export const GarmentSchema = z.object({
   id: z.string(),
   name: z.string(),
-  category: z.enum(["short_sleeve_top", "trousers"]),
+  category: z.enum(["short_sleeve_top", "long_sleeve_top", "trousers"]),
   measurements: GarmentMeasurementsSchema,
   measurementVersion: z.string(),
 });
@@ -29,7 +29,7 @@ export type Garment = z.infer<typeof GarmentSchema>;
 
 /* ---------------------------------------------------------------- 3D側の寸法 */
 
-/** Tシャツの入力4項目（cm）。サイズキーsize_* と1対1 */
+/** Tシャツ・長袖の入力4項目（cm）。サイズキーsize_* と1対1 */
 export const MeasurementsSchema = z.object({
   length: z.number(), // 着丈：後ろ襟ぐり中心〜裾
   width: z.number(), // 身幅：脇の下の高さの胴回り ÷ 2
@@ -52,10 +52,10 @@ export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
   sleeve: "袖丈",
 };
 
-/** 服データ（short_sleeve_top）からTシャツの4項目を取り出す。4項目はnullにならない前提 */
-export function tshirtMeasurements(g: Garment): Measurements {
-  if (g.category !== "short_sleeve_top")
-    throw new Error(`Tシャツではありません: ${g.category}`);
+/** 服データ（short_sleeve_top・long_sleeve_top）からTシャツ・長袖の4項目を取り出す。4項目はnullにならない前提 */
+export function topMeasurements(g: Garment): Measurements {
+  if (g.category !== "short_sleeve_top" && g.category !== "long_sleeve_top")
+    throw new Error(`Tシャツ・長袖ではありません: ${g.category}`);
   const m = g.measurements;
   return MeasurementsSchema.parse({
     length: m.bodyLengthCm,

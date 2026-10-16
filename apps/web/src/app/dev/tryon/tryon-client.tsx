@@ -3,7 +3,9 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import trousersHeightJson from "@/../public/models/trousers_male_height.json";
+import longsleeveHeightJson from "@/../public/models/longsleeve_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
+import presetsJson from "@/../public/presets/presets.json";
 import type { Benchmark } from "@/app/dev/tryon/tryon-scene";
 import {
   BUILD_LABELS,
@@ -20,10 +22,12 @@ import {
   MEASUREMENT_LABELS,
   sizeKeyValues,
   STRETCH_RATIO,
-  tshirtMeasurements,
+  topMeasurements,
   type Build,
   type Measurements,
 } from "@/lib/garment";
+import { PresetsSchema } from "@/lib/presets";
+import { drapeKeyValues } from "@/lib/sleeve-drape";
 import type { PushStats } from "@/lib/push-out";
 import {
   TROUSER_KEYS,
@@ -45,6 +49,7 @@ const TryOnScene = dynamic(() => import("@/app/dev/tryon/tryon-scene"), {
 // Blenderが書き出した表。小さいので、取りに行かずにバンドルに入れる
 const heightTable = HeightTableSchema.parse(tshirtHeightJson);
 const trouserTable = TrouserTableSchema.parse(trousersHeightJson);
+const presets = PresetsSchema.parse(presetsJson);
 
 /** 確認用の服データ（チーム共通の形式・仮） */
 const SAMPLE_GARMENT = GarmentSchema.parse({
@@ -65,6 +70,43 @@ const SAMPLE_GARMENT = GarmentSchema.parse({
   },
   measurementVersion: "df2-a4-midpoint-v1",
 });
+
+const SAMPLE_LONGSLEEVE = GarmentSchema.parse({
+  id: "33333333-3333-4333-8333-333333333333",
+  name: "白い長袖",
+  category: "long_sleeve_top",
+  measurements: {
+    shoulderWidthCm: 45,
+    sleeveLengthCm: 60,
+    bodyWidthCm: 52,
+    bodyLengthCm: 70,
+    waistCm: null,
+    hipCm: null,
+    thighWidthCm: null,
+    riseCm: null,
+    inseamCm: null,
+    hemWidthCm: null,
+  },
+  measurementVersion: "df2-a4-midpoint-v1",
+});
+
+/** 上の服。寸法の4項目とキーはどちらも同じで、Blenderが書き出したglbと表だけが違う */
+const TOPS = {
+  tshirt: {
+    label: "Tシャツ",
+    url: "/models/tshirt_male.glb",
+    table: heightTable,
+    sample: SAMPLE_GARMENT,
+  },
+  longsleeve: {
+    label: "長袖",
+    url: "/models/longsleeve_male.glb",
+    table: HeightTableSchema.parse(longsleeveHeightJson),
+    sample: SAMPLE_LONGSLEEVE,
+  },
+};
+type Top = keyof typeof TOPS;
+const TOP_IDS = Object.keys(TOPS) as Top[];
 
 const SAMPLE_TROUSERS = GarmentSchema.parse({
   id: "22222222-2222-4222-8222-222222222222",
@@ -116,18 +158,57 @@ function parseInputs<K extends string>(
     : null;
 }
 
+function ColorChoices({
+  label,
+  colors,
+  value,
+  onChange,
+}: {
+  label: string;
+  colors: string[];
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="w-14 shrink-0">{label}</span>
+      <div className="flex gap-2">
+        {colors.map((c) => (
+          <button
+            key={c}
+            type="button"
+            aria-label={c}
+            aria-pressed={value === c}
+            onClick={() => {
+              onChange(c);
+            }}
+            style={{ backgroundColor: c }}
+            className="size-7 rounded-full border border-line aria-pressed:ring-2 aria-pressed:ring-main aria-pressed:ring-offset-2"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function TryOnClient() {
   const [build, setBuild] = useState<Build>("standard");
   const [heightInput, setHeightInput] = useState(() =>
     heightTable.standard_cm.toFixed(1),
   );
+  const [top, setTop] = useState<Top>("tshirt");
   const [input, setInput] = useState<Inputs>(() =>
-    toInputs(tshirtMeasurements(SAMPLE_GARMENT)),
+    toInputs(topMeasurements(SAMPLE_GARMENT)),
   );
+  const topTable = TOPS[top].table;
   const [wearTrousers, setWearTrousers] = useState(true);
   const [trouserInput, setTrouserInput] = useState<TrouserInputs>(() =>
     toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
   );
+  const [hairId, setHairId] = useState<string | null>(presets.hair[0].id);
+  const [hairColor, setHairColor] = useState(presets.hairColors[1]);
+  const [skinColor, setSkinColor] = useState(presets.skinColors[1]);
+  const [wearShoes, setWearShoes] = useState(true);
   const [pushStats, setPushStats] = useState<PushStats | null>(null);
   const [benchmarkRequest, setBenchmarkRequest] = useState(0);
   const [benchmark, setBenchmark] = useState<Benchmark | null>(null);
@@ -147,12 +228,12 @@ export default function TryOnClient() {
   const heightCm = isHeightValid ? heightValue : heightTable.standard_cm;
 
   const fit = useMemo(
-    () => fitAt(build, heightCm, heightTable),
-    [build, heightCm],
+    () => fitAt(build, heightCm, topTable),
+    [build, heightCm, topTable],
   );
   const size = useMemo(
-    () => (target ? sizeKeyValues(target, fit, heightTable) : null),
-    [fit, target],
+    () => (target ? sizeKeyValues(target, fit, topTable) : null),
+    [fit, target, topTable],
   );
   const status = target ? fitStatus(target, fit) : null;
   const trouserFit = useMemo(
@@ -177,16 +258,23 @@ export default function TryOnClient() {
     }),
     [build, heightCm],
   );
+  // 長袖の袖丈が腕より長いときは、余った袖が手に垂れた形（垂れ方のキー）を混ぜる
+  const sleeveExcessCm =
+    top === "longsleeve" && target ? target.sleeve - fit.base.sleeve : 0;
   const shirtMorphs = useMemo(
-    () => ({ ...bodyMorphs, ...(size ?? {}) }),
-    [bodyMorphs, size],
+    () => ({
+      ...bodyMorphs,
+      ...(size ?? {}),
+      ...(top === "longsleeve" ? drapeKeyValues(sleeveExcessCm) : {}),
+    }),
+    [bodyMorphs, size, top, sleeveExcessCm],
   );
   const trouserMorphs = useMemo(
     () => ({ ...bodyMorphs, ...(trouserSize ?? {}) }),
     [bodyMorphs, trouserSize],
   );
   const tooSmall = [
-    status === "tooSmall" ? "Tシャツ" : null,
+    status === "tooSmall" ? TOPS[top].label : null,
     wearTrousers && trouserStatus === "tooSmall" ? "ズボン" : null,
   ].filter((name) => name !== null);
 
@@ -203,10 +291,15 @@ export default function TryOnClient() {
           <TryOnScene
             heightScale={heightCm / heightTable.standard_cm}
             bodyMorphs={bodyMorphs}
+            shirtUrl={TOPS[top].url}
             shirtMorphs={shirtMorphs}
             showShirt={status !== "tooSmall"}
             trouserMorphs={trouserMorphs}
             showTrousers={wearTrousers && trouserStatus !== "tooSmall"}
+            skinColor={skinColor}
+            hairUrl={presets.hair.find((h) => h.id === hairId)?.path ?? null}
+            hairColor={hairColor}
+            shoesUrl={wearShoes ? presets.shoes[0].path : null}
             onPushStats={setPushStats}
             benchmarkRequest={benchmarkRequest}
             onBenchmark={setBenchmark}
@@ -265,9 +358,81 @@ export default function TryOnClient() {
         </fieldset>
 
         <fieldset className="flex flex-col gap-2">
+          <legend className="mb-2 text-[15px] font-semibold">髪型</legend>
+          <div className="grid grid-cols-5 gap-1.5">
+            {[null, ...presets.hair].map((h) => (
+              <button
+                key={h?.id ?? "none"}
+                type="button"
+                aria-pressed={hairId === (h?.id ?? null)}
+                onClick={() => {
+                  setHairId(h?.id ?? null);
+                }}
+                className="flex flex-col items-center gap-0.5 rounded border border-line p-1 text-[11px] aria-pressed:border-main aria-pressed:font-semibold"
+              >
+                {h ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- 確認用ページなので最適化しない
+                  <img
+                    src={h.thumbs.front}
+                    alt=""
+                    className="aspect-square w-full"
+                  />
+                ) : (
+                  <span className="flex aspect-square w-full items-center justify-center text-muted">
+                    なし
+                  </span>
+                )}
+                {h?.name ?? "なし"}
+              </button>
+            ))}
+          </div>
+          <ColorChoices
+            label="髪の色"
+            colors={presets.hairColors}
+            value={hairColor}
+            onChange={setHairColor}
+          />
+          <ColorChoices
+            label="肌の色"
+            colors={presets.skinColors}
+            value={skinColor}
+            onChange={setSkinColor}
+          />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={wearShoes}
+              onChange={(e) => {
+                setWearShoes(e.target.checked);
+              }}
+              className="accent-main"
+            />
+            {presets.shoes[0].name}を履く
+          </label>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-2">
           <legend className="mb-2 text-[15px] font-semibold">
-            Tシャツの実寸（cm）
+            上の服の実寸（cm）
           </legend>
+          <div className="flex gap-4">
+            {TOP_IDS.map((t) => (
+              <label key={t} className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="top"
+                  value={t}
+                  checked={top === t}
+                  onChange={() => {
+                    setTop(t);
+                    setInput(toInputs(topMeasurements(TOPS[t].sample)));
+                  }}
+                  className="accent-main"
+                />
+                {TOPS[t].label}
+              </label>
+            ))}
+          </div>
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="text-xs text-description">
@@ -333,11 +498,11 @@ export default function TryOnClient() {
             <button
               type="button"
               onClick={() => {
-                setInput(toInputs(tshirtMeasurements(SAMPLE_GARMENT)));
+                setInput(toInputs(topMeasurements(TOPS[top].sample)));
               }}
               className="rounded border border-main px-3 py-1.5 text-xs font-semibold"
             >
-              服データ「{SAMPLE_GARMENT.name}」
+              服データ「{TOPS[top].sample.name}」
             </button>
           </div>
         </fieldset>
