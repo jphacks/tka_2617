@@ -717,6 +717,55 @@ def cover_weights(body, shirt, lm):
     return w
 
 
+THUMB_RADIUS = 0.017        # 親指の関節を結ぶ線からこの距離以内の体の頂点を、親指として動かす
+THUMB_FADE = 0.012          # その外側この距離で、動かす量を 0 へ下げる
+THUMB_BASE_FADE = 0.015     # 付け根の関節から親指の向きにこの距離までで、動かす量を 0 から上げる（手のひらを動かさない）
+THUMB_TUCK = 0.85           # 親指と手の向きの角度を、この割合だけ閉じる
+
+
+def _segment_dist(X, a, b):
+    ab = b - a
+    t = np.clip(((X - a) @ ab) / (ab @ ab), 0, 1)
+    return np.linalg.norm(X - (a + np.outer(t, ab)), axis=1)
+
+
+def _rotate(X, pivot, axis, angle):
+    """pivot を通る axis（単位ベクトル）まわりに angle 回す（Rodrigues）"""
+    v = X - pivot
+    c, s = np.cos(angle), np.sin(angle)
+    return pivot + v * c + np.cross(axis, v) * s + np.outer(v @ axis, axis) * (1 - c)
+
+
+def _joint(body, P, name):
+    g = body.vertex_groups[name].index
+    idx = [v.index for v in body.data.vertices if any(x.group == g for x in v.groups)]
+    return P[idx].mean(0)
+
+
+def thumb_in_shape(body):
+    """親指を内側に曲げて手に沿わせた体の形（helper を消す前の全頂点、ワールド座標）。
+    長袖が手にかぶさるとき、ブラウザでキー thumb_in として入れ、親指を袖の中に収める。
+    親指の位置は MPFB の関節の目印（joint-<l|r>-finger-1-1〜4）。付け根の関節を中心に、手の向き（手首 → 中指の付け根）へ回す"""
+    P = body_mix_coords(body)
+    out = P.copy()
+    for side in ("l", "r"):
+        j = [_joint(body, P, f"joint-{side}-finger-1-{k}") for k in range(1, 5)]
+        tip = j[-1] + (j[-1] - j[-2]) * 0.8
+        hand = _joint(body, P, f"joint-{side}-finger-3-1") - _joint(body, P, f"joint-{side}-hand")
+        t = tip - j[0]
+        t, hand = t / np.linalg.norm(t), hand / np.linalg.norm(hand)
+        axis = np.cross(t, hand); axis /= np.linalg.norm(axis)
+        angle = THUMB_TUCK * np.arccos(np.clip(t @ hand, -1, 1))
+        pts = j + [tip]
+        d = np.min([_segment_dist(P, a, b) for a, b in zip(pts, pts[1:])], axis=0)
+        w = (1 - _smooth01((d - THUMB_RADIUS) / THUMB_FADE)) * _smooth01(((P - j[0]) @ t) / THUMB_BASE_FADE)
+        moved = w > 0
+        rot = _rotate(P[moved], j[0], axis, angle)
+        out[moved] = P[moved] + (rot - P[moved]) * w[moved, None]
+        log(f"avatar: 親指（{side}）{int(moved.sum())} 頂点を {np.degrees(angle):.0f}° 曲げる")
+    return out
+
+
 def set_point_attribute(obj, name, values):
     me = obj.data
     a = me.attributes.get(name) or me.attributes.new(name, "FLOAT", "POINT")

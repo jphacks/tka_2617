@@ -8,6 +8,8 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - `verify_sizes.py`：サイズ合わせの検証と、確認用の画像（`out/renders/`）
 - `pitari_tshirt.py`：共通処理（生成・基準点・計測・シェイプキー・書き出し）
 - `build_presets.py`：入口。髪4種と靴を作り、`apps/web/public/presets/`に書き出す
+- `build_longsleeve.py`：入口。Tシャツの袖を手首まで伸ばした長袖を作り、`apps/web/public/models/`に書き出す（[ADR 0011](../../docs/adr/0011-longsleeve-from-tshirt.md)）
+- `pitari_longsleeve.py`：長袖の共通処理（袖口の先に腕に沿って輪を足す）
 - `render_presets.py`：プリセットの確認。書き出したglbを重ねて、サムネイル（`apps/web/public/presets/thumbs/`）と体型ごとの確認画像（`out/presets/builds_check.png`）を描き、めり込みを数える
 - `pitari_presets.py`：プリセットの共通処理（素材の選択・灰色のテクスチャ・材質）。`build_tshirt.py`も体の肌と`_shoe`に使う
 - `out/`：生成物（`tshirt_landmarks.json`、確認用の`build.blend`、`renders/`）。gitに入れない
@@ -19,6 +21,8 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build.blend --python assets/blender/verify_sizes.py
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_presets.py
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/render_presets.py
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_longsleeve.py
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_longsleeve.blend --python assets/blender/verify_sizes.py -- longsleeve
 ```
 
 - プリセットの生成は約20秒、確認は約3分。確認は`build_tshirt.py`の体（`avatar_male.glb`）を読むので、体を作り直したら確認もやり直す
@@ -31,13 +35,14 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 
 ## 出力（apps/web/public/models/）
 
-| ファイル                      | 中身                                                                                                                                                                                |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `avatar_male.glb`             | 体。体型キー3個＋身長キー2個＋頂点属性`_cover`（服の下の重み0〜1。1は服で完全に覆われる所）と`_shoe`（靴で隠れる所が1）。肌は明暗だけの灰色のテクスチャ（ブラウザで肌の色を掛ける） |
-| `tshirt_male.glb`             | Tシャツ。体型キー3個＋身長キー2個＋サイズキー4個                                                                                                                                    |
-| `tshirt_male_height.json`     | 標準の身長（`standard_cm`）と、体型・身長（150、160、標準、185、195cm）ごとの基準寸法、キーの効き方`m`（4項目×4キー）、体の身幅`body_width`。webはこれを使う                        |
-| `tshirt_male_base.json`       | 標準の身長での体型ごとの基準寸法（cm）。webは使っていない                                                                                                                           |
-| `tshirt_male_correction.json` | 標準の身長での体型ごとのキーの効き方`m`。webは使っていない                                                                                                                          |
+| ファイル                                        | 中身                                                                                                                                                                                                                  |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `avatar_male.glb`                               | 体。体型キー3個＋身長キー2個＋頂点属性`_cover`（服の下の重み0〜1。1は服で完全に覆われる所）と`_shoe`（靴で隠れる所が1）。親指を内側に曲げるキー`thumb_in`。肌は明暗だけの灰色のテクスチャ（ブラウザで肌の色を掛ける） |
+| `tshirt_male.glb`                               | Tシャツ。体型キー3個＋身長キー2個＋サイズキー4個                                                                                                                                                                      |
+| `tshirt_male_height.json`                       | 標準の身長（`standard_cm`）と、体型・身長（150、160、標準、185、195cm）ごとの基準寸法、キーの効き方`m`（4項目×4キー）、体の身幅`body_width`。webはこれを使う                                                          |
+| `tshirt_male_base.json`                         | 標準の身長での体型ごとの基準寸法（cm）。webは使っていない                                                                                                                                                             |
+| `tshirt_male_correction.json`                   | 標準の身長での体型ごとのキーの効き方`m`。webは使っていない                                                                                                                                                            |
+| `longsleeve_male.glb`、`longsleeve_male_*.json` | 長袖。中身はTシャツの同じ名前のファイルと同じ形（体型キー3個＋身長キー2個＋サイズキー4個、身長ごとの表）                                                                                                              |
 
 生成物だが、Vercelでは再生成できないのでcommitする。
 
@@ -84,6 +89,21 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - サイズキー：`fitAt(build, 身長, table)`で前後の身長の基準寸法とMを直線で補間し、`sizeKeyValues(実寸, fit, table)`がM（4×4）×キー＝（実寸−その体型・身長の基準寸法）を解く。同じ計算を`verify_sizes.fit_at`と`key_values`に持っている
 - 服の押し出しは`src/lib/push-out.ts`（three-mesh-bvh）。スマホでは1回0.3〜0.4秒かかるので、入力が止まってから（0.3秒後に）計算する。検証スクリプトは押し出した後の寸法のずれを出す（合否には使わない）
 - 確認ページは`/dev/tryon`（`src/app/dev/tryon/`）
+
+## 長袖（`pitari_longsleeve.py`）
+
+- Tシャツ（`add_shirt`）の袖口から手首まで、腕に沿って輪を14個足す。Tシャツの頂点は番号を変えないので、基準点・寸法の測り方・サイズキーはTシャツのものをそのまま使う。袖丈は肩先から手首の袖口まで
+- Tシャツの袖口は内側へ折り返してあるので、縁を外側の面の延長へ1cm開いてから伸ばす（段ができないように）
+- 輪の半径は腕の断面と円の中間にして、輪の並びの向きにならす（ひじの凹凸を写さない）。ゆとりは袖口の値から手首の1.2cmへ移す
+- 手首は標準体型で腕の一番細い所を探し、その近くの体の頂点を覚えておく。ほかの体型・身長では、その頂点の平均を手首にする（ぽっちゃりでは一番細い所が手の先になるため）
+- 体型・身長の形は、その体の腕に沿って同じ数の輪を足して作る
+- 袖丈キーだけは長袖用（`pitari_longsleeve.sleeve_displacement`）。袖の頂点を前腕の向きに、腕の中心線に沿った位置の割合（縫い目0→袖口1）で動かす。Tシャツと同じ縫い目→袖口の直線の向きだと、ひじで曲がった腕から袖口が外れる。頂点ごとに中心線の向きへ動かすと、キーの値と袖丈の関係が直線から外れて検証に通らない
+- 頂点属性`_sleeve`に、腕に沿った位置（縫い目0→袖口1、胴は0）を入れる。ブラウザの`src/lib/sleeve-drape.ts`は、これで袖の中心線を作り、袖の中の腕・手を選ぶ
+- 袖丈が腕より長いときの垂れ方は、布のシミュレーションで作ったキー`drape_3`／`drape_6`／`drape_10`（余りが3・6・10cmのとき。値1で、袖丈キーだけの形から垂れた形への差）。標準体型・標準の身長で、手首から肩側へ8cmより先の袖だけを布として動かし、体に当てて60フレーム垂らす。ブラウザは余った長さで隣の2つを直線で混ぜる（10cmより長ければ`drape_10`のまま）
+- 足した部分のUVは袖口の値のまま（テクスチャを貼るときに展開し直す）
+- ブラウザの体の`_cover`はTシャツのもので、前腕・ひじ・手を含まない。長袖では`sleeve-drape.ts`の`bodyInSleeves`が袖の中の腕・手を選び、押し出しで頂点の間から出ていないかを確かめる
+  - それでも輪の間からひじが出るので、袖の中に隠れる腕（腕に沿った位置0.85まで）は描かない（体の`_hide`。靴の中の足と同じ）。袖口の奥は消さない（のぞいたときに穴に見えないように）
+- 袖が手にかぶさるときは、体のキー`thumb_in`（`pitari_tshirt.thumb_in_shape`）で親指を内側へ40°ほど曲げて袖の中に収める。ブラウザは垂れ方のキーの合計（0〜1）を入れる。親指を描かない方法は、付け根に穴が開いたのでやめた
 
 ## プリセット（髪・靴、`apps/web/public/presets/`）
 

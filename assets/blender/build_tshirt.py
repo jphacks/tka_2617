@@ -5,7 +5,7 @@
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background --python assets/blender/build_tshirt.py
 
 出力:
-  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover、靴で隠れる所 _shoe、肌の明暗テクスチャ）
+  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover、靴で隠れる所 _shoe、肌の明暗テクスチャ、親指を曲げるキー thumb_in）
   apps/web/public/models/tshirt_male.glb               Tシャツ（体型キー 3 個＋身長キー 2 個＋サイズキー 4 個）
   apps/web/public/models/tshirt_male_base.json         体型ごとの基準寸法（cm）
   apps/web/public/models/tshirt_male_height.json       標準の身長と、体型・身長ごとの基準寸法とキーの効き方 M、体の身幅
@@ -30,12 +30,12 @@ OUT = os.path.join(HERE, "out")
 D = 10.0                    # +10cm の形を作ってから 0.1 倍で 1cm キーにする
 
 
-def make_size_key(shirt, part, lm, polys):
+def make_size_key(shirt, part, lm, polys, displacements=pt.DISPLACEMENTS):
     """part の +10cm の形を作り（実測で +10.00cm になるよう倍率を探す）、0.1 倍で size_part にする。
     体からの押し出しはキーに入れない（ブラウザの push-out.ts が毎回押し出す）。
     入れると、キーをマイナスで使ったときに押し出しが逆向きにかかり、裾などが頂点ごとにばらばらに内側へ引かれる"""
     B = pt.world_coords(shirt, "Basis")
-    disp = pt.DISPLACEMENTS[part]
+    disp = displacements[part]
     base = pt.measure(B, lm, polys)[part]
 
     def shape(k):
@@ -106,6 +106,7 @@ def main():
     std_body = pt.body_mix_coords(body)
     # 靴を一度着せて、靴で隠れる体の頂点グループ（Delete.<靴>）だけを残す
     pt.remove_objects([pp.add_asset(body, "shoes", pp.SHOES["sneaker"][0])])
+    thumb_in = pt.thumb_in_shape(body)
 
     lm = pt.find_landmarks(shirt)
     polys = pt.polys_of(shirt)
@@ -140,6 +141,8 @@ def main():
         pt.set_key_from_world(body, pt.build_key(b), body_co[keep])
     for d, (body_co, _) in height_shapes.items():
         pt.set_key_from_world(body, pt.height_key(d), pt.height_key_world(std_body[keep], body_co[keep]))
+    # 長袖が手にかぶさるときに、親指を袖の中に収める（ブラウザが入れる）
+    pt.set_key_from_world(body, "thumb_in", thumb_in[keep])
     pt.write_json(os.path.join(MODELS, "tshirt_male_height.json"),
                   height_table(shirt, body, lm, polys, standard_cm))
     moved = np.linalg.norm(pt.world_coords(body) - std_body[keep], axis=1).max()
@@ -152,4 +155,5 @@ def main():
     pt.log("完了")
 
 
-main()
+if __name__ == "__main__":       # build_longsleeve.py から関数だけを import できるように
+    main()

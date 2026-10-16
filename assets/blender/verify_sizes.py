@@ -8,6 +8,8 @@
 
 実行（pitari/ で、build_tshirt.py の後に）:
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background assets/blender/out/build.blend --python assets/blender/verify_sizes.py
+長袖（build_longsleeve.py の後に）:
+  "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background assets/blender/out/build_longsleeve.blend --python assets/blender/verify_sizes.py -- longsleeve
 
 合格条件：標準体型は全項目 ±0.5cm 以内、ほかの体型は ±1cm 以内。不合格なら終了コード 1
 """
@@ -26,7 +28,9 @@ import pitari_tshirt as pt  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 MODELS = os.path.join(ROOT, "apps", "web", "public", "models")
-RENDERS = os.path.join(HERE, "out", "renders")
+# 確かめる服（"tshirt" か "longsleeve"）。オブジェクト名と、JSON・基準点のファイル名に使う
+GARMENT = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "tshirt"
+RENDERS = os.path.join(HERE, "out", "renders" if GARMENT == "tshirt" else f"renders_{GARMENT}")
 TOL = {"standard": 0.5}
 TOL_OTHER = 1.0
 # 標準の身長に加えて確かめる身長（cm）。測った身長（HEIGHT_SAMPLES_CM）の間も確かめる
@@ -260,11 +264,11 @@ def render_case(name, shirt_P, body_P, shirt, body):
 
 
 def main():
-    shirt, body = bpy.data.objects["tshirt"], bpy.data.objects["avatar"]
-    with open(os.path.join(HERE, "out", "tshirt_landmarks.json"), encoding="utf-8") as fp:
+    shirt, body = bpy.data.objects[GARMENT], bpy.data.objects["avatar"]
+    with open(os.path.join(HERE, "out", f"{GARMENT}_landmarks.json"), encoding="utf-8") as fp:
         lm = json.load(fp)
-    base, corr = load_json("tshirt_male_base.json"), load_json("tshirt_male_correction.json")
-    height = load_json("tshirt_male_height.json")
+    base, corr = load_json(f"{GARMENT}_male_base.json"), load_json(f"{GARMENT}_male_correction.json")
+    height = load_json(f"{GARMENT}_male_height.json")
     polys = pt.polys_of(shirt)
     body_polys = pt.polys_of(body)
     cover = np.empty(len(body.data.vertices), dtype=np.float32)
