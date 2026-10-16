@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useRef,
+  useState,
   type ComponentRef,
   type RefObject,
 } from "react";
@@ -13,19 +14,23 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, useGLTF } from "@react-three/drei";
 import {
   BufferAttribute,
+  DoubleSide,
   Mesh,
   MeshStandardMaterial,
   NeutralToneMapping,
+  Ray,
+  Vector3,
   type Object3D,
 } from "three";
 import { setMorph } from "@/lib/morph";
-import { stackHems } from "@/lib/hem-stack";
+import { stackHems, type FloorAt } from "@/lib/hem-stack";
 import { bodyInSleeves } from "@/lib/sleeve-drape";
 import {
   buildBodyBVH,
   buildGarmentCollider,
   shirtTopology,
   updatePush,
+  type GarmentCollider,
   type PushStats,
 } from "@/lib/push-out";
 
@@ -141,18 +146,52 @@ function hideAttribute(body: Mesh): BufferAttribute {
 /** 袖の中に隠れる腕を描かないのは、腕に沿った位置（縫い目0 → 袖口1）がここまでの袖の中だけ（袖口からのぞいたときに腕が消えて見えないように） */
 const HIDE_SLEEVE_MAX = 0.85;
 
+/** root の中で、材質名が name のメッシュ */
+function findMesh(root: Object3D | null, name: string): Mesh | null {
+  let found: Mesh | null = null;
+  root?.traverse((o) => {
+    if (
+      !found &&
+      o instanceof Mesh &&
+      o.material instanceof MeshStandardMaterial &&
+      o.material.name === name
+    )
+      found = o;
+  });
+  return found;
+}
+
+/** (x, z) の真下の靴の表面の高さ（靴の上から下へ光線を当てて、最初に当たった所。当たらなければ床の0） */
+function shoeFloor(shoe: GarmentCollider): FloorAt {
+  const ray = new Ray(new Vector3(), new Vector3(0, -1, 0));
+  return (x, z) => {
+    ray.origin.set(x, shoe.topY + 0.1, z);
+    const hit = shoe.bvh.raycastFirst(ray, DoubleSide);
+    return hit ? hit.point.y : 0;
+  };
+}
+
 /** 髪・靴のプリセット。体と同じ体型キー・身長キーを入れると体に重なる */
 function PresetModel({
   url,
   morphs,
   tints = {},
+  onScene,
 }: {
   url: string;
   morphs: Record<string, number>;
   /** 材質名の始まり → 掛ける色（髪・眉毛・まつ毛は hair、靴下は socks） */
   tints?: Record<string, string>;
+  /** 読み込んだら（外したらnullで）呼ぶ。靴の上に裾を乗せるのに使う */
+  onScene?: (scene: Object3D | null) => void;
 }) {
   const gltf = useGLTF(url);
+  useEffect(() => {
+    onScene?.(gltf.scene);
+    return () => {
+      onScene?.(null);
+    };
+  }, [gltf.scene, onScene]);
   useEffect(() => {
     applyMorphs(gltf.scene, morphs);
   }, [gltf.scene, morphs]);
@@ -206,6 +245,8 @@ function Models({
   }, [bodyMesh]);
   const hairTints = useMemo(() => ({ hair: hairColor }), [hairColor]);
   const sockTints = useMemo(() => ({ socks: sockColor }), [sockColor]);
+  // 読み込んだ靴（押し出しの計算で、裾を靴の上に乗せる）
+  const [shoeScene, setShoeScene] = useState<Object3D | null>(null);
   const armsHidden = useRef<number[]>([]);
   const updateHide = useCallback(() => {
     const hide = hideAttribute(bodyMesh);
@@ -261,10 +302,18 @@ function Models({
         bvhMorphs.current = avatarMorphs;
       }
       if (showTrousers) {
+        // 靴を履いていれば、裾は靴の上に乗ってたまり、ズボンは靴の外へ押し出す
+        const shoeMesh = findMesh(shoeScene, "shoes");
+        const shoeLayer = shoeMesh ? buildGarmentCollider(shoeMesh) : null;
+        const floorAt = shoeLayer ? shoeFloor(shoeLayer) : undefined;
         updatePush(trouserMesh, bodyBVH.current, trouserTopo, {
           covered: NO_COVERED,
-          prepare: stackHems,
+          prepare: (pos) => {
+            stackHems(pos, floorAt);
+          },
+          layers: shoeLayer ? [shoeLayer] : [],
         });
+        shoeLayer?.geometry.dispose();
       }
       if (showShirt) {
         // Tシャツはズボンの上に着るので、押し出したズボンの外へも押し出す
@@ -313,6 +362,7 @@ function Models({
     avatarMorphs,
     onPushStats,
     updateHide,
+    shoeScene,
   ]);
 
   useEffect(() => {
@@ -352,7 +402,12 @@ function Models({
       )}
       {shoe && (
         <Suspense fallback={null}>
-          <PresetModel url={shoe.path} morphs={bodyMorphs} tints={sockTints} />
+          <PresetModel
+            url={shoe.path}
+            morphs={bodyMorphs}
+            tints={sockTints}
+            onScene={setShoeScene}
+          />
         </Suspense>
       )}
     </>
