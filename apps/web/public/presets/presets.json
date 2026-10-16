@@ -56,6 +56,9 @@
       }
     }
   ],
+  "face": {
+    "path": "/presets/face/face.glb"
+  },
   "hairColors": [
     "#1E1B19",
     "#3E2C22",

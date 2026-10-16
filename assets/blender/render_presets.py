@@ -178,6 +178,13 @@ def main():
     body = import_glb(os.path.join(MODELS, "avatar_male.glb"), "avatar")
     tint(body, THUMB_SKIN)
     mask, hidden = hide_under_shoes(body)
+    # 顔のパーツ（目・眉毛・まつ毛）はいつも着ける。眉毛・まつ毛（材質名が hair_）だけ髪の色を掛ける
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(pp.ROOT, "apps", "web", "public", presets["face"]["path"].lstrip("/")))
+    face = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
+    for o in face:
+        if o.data.materials[0].name.startswith("hair"):
+            tint(o, THUMB_HAIR)
     items = []
     for kind in ("hair", "shoes"):
         for e in presets[kind]:
@@ -215,7 +222,7 @@ def main():
     paths = []
     for b in pt.BUILDS:
         vals = pt.build_values(b)
-        set_keys([body] + [o for *_, o in items], vals)
+        set_keys([body] + face + [o for *_, o in items], vals)
         for kind, pid, obj in items:
             obj.hide_render = False
             mask.show_render = kind == "shoes"
