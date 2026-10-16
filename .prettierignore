@@ -16,3 +16,6 @@ apps/web/public/models/*.json
 
 # Blenderの生成スクリプトが書き出すので整形しない
 apps/web/public/presets/*.json
+
+# テクスチャ担当のUVを書き出したデータなので整形しない
+assets/blender/data/*.json

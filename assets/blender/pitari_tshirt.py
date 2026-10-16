@@ -766,6 +766,38 @@ def thumb_in_shape(body):
     return out
 
 
+PITARI_UV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "tshirt_pitari_uv.json")
+
+
+def topology_sha256(faces):
+    """面ごとの頂点番号を "," でつなぎ ";" で区切った SHA-256（テクスチャ担当の uv_template と同じ作り方）"""
+    import hashlib
+    return hashlib.sha256("".join(",".join(map(str, f)) + ";" for f in faces).encode()).hexdigest()
+
+
+def apply_pitari_uv(obj):
+    """テクスチャ担当が作った Tシャツの UV（pitari、写真から貼る用）を、面の順番どおりに先頭の面へ写し、
+    元の UVMap を消す（glTF の TEXCOORD_0 を pitari にする）。Tシャツの面の並びが変わっていないかを確かめる。
+    写した UV マップを返す（先頭より後ろの面は呼び出した側で埋める）"""
+    with open(PITARI_UV, encoding="utf-8") as fp:
+        data = json.load(fp)
+    me = obj.data
+    n = data["faces"]
+    if topology_sha256([tuple(p.vertices) for p in me.polygons][:n]) != data["topology_sha256"]:
+        raise RuntimeError("Tシャツの面の並びが、pitari の UV を作った時と違います")
+    uv = me.uv_layers.new(name="pitari")
+    k = 0
+    for p in me.polygons[:n]:
+        for li in p.loop_indices:
+            uv.data[li].uv = data["uv"][k]
+            k += 1
+    me.uv_layers.remove(me.uv_layers["UVMap"])
+    uv = me.uv_layers["pitari"]
+    me.uv_layers.active = uv
+    uv.active_render = True
+    return uv
+
+
 def set_point_attribute(obj, name, values):
     me = obj.data
     a = me.attributes.get(name) or me.attributes.new(name, "FLOAT", "POINT")

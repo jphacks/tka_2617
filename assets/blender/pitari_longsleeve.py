@@ -384,3 +384,171 @@ def make_drape_keys(shirt, body, lm):
     for e in DRAPE_CM:
         res, P0 = drape_shape(shirt, body, lm, e)
         pt.set_key_from_world(shirt, f"drape_{e}", B + (res - P0))
+
+
+# ---------------------------------------------------------------- 写真から貼る用の UV（pitari）
+
+UV_MARGIN = 0.02            # 並べ直した島の、画像の端と島どうしの間の余白（UV）
+
+
+UV_MIN_RUN = 8              # 袖口を一周したとき、島がこの本数より短く入れ替わる所は、隣の島にそろえる
+
+
+def _face_island(me, loop_uv, f):
+    return "front" if np.mean([loop_uv[(f.index, v)][0] for v in f.vertices]) < 0.5 else "back"
+
+
+def _merge_short_runs(cols, cuff, me, loop_uv, n):
+    """袖口の辺ごとの島（cols[c] = (島, {0: 始まりの頂点の UV, 1: 終わりの頂点の UV})）のうち、
+    短く入れ替わる所を隣の島にそろえる。テクスチャ担当の UV は袖の前後の切れ目が階段状なので、
+    そのままだと、離れた所の島から細い帯が延びる。そろえた辺の UV は、その島での頂点の UV、無ければ隣の辺から延ばす"""
+    labels = [cols[c][0] for c in range(n)]
+    start = next(c for c in range(n) if labels[c] != labels[c - 1])     # 島の変わり目から一周する
+    runs, cur = [], [start]
+    for k in range(1, n):
+        c = (start + k) % n
+        if labels[c] == labels[cur[-1]]:
+            cur.append(c)
+        else:
+            runs.append(cur); cur = [c]
+    runs.append(cur)
+    for i, run in enumerate(runs):
+        if len(run) >= UV_MIN_RUN:
+            continue
+        prev_run, next_run = runs[i - 1], runs[(i + 1) % len(runs)]
+        target = labels[(prev_run if len(prev_run) >= len(next_run) else next_run)[0]]
+        for c in run:
+            ends = {}
+            for k, v in enumerate((cuff[c], cuff[(c + 1) % n])):
+                for p in me.polygons:
+                    if v in p.vertices and (p.index, v) in loop_uv and _face_island(me, loop_uv, p) == target:
+                        ends[k] = loop_uv[(p.index, v)]
+                        break
+            cols[c] = (target, ends)
+    # 島での UV が無い頂点は、同じ島の隣の辺の UV から直線で延ばす
+    for c in range(n):
+        isl, ends = cols[c]
+        for k in (0, 1):
+            if k in ends:
+                continue
+            a, b = cols[(c - 1) % n], cols[(c - 2) % n]
+            if a[0] == isl and b[0] == isl and 0 in a[1] and 0 in b[1]:
+                ends[k] = a[1][0] + (a[1][0] - b[1][0]) * (1 + k)
+            else:
+                a, b = cols[(c + 1) % n], cols[(c + 2) % n]
+                ends[k] = a[1][1] + (a[1][1] - b[1][1]) * (2 - k)
+
+
+UV_CUFF_JUMP = 0.008        # 袖口の UV が、同じ島の隣の列から袖の向きにこれより離れていたら、隣に合わせる
+UV_CUFF_WINDOW = 3          # 比べる隣の列の数（片側）
+
+
+def _straighten_cuff(cols, n, step):
+    """延ばし始める袖口の UV を、袖の向きにそろえる。テクスチャ担当の UV は袖の前後の切れ目が階段状で、
+    切れ目の近くの数列だけ袖口が袖の先の方へずれ、そこから延ばすと細い帯が飛び出すため。
+    同じ島の隣の列（両側 UV_CUFF_WINDOW 列）の、袖の向きの位置の中央値から UV_CUFF_JUMP より離れた端を、中央値に合わせる"""
+    for isl, st in step.items():
+        d = st / np.linalg.norm(st)
+        idx = [c for c in range(n) if cols[c][0] == isl]
+        along = {(c, k): float(cols[c][1][k] @ d) for c in idx for k in (0, 1)}
+        fixed = {}
+        for c in idx:
+            near = [along[(cc, k)] for cc in idx
+                    if 0 < min((cc - c) % n, (c - cc) % n) <= UV_CUFF_WINDOW for k in (0, 1)]
+            if not near:
+                continue
+            med = float(np.median(near))
+            for k in (0, 1):
+                if abs(along[(c, k)] - med) > UV_CUFF_JUMP:
+                    fixed[(c, k)] = cols[c][1][k] + d * (med - along[(c, k)])
+        for (c, k), v in fixed.items():
+            cols[c][1][k] = v
+        if fixed:
+            pt.log(f"pitari UV: 袖口の位置をそろえた端 {len(fixed)}（{isl}）")
+
+
+def extend_pitari_uv(shirt, lm):
+    """長袖の pitari UV を作る。Tシャツの部分はテクスチャ担当の UV（apply_pitari_uv で写したもの）のまま、
+    手首まで足した面は、袖口の島（前身頃か後身頃）を、その島での袖の向きにまっすぐ延ばす（長さは袖口の近くの縮尺で）。
+    延ばすと左右の島の袖がぶつかるので、前身頃を上半分、後身頃を下半分に、同じ縮尺で並べ直す"""
+    me = shirt.data
+    uv = me.uv_layers["pitari"]
+    P = pt.world_coords(shirt, "Basis")
+    U = np.empty(len(me.loops) * 2); uv.data.foreach_get("uv", U); U = U.reshape(-1, 2)
+    where = {}                                     # 足した輪の頂点 → (輪の番号, 列)
+    for side in ("left", "right"):
+        for j, ring in enumerate(lm["sides"][side]["rings"]):
+            for c, v in enumerate(ring):
+                where[v] = (side, j, c)
+    new_faces = [p for p in me.polygons if any(where.get(v, (0, 0))[1] > 0 for v in p.vertices)]
+    new_ids = {p.index for p in new_faces}
+    old_by_edge = {}
+    for p in me.polygons:
+        if p.index in new_ids:
+            continue
+        vs = list(p.vertices)
+        for k in range(len(vs)):
+            old_by_edge[frozenset((vs[k], vs[(k + 1) % len(vs)]))] = p
+    loop_uv = {}                                   # (面, 頂点) → UV
+    for p in me.polygons:
+        for li in p.loop_indices:
+            loop_uv[(p.index, me.loops[li].vertex_index)] = U[li]
+
+    island = {}                                    # 足した面 → "front" か "back"
+    for side in ("left", "right"):
+        rings = lm["sides"][side]["rings"]
+        cuff, n = rings[0], len(rings[0])
+        # 列ごとの、袖口から輪までの長さ（3D）
+        dist = np.zeros((len(rings), n))
+        for j in range(1, len(rings)):
+            dist[j] = dist[j - 1] + np.linalg.norm(P[rings[j]] - P[rings[j - 1]], axis=1)
+        # 袖口の辺ごとに、隣の Tシャツの面から、島・袖口の UV・袖の向き・縮尺を取る
+        cols, samples = {}, {"front": [], "back": []}
+        for c in range(n):
+            a, b = cuff[c], cuff[(c + 1) % n]
+            f = old_by_edge[frozenset((a, b))]
+            ua, ub = loop_uv[(f.index, a)], loop_uv[(f.index, b)]
+            isl = "front" if (ua[0] + ub[0]) / 2 < 0.5 else "back"
+            inner = [v for v in f.vertices if v not in (a, b)]
+            ui = np.mean([loop_uv[(f.index, v)] for v in inner], axis=0)
+            pc, pi = (P[a] + P[b]) / 2, P[inner].mean(0)
+            duv = (ua + ub) / 2 - ui
+            samples[isl].append((duv, np.linalg.norm(duv) / np.linalg.norm(pc - pi)))
+            cols[c] = (isl, {0: ua, 1: ub})
+        _merge_short_runs(cols, cuff, me, loop_uv, n)
+        step = {}
+        for isl, ss in samples.items():
+            if ss:
+                d = np.mean([s[0] / np.linalg.norm(s[0]) for s in ss], axis=0)
+                step[isl] = d / np.linalg.norm(d) * float(np.median([s[1] for s in ss]))
+        _straighten_cuff(cols, n, step)
+        for p in new_faces:
+            if where[p.vertices[0]][0] != side:
+                continue
+            cs = {where[v][2] for v in p.vertices}
+            c = (n - 1) if cs == {n - 1, 0} else min(cs)
+            isl, ends = cols[c]
+            island[p.index] = isl
+            for li in p.loop_indices:
+                v = me.loops[li].vertex_index
+                _, j, cv = where[v]
+                base = ends[0] if cv == c else ends[1]
+                U[li] = base + step[isl] * dist[j, cv]
+
+    # 島ごとに並べ直す（前身頃を上半分、後身頃を下半分。縮尺は両方で同じ）
+    loop_isl = np.empty(len(me.loops), dtype=object)
+    for p in me.polygons:
+        isl = island.get(p.index)
+        if isl is None:
+            isl = "front" if U[list(p.loop_indices)][:, 0].mean() < 0.5 else "back"
+        loop_isl[list(p.loop_indices)] = isl
+    boxes = {isl: (U[loop_isl == isl].min(0), U[loop_isl == isl].max(0)) for isl in ("front", "back")}
+    scale = min(min((1 - 2 * UV_MARGIN) / (hi[0] - lo[0]), (0.5 - 1.5 * UV_MARGIN) / (hi[1] - lo[1]))
+                for lo, hi in boxes.values())
+    for isl, cy in (("front", 0.75 - UV_MARGIN / 4), ("back", 0.25 + UV_MARGIN / 4)):
+        lo, hi = boxes[isl]
+        m = loop_isl == isl
+        U[m] = (U[m] - (lo + hi) / 2) * scale + np.array([0.5, cy])
+    uv.data.foreach_set("uv", U.ravel())
+    me.update()
+    pt.log(f"pitari UV: 足した面 {len(new_faces)}、縮尺 {scale:.3f}（Tシャツの配置に対して）")

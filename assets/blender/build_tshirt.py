@@ -130,6 +130,7 @@ def main():
     shirt.parent = None
     shirt.matrix_world = mw
     pt.simple_material(shirt, "tshirt", (0.92, 0.92, 0.95, 1.0))
+    pt.apply_pitari_uv(shirt)                     # 写真から貼る用の UV（テクスチャ担当が作ったもの）
 
     # 体：helper を消して標準体型を Basis に → 体型キー・身長キー → 服の下の重み（_cover）、靴で隠れる所（_shoe）
     keep = pt.bake_body(body)
