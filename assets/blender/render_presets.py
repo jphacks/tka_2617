@@ -67,15 +67,16 @@ def tint(obj, hex_color):
         links.new(mul.outputs[0], sock)
 
 
-def hide_under_shoes(body):
-    """ブラウザで靴を履いたときと同じく、_shoe が 1 の体の頂点を隠す"""
-    attr = body.data.attributes.get("_SHOE") or body.data.attributes.get("_shoe")
+def hide_under_shoes(body, sid):
+    """ブラウザで靴 sid を履いたときと同じく、_shoe_<sid> が 1 の体の頂点を隠す Mask（はじめは切ってある）"""
+    name = f"_shoe_{sid}"
+    attr = body.data.attributes.get(name.upper()) or body.data.attributes.get(name)
     w = np.empty(len(body.data.vertices), dtype=np.float32)
     attr.data.foreach_get("value", w)
-    g = body.vertex_groups.new(name="shoe")
+    g = body.vertex_groups.new(name=f"shoe_{sid}")
     g.add([int(i) for i in np.where(w > 0.5)[0]], 1.0, "REPLACE")
-    m = body.modifiers.new("shoe", "MASK")
-    m.vertex_group, m.invert_vertex_group = "shoe", True
+    m = body.modifiers.new(f"shoe_{sid}", "MASK")
+    m.vertex_group, m.invert_vertex_group = f"shoe_{sid}", True
     m.show_render = m.show_viewport = False
     return m, w
 
@@ -177,7 +178,13 @@ def main():
         standard_cm = json.load(fp)["standard_cm"]
     body = import_glb(os.path.join(MODELS, "avatar_male.glb"), "avatar")
     tint(body, THUMB_SKIN)
-    mask, hidden = hide_under_shoes(body)
+    masks = {e["id"]: hide_under_shoes(body, e["id"]) for e in presets["shoes"]}
+    no_hidden = np.zeros(len(body.data.vertices))
+
+    def show_masks(kind, pid):
+        """靴を描くときだけ、その靴の Mask を入れる"""
+        for sid, (m, _) in masks.items():
+            m.show_render = kind == "shoes" and pid == sid
     # 顔のパーツ（目・眉毛・まつ毛）はいつも着ける。眉毛・まつ毛（材質名が hair_）だけ髪の色を掛ける
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=os.path.join(pp.ROOT, "apps", "web", "public", presets["face"]["path"].lstrip("/")))
@@ -210,7 +217,7 @@ def main():
     # サムネイル（標準体型・標準の身長）
     for kind, pid, obj in items:
         obj.hide_render = False
-        mask.show_render = kind == "shoes"
+        show_masks(kind, pid)
         lo, hi = frame(kind, obj)
         for view in ("front", "angle"):
             render(cam, lo, hi, view, os.path.join(THUMBS, f"{kind}_{pid}_{view}.png"), THUMB_PX)
@@ -225,7 +232,7 @@ def main():
         set_keys([body] + face + [o for *_, o in items], vals)
         for kind, pid, obj in items:
             obj.hide_render = False
-            mask.show_render = kind == "shoes"
+            show_masks(kind, pid)
             lo, hi = frame(kind, obj)
             for view in ("angle", "back"):
                 p = os.path.join(tmp, f"{b}_{kind}_{pid}_{view}.png")
@@ -240,7 +247,7 @@ def main():
         for h_cm in [standard_cm] + CHECK_HEIGHTS_CM:
             vals = pt.build_values(b, None, h_cm - standard_cm)
             res = [f"{kind}/{pid} {n} ({d:.2f}cm)" for kind, pid, obj in items
-                   for n, d in [penetration(body, hidden, obj, vals)]]
+                   for n, d in [penetration(body, masks[pid][1] if kind == "shoes" else no_hidden, obj, vals)]]
             pt.log(f"  {b:8s} {h_cm:6.1f}cm  " + ", ".join(res))
     pt.log("完了")
 

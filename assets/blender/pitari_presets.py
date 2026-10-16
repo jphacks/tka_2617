@@ -27,7 +27,8 @@ HAIR = {
     "spiky": ("short01", "無造作ショート"),
 }
 SHOES = {
-    "sneaker": ("shoes05", "スニーカー"),
+    "sneaker": ("shoes05", "スニーカー（白）"),
+    "leather": ("shoes04", "革靴（黒）"),
 }
 # 顔のパーツ（目・眉毛・まつ毛）。いつも着ける。PRESETS/face/face.glb に 1 つにまとめる
 FACE = {
@@ -38,6 +39,8 @@ FACE = {
 EYE_TEXTURE = os.path.join(MH_DATA, "eyes", "materials", "brown_eye.png")
 SKIN = os.path.join(MH_DATA, "skins", "young_caucasian_male", "young_lightskinned_male_diffuse.png")
 HAIR_COLORS = ["#1E1B19", "#3E2C22", "#6B4A32", "#9C7451", "#C9A86A", "#9A9894"]
+# 靴下の色：白・ライトグレー・チャコール・黒・紺・ベージュ
+SOCK_COLORS = ["#F2F2F2", "#B8B8B8", "#55575C", "#1F1F22", "#2B3A55", "#D6C6AA"]
 SKIN_COLORS = ["#F3E2D2", "#E8CBB0", "#D6AC89", "#BC8963", "#8F5E3D", "#5C3B26"]
 
 TEXTURE_MAX = 1024
@@ -47,7 +50,6 @@ HAIR_GRAY_MEDIAN = 0.8
 SKIN_GRAY_MEDIAN = 0.9
 # 眉毛・まつ毛のテクスチャは薄い半透明なので、アルファをこの倍にしてから 0.5 で切る
 BROW_ALPHA_GAIN = 3.0
-SHOE_DELETE_GROUP = "Delete." + SHOES["sneaker"][0]
 
 
 # 種類 → (MakeHuman の data の下のフォルダ, MPFB の asset_type)
@@ -217,15 +219,30 @@ def export_glb_many(objs, path):
     pt.log("GLB:", path)
 
 
-# 靴のテクスチャ（shoes05_diffuse.png）で靴下が入っている所（右下の四角、Blender の UV）
-SOCK_UV_MIN = (0.76, 0.0)
-SOCK_UV_MAX = (1.0, 0.155)
+# 靴ごとの、テクスチャで靴下が入っている四角（Blender の UV の最小・最大）と、靴の色の扱い。
+# white：白一色にする（元の明るさは陰影として少しだけ残す）。そうでなければ元の色のまま
+SHOE_STYLE = {
+    "shoes05": {"sock": ((0.76, 0.0), (1.0, 0.155)), "white": True},
+    "shoes04": {"sock": ((0.83, 0.73), (1.0, 1.0)), "white": False},
+}
+SHOE_WHITE_FLOOR = 0.86     # 白くするとき、元の明るさ 0 → この値、1 → 1
 SOCK_GRAY_MEDIAN = 0.85
 
 
+def shoe_delete_group(asset):
+    """靴を着せたとき、MPFB が体に作る「靴で隠れる頂点」の頂点グループ"""
+    return "Delete." + asset
+
+
+def _in_box(u, v, box):
+    (u0, v0), (u1, v1) = box
+    return u0 <= u <= u1 and v0 <= v <= v1
+
+
 def shoe_texture(asset):
-    """靴のテクスチャを灰色にする。靴は明るさをそのまま使う（白い甲と黒い側面・靴底の明暗を残す）。
-    靴下の四角は明るさの中央値を SOCK_GRAY_MEDIAN に揃える（ブラウザで靴下の色を掛けるため）"""
+    """靴のテクスチャ。靴は SHOE_STYLE の white なら白一色に、そうでなければ元の色のまま。
+    靴下の四角は灰色にして、明るさの中央値を SOCK_GRAY_MEDIAN に揃える（ブラウザで靴下の色を掛けるため）"""
+    style = SHOE_STYLE[asset]
     src = os.path.join(MH_DATA, "clothes", asset, f"{asset}_diffuse.png")
     img = bpy.data.images.load(src, check_existing=False)
     w, h = img.size
@@ -237,21 +254,24 @@ def shoe_texture(asset):
     px = px.reshape(h, w, 4)                                  # bpy の画素は下の行から（v が小さい方から）
     bpy.data.images.remove(img)
     lum = px[:, :, :3] @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
-    x0, x1 = int(SOCK_UV_MIN[0] * w), int(SOCK_UV_MAX[0] * w)
-    y0, y1 = int(SOCK_UV_MIN[1] * h), int(SOCK_UV_MAX[1] * h)
-    sock = lum[y0:y1, x0:x1]
-    lum[y0:y1, x0:x1] = np.clip(sock * (SOCK_GRAY_MEDIAN / float(np.median(sock))), 0, 1)
     out = np.ones((h, w, 4), dtype=np.float32)
-    out[:, :, 0] = out[:, :, 1] = out[:, :, 2] = lum
-    res = bpy.data.images.new(f"{asset}_gray", w, h)
+    if style["white"]:
+        out[:, :, :3] = (SHOE_WHITE_FLOOR + (1 - SHOE_WHITE_FLOOR) * lum)[:, :, None]
+    else:
+        out[:, :, :3] = px[:, :, :3]
+    (u0, v0), (u1, v1) = style["sock"]
+    x0, x1, y0, y1 = int(u0 * w), int(u1 * w), int(v0 * h), int(v1 * h)
+    sock = lum[y0:y1, x0:x1]
+    out[y0:y1, x0:x1, :3] = np.clip(sock * (SOCK_GRAY_MEDIAN / float(np.median(sock))), 0, 1)[:, :, None]
+    res = bpy.data.images.new(f"{asset}_shoe", w, h)
     res.pixels.foreach_set(out.ravel())
     os.makedirs(OUT, exist_ok=True)
-    res.filepath_raw = os.path.join(OUT, f"{asset}_gray.jpg"); res.file_format = "JPEG"; res.save()
+    res.filepath_raw = os.path.join(OUT, f"{asset}_shoe.jpg"); res.file_format = "JPEG"; res.save()
     return res
 
 
 def shoe_material(obj, asset):
-    """靴と靴下で材質を分ける（材質名 shoes と socks。ブラウザで別々の色を掛けられる）。どちらも同じ灰色のテクスチャ"""
+    """靴と靴下で材質を分ける（材質名 shoes と socks。ブラウザで別々の色を掛けられる）。どちらも同じテクスチャ"""
     img = shoe_texture(asset)
     me = obj.data
     me.materials.clear()
@@ -261,7 +281,7 @@ def shoe_material(obj, asset):
     socks = 0
     for p in me.polygons:
         u, v = np.mean([uv[li].uv for li in p.loop_indices], axis=0)
-        is_sock = SOCK_UV_MIN[0] <= u <= SOCK_UV_MAX[0] and SOCK_UV_MIN[1] <= v <= SOCK_UV_MAX[1]
+        is_sock = _in_box(u, v, SHOE_STYLE[asset]["sock"])
         p.material_index = 1 if is_sock else 0
         socks += is_sock
     pt.log(f"靴下の面 {socks} / {len(me.polygons)}")

@@ -8,7 +8,7 @@
   apps/web/public/presets/hair/<id>.glb       髪（体型キー 3 個＋身長キー 2 個、灰色のテクスチャ、alphaMode MASK）
   apps/web/public/presets/shoes/<id>.glb      靴（体型キー 3 個＋身長キー 2 個、灰色のテクスチャ。靴と靴下で材質を分ける）
   apps/web/public/presets/face/face.glb       顔のパーツ：目・眉毛・まつ毛（いつも着ける。眉毛・まつ毛は髪の色を掛ける）
-  apps/web/public/presets/presets.json        ファイルのパス、表示名、髪の色・肌の色
+  apps/web/public/presets/presets.json        ファイルのパス、表示名、髪の色・肌の色・靴下の色
   assets/blender/out/presets/build_presets.blend   確認用
 
 体（avatar_male.glb）は build_tshirt.py が書き出す。髪・靴は体と同じ原点・スケールで、
@@ -45,6 +45,7 @@ def presets_json():
         "face": {"path": "/presets/face/face.glb"},
         "hairColors": pp.HAIR_COLORS,
         "skinColors": pp.SKIN_COLORS,
+        "sockColors": pp.SOCK_COLORS,
     }
 
 
