@@ -69,7 +69,7 @@ PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを確認する。スマ�
 
 ## commit前の確認
 
-lefthookが、stagedのファイルをPrettierで整形し、ESLintで検査する。mdは、textlintで英語と日本語の間の空白を消す（表の中は見ない）。整形の結果は自動でstagedに戻る。lintエラーがあるとcommitできない。
+lefthookが、stagedのファイルをPrettierで整形し、ESLintで検査する。mdは、Prettierの前にtextlintで英語と日本語の間の空白を消す。手で`pnpm lint:md --fix`したときは、続けて`pnpm format`する。整形の結果は自動でstagedに戻る。lintエラーがあるとcommitできない。
 
 ## DB を変えるとき
 
