@@ -18,7 +18,7 @@ export default async function GarmentPage({
       <header className="sticky top-0 z-10 border-b border-line bg-white/96 pt-[env(safe-area-inset-top)] backdrop-blur-sm">
         <div className="relative flex h-11 items-center justify-center">
           <Link
-            href="/"
+            href="/closet"
             aria-label="クローゼットに戻る"
             className="absolute left-1 flex size-11 items-center justify-center rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main"
           >

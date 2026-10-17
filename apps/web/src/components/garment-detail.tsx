@@ -172,7 +172,7 @@ export function GarmentDetail({ id }: { id: string }) {
         method: "DELETE",
       });
       if (!response.ok) throw new Error();
-      router.push("/");
+      router.push("/closet");
     } catch {
       setDeleteError("削除できませんでした。もう一度お試しください");
       setDeleting(false);
