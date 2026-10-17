@@ -43,8 +43,16 @@ Dockerを使うのはローカルSupabaseだけ。`supabase start`後にDocker D
 ### 解決出来ること
 ### 今後の展望
 ### 注力したこと（こだわり等）
-* 
-* 
+* **AIが書いても崩れない開発の仕組み**：3人ともAI（Claude Code、Codex）でコードを書く。AIが毎回読む指示（[AGENTS.md](AGENTS.md)）は短くし、守ってほしいことはlintとCIで機械的に止めた。止まったときのメッセージには「なぜ・代わりにどうするか」を日本語で書いたので、AIがそれを読んで自分で直せる
+* **決めたことと理由を残す**：設計の判断を28件のADR（[docs/adr](docs/adr/README.md)）に残し、AIが前提を知らずに作りを変えてしまうのを防いだ
+* **ログインが無くても、DBの鍵をブラウザに出さない**：画面（Next.js）と、DBに触れるapi（Hono）を分け、鍵はapiだけが持つ（[ADR 0001](docs/adr/0001-separate-web-and-api.md)）。webはapiの型をHono RPCでそのまま使うので、分けても型はずれない
+
+| いつ | 何で止めるか |
+| --- | --- |
+| commitの前（lefthook） | Prettier、ESLint、textlint（英語と日本語の間の空白）、ruff（Python） |
+| PRのCI | 上に加えて、型、テスト、build、knip（使っていないコードと依存）、actionlint（workflowの書き間違い）、migration、PRの行数 |
+| マージの後 | mainへのマージで本番に自動で出す。開発用のページは本番では404 |
+| AIの権限 | force push、フックを飛ばすcommit、クラウドのDBへの反映、`.env`の読み取りを止める（[.claude/settings.json](.claude/settings.json)、[.codex/rules/project.rules](.codex/rules/project.rules)） |
 
 ## 開発技術
 ### 活用した技術
@@ -62,5 +70,7 @@ Dockerを使うのはローカルSupabaseだけ。`supabase start`後にDocker D
 
 ### 独自技術
 #### ハッカソンで開発した独自機能・技術
-* 独自で開発したものの内容をこちらに記載してください
-* 特に力を入れた部分をファイルリンク、またはcommit_idを記載してください。
+* **AIの誤りを止める独自のlintのルール**：サーバー専用のファイルに`import "server-only"`を書き忘れる、秘密に見える名前の環境変数を`NEXT_PUBLIC_`にする、画面から外部のURLを直接呼ぶ、Honoのルートを別の文で足してwebから型が見えなくなる、などを止める（[apps/web/eslint.config.mjs](apps/web/eslint.config.mjs)、[apps/api/eslint.config.mjs](apps/api/eslint.config.mjs)）
+* **Blenderが書き出した3Dの表を、webのテストで確かめる**：服の表（身長・体型ごとのシェイプキーの効き方）を実際に読み、4体型×4身長で「寸法からキーを解き、キーから寸法を作り直すと元に戻るか」を確かめる。ズボンは、写真の寸法が矛盾しても、キーの値が暴れないことを確かめる（抑えないと284まで、抑えると15.8に収まる）（[apps/web/tests/](apps/web/tests/)）
+* **PRの大きさの警告**：ロックファイルやBlenderの書き出しなどの生成物に印を付けて除き（[.gitattributes](.gitattributes)）、400行を超えたら警告する。AIが作るPRは大きくなりやすいため（[scripts/pr-size.sh](scripts/pr-size.sh)）
+* **migrationを空のDBで確かめる**：PRごとにSupabaseのDBを空の状態で起動し、migrationとseedが最後まで通るか、DBの関数に誤りが無いかを確かめる（[.github/workflows/db.yml](.github/workflows/db.yml)）
