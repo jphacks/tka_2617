@@ -162,7 +162,7 @@ apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBear
 
 ### アバター設定の候補（ログインを入れるまで作らない）
 
-アバターの設定は、ログインを入れるまでAPIを作らず、ブラウザのlocalStorageに保存する。ログインが無いうちにDBへ保存すると、全員が同じデモユーザーなので上書きし合い、身長や性別を誰でも読めてしまうため（[ADR 0035](adr/0035-avatar-settings-in-browser.md)）。
+アバターの設定は、ログインを入れるまでAPIを作らず、ブラウザのlocalStorageに保存する。ログインが無いうちにDBへ保存すると、全員が同じデモユーザーなので上書きし合い、身長や性別を誰でも読めてしまうため（[ADR 0036](adr/0036-avatar-settings-in-browser.md)）。
 
 - ログインを入れたら、`GET/PUT /v1/avatar`で次の形を読み書きする。項目と値は`apps/web/src/lib/avatar-settings.ts`の`AvatarSettings`と同じ。
 - `{ gender, heightCm, build, bodyFrame, skinColor, hairId, hairColor }`。まだ登録していなければ`GET`は`null`を返す。

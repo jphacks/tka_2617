@@ -2,7 +2,7 @@ import { z } from "zod";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import presetsJson from "@/../public/presets/presets.json";
 
-// アバターの設定。ログインを入れるまでは、ブラウザのlocalStorageに保存する（docs/adr/0035-avatar-settings-in-browser.md）
+// アバターの設定。ログインを入れるまでは、ブラウザのlocalStorageに保存する（docs/adr/0036-avatar-settings-in-browser.md）
 
 /** 体型4つ。standardはBasisそのもの（キーなし）。がっしり＝筋肉、ぽっちゃり＝体重 */
 export const BUILDS = ["slim", "standard", "broad", "chubby"] as const;
