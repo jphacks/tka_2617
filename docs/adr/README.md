@@ -46,6 +46,7 @@
 - [0029 DBの型をmigrationから作ってcommitし、apiのSupabaseのクライアントに付ける](0029-commit-db-types.md)
 - [0030 APIの型はapiのzodから作ってHono RPCで渡し、Orvalは入れない](0030-api-types-from-zod-not-orval.md)
 - [0031 テクスチャの保存フォルダを生成日時から始める](0031-texture-filenames-with-dates.md)
+- [0032 重ね着の「タイト」「小さすぎます」は、中の服1枚分の厚みを体の身幅に足して決める](0032-layered-fit-status.md)
 
 ## 参考文献
 

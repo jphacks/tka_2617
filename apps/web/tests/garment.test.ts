@@ -12,11 +12,13 @@ import {
   heightKeyValues,
   type HeightTable,
   HeightTableSchema,
+  LAYER_WIDTH_CM,
   MEASUREMENT_KEYS,
   type Measurements,
   sizeKeyValues,
   solveLinear,
   STRETCH_RATIO,
+  WOVEN_STRETCH_RATIO,
 } from "@/lib/garment";
 
 // Blenderが書き出した表。書き出し直して形が変わったら、ここで止まる
@@ -91,6 +93,63 @@ void test("身幅で着られるかを決める：体以上はfits、伸ばせ�
   assert.equal(fitStatus(withWidth(48), fit), "tight");
   assert.equal(fitStatus(withWidth(50 * (1 - STRETCH_RATIO)), fit), "tight");
   assert.equal(fitStatus(withWidth(44), fit), "tooSmall");
+});
+
+void test("織物のシャツは伸びが小さいので、ニットならtightの身幅でもtooSmallになる", () => {
+  const fit: Fit = {
+    base: { length: 70, width: 50, shoulder: 45, sleeve: 60 },
+    m: [],
+    bodyWidth: 50,
+  };
+  const withWidth = (width: number): Measurements => ({ ...fit.base, width });
+  const woven = { stretchRatio: WOVEN_STRETCH_RATIO };
+  assert.equal(fitStatus(withWidth(50), fit, woven), "fits");
+  assert.equal(fitStatus(withWidth(49), fit, woven), "tight");
+  assert.equal(
+    fitStatus(withWidth(50 * (1 - WOVEN_STRETCH_RATIO)), fit, woven),
+    "tight",
+  );
+  assert.equal(fitStatus(withWidth(48), fit, woven), "tooSmall");
+  assert.equal(fitStatus(withWidth(48), fit), "tight");
+});
+
+void test("中にもう1枚着ているときは、体の身幅に1枚分を足して比べる", () => {
+  const fit: Fit = {
+    base: { length: 70, width: 50, shoulder: 45, sleeve: 60 },
+    m: [],
+    bodyWidth: 50,
+  };
+  const withWidth = (width: number): Measurements => ({ ...fit.base, width });
+  const layered = { layered: true };
+  const under = 50 + LAYER_WIDTH_CM;
+  // 1枚分は、押し出しで外の服を中の服から離す4mmの厚みの分（約1.26cm）
+  assertClose(LAYER_WIDTH_CM, 1.2566, 1e-4);
+  assert.equal(fitStatus(withWidth(under), fit, layered), "fits");
+  // 体の上だけならfitsでも、中に着るとtight
+  assert.equal(fitStatus(withWidth(51), fit), "fits");
+  assert.equal(fitStatus(withWidth(51), fit, layered), "tight");
+  assert.equal(
+    fitStatus(withWidth(under * (1 - STRETCH_RATIO)), fit, layered),
+    "tight",
+  );
+  // 体の上だけならtightでも、中に着るとtooSmall
+  assert.equal(fitStatus(withWidth(45.5), fit), "tight");
+  assert.equal(fitStatus(withWidth(45.5), fit, layered), "tooSmall");
+  // 織物のシャツの伸びと重ね着は、一緒に効く
+  assert.equal(
+    fitStatus(withWidth(50), fit, {
+      layered: true,
+      stretchRatio: WOVEN_STRETCH_RATIO,
+    }),
+    "tight",
+  );
+  assert.equal(
+    fitStatus(withWidth(49), fit, {
+      layered: true,
+      stretchRatio: WOVEN_STRETCH_RATIO,
+    }),
+    "tooSmall",
+  );
 });
 
 void test("連立方程式は、最初の係数が0でも行を入れ替えて解ける", () => {
