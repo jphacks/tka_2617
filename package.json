@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter \"./apps/*\" dev",
     "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
+    "lint": "pnpm -r lint && pnpm lint:md",
     "lint:md": "textlint \"**/*.md\"",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",

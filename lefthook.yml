@@ -5,6 +5,10 @@ pre-commit:
       glob: "*.{js,mjs,ts,tsx,json,md,yml,yaml,css}"
       run: pnpm exec prettier --write --ignore-unknown {staged_files}
       stage_fixed: true
+    - name: lint md
+      glob: "*.md"
+      run: pnpm exec textlint --fix {staged_files}
+      stage_fixed: true
     - name: lint web
       root: "apps/web/"
       glob: "*.{ts,tsx,mjs}"

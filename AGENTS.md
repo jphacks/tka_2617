@@ -16,7 +16,7 @@
 - 読みやすい名前と素直なコードを選ぶ。共通化は本当に同じ処理だけ。コメントは必要な「なぜ」だけを書く。仕様番号は振らない。
 - importはwebで`@/`、apiで`#src/`を使う。
 - deprecatedな書き方を避ける。Next.jsの実装前に`apps/web/node_modules/next/dist/docs`の該当ガイドを確認する。
-- docs・コメントは日本語。PR本文やレビューを含め、英語と日本語の間に半角スペースを入れない。コード・コマンド・URLの空白は維持する。
+- docs・コメントは日本語。PR本文やレビューを含め、英語と日本語の間に半角スペースを入れない。コード・コマンド・URLの空白は維持する。mdは`pnpm lint`のtextlintで確かめる。
 - API追加は`docs/api.md`→zodスキーマ→apiのroute→webのBFFの順。
 - DB変更は`supabase/migrations`のみ。新しいテーブルはRLSを有効にし、`docs/er.md`を更新する。
 - 設計上の決定は`docs/adr/`に1件ずつ残す。候補要件は`docs/requirements-candidates.md`へ。
