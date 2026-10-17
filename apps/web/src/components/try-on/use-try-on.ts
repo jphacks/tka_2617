@@ -25,7 +25,12 @@ import {
 } from "@/lib/garment";
 import type { GarmentView } from "@pitari/api";
 import { PresetsSchema } from "@/lib/presets";
-import { checkSizes, TOP_VERIFIED, TROUSER_VERIFIED } from "@/lib/size-check";
+import {
+  checkSizes,
+  TOP_VERIFIED,
+  TROUSER_VERIFIED,
+  withinLimits,
+} from "@/lib/size-check";
 import { drapeKeyValues } from "@/lib/sleeve-drape";
 import {
   TROUSER_KEYS,
@@ -255,9 +260,14 @@ export function useTryOn(
     () => checkSizes(MEASUREMENT_KEYS, input, fit.base, TOP_VERIFIED),
     [input, fit.base],
   );
-  const target = useLastValid(
+  const keptTarget = useLastValid(
     Object.keys(topCheck.problems).length === 0 ? parsedTarget : null,
   );
+  // 身長や体型を変えて基準寸法が変わると、保っていた寸法が範囲の外になることがある。そのときは服を基準の形で出す
+  const target =
+    keptTarget && withinLimits(MEASUREMENT_KEYS, keptTarget, fit.base)
+      ? keptTarget
+      : null;
   const size = useMemo(
     () => (target ? sizeKeyValues(target, fit, topTable) : null),
     [fit, target, topTable],
@@ -273,11 +283,16 @@ export function useTryOn(
       checkSizes(TROUSER_KEYS, trouserInput, trouserFit.base, TROUSER_VERIFIED),
     [trouserInput, trouserFit.base],
   );
-  const trouserTarget = useLastValid(
+  const keptTrouserTarget = useLastValid(
     Object.keys(trouserCheck.problems).length === 0
       ? parsedTrouserTarget
       : null,
   );
+  const trouserTarget =
+    keptTrouserTarget &&
+    withinLimits(TROUSER_KEYS, keptTrouserTarget, trouserFit.base)
+      ? keptTrouserTarget
+      : null;
   const trouserSize = useMemo(
     () =>
       trouserTarget

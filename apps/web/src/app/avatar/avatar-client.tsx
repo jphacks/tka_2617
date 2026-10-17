@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { useId, useState, useSyncExternalStore, type ReactNode } from "react";
 import { AvatarErrorBoundary } from "@/components/avatar-error-boundary";
 import { AvatarFrame } from "@/components/avatar-frame";
 import { ColorChoices } from "@/components/try-on/color-choices";
@@ -116,6 +116,8 @@ function SizeInput({
   problem: string | undefined;
   outside: boolean;
 }) {
+  // スクリーンリーダーでも、欄から直す内容や案内を読めるようにする
+  const noteId = useId();
   return (
     <>
       <label className="flex items-center justify-between gap-2">
@@ -130,16 +132,19 @@ function SizeInput({
               onChange(e.target.value);
             }}
             aria-invalid={problem !== undefined}
+            aria-describedby={problem || outside ? noteId : undefined}
             className="w-18 rounded border border-line px-2 py-1 text-right text-base tabular-nums aria-invalid:border-red-600"
           />
           <span className="text-xs text-muted">cm</span>
         </span>
       </label>
       {problem ? (
-        <p className="text-right text-xs text-red-600">{problem}</p>
+        <p id={noteId} className="text-right text-xs text-red-600">
+          {problem}
+        </p>
       ) : (
         outside && (
-          <p className="text-right text-xs text-description">
+          <p id={noteId} className="text-right text-xs text-description">
             確かめた範囲の外なので、形がずれることがあります
           </p>
         )

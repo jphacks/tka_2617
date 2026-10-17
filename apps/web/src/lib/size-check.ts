@@ -47,9 +47,10 @@ export function checkSizes<K extends string>(
       problems[k] = "0より大きい数を入れてください";
       continue;
     }
-    const min = Math.ceil(base[k] * MIN_RATIO);
-    const max = Math.floor(base[k] * MAX_RATIO);
-    if (value < min || value > max) {
+    if (!withinLimit(value, base[k])) {
+      // 表示だけ整数にする。範囲の内側に丸めるので、表示した値はどちらも受け付ける
+      const min = Math.ceil(base[k] * MIN_RATIO);
+      const max = Math.floor(base[k] * MAX_RATIO);
       problems[k] = `${String(min)}〜${String(max)}cmで入れてください`;
       continue;
     }
@@ -57,4 +58,17 @@ export function checkSizes<K extends string>(
     if (diff < verified[k][0] || diff > verified[k][1]) outside.push(k);
   }
   return { problems, outside };
+}
+
+/** 前に確かめた寸法が、今の基準寸法でもモデルへ渡せるか。身長や体型を変えると基準寸法が変わるため */
+export function withinLimits<K extends string>(
+  keys: readonly K[],
+  values: Record<K, number>,
+  base: Record<K, number>,
+): boolean {
+  return keys.every((k) => withinLimit(values[k], base[k]));
+}
+
+function withinLimit(value: number, base: number): boolean {
+  return value >= base * MIN_RATIO && value <= base * MAX_RATIO;
 }

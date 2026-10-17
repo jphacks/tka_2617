@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { TOPS, trouserTable } from "@/components/try-on/use-try-on";
 import { fitAt, MEASUREMENT_KEYS } from "@/lib/garment";
-import { checkSizes, TOP_VERIFIED, TROUSER_VERIFIED } from "@/lib/size-check";
+import {
+  checkSizes,
+  TOP_VERIFIED,
+  TROUSER_VERIFIED,
+  withinLimits,
+} from "@/lib/size-check";
 import { TROUSER_KEYS, trouserFitAt } from "@/lib/trousers";
 
 const topBases = Object.entries(TOPS).map(([name, { table }]) => ({
@@ -65,10 +70,9 @@ void test("0・負数・空欄・数値でない値は、モデルへ渡さな�
   }
 });
 
-void test("基準寸法の半分から2倍までを受け付け、その外は範囲を出して止める", () => {
-  const { base } = topBases[0];
-  const min = Math.ceil(base.length * 0.5);
-  const max = Math.floor(base.length * 2);
+void test("基準寸法の半分から2倍までを受け付け、その外は範囲を出して止める（基準寸法が小数でも丸めずに比べる）", () => {
+  // 基準51.3なら25.65〜102.6cm。表示は内側の整数にする
+  const base = { ...topBases[0].base, length: 51.3 };
   const check = (length: number) =>
     checkSizes(
       MEASUREMENT_KEYS,
@@ -76,12 +80,25 @@ void test("基準寸法の半分から2倍までを受け付け、その外は�
       base,
       TOP_VERIFIED,
     ).problems;
-  assert.deepEqual(check(min), {});
-  assert.deepEqual(check(max), {});
-  const message = `${String(min)}〜${String(max)}cmで入れてください`;
-  assert.deepEqual(check(min - 0.5), { length: message });
-  assert.deepEqual(check(max + 0.5), { length: message });
-  assert.deepEqual(check(1000000), { length: message });
+  assert.deepEqual(check(25.7), {});
+  assert.deepEqual(check(102.6), {});
+  const message = { length: "26〜102cmで入れてください" };
+  assert.deepEqual(check(25.6), message);
+  assert.deepEqual(check(102.7), message);
+  assert.deepEqual(check(1000000), message);
+});
+
+void test("前に通った寸法でも、体を変えて基準寸法が変わり範囲の外になれば、モデルへ渡せない", () => {
+  const { base } = topBases[0];
+  const kept = { ...base, width: 30 };
+  assert.equal(
+    withinLimits(MEASUREMENT_KEYS, kept, { ...base, width: 50 }),
+    true,
+  );
+  assert.equal(
+    withinLimits(MEASUREMENT_KEYS, kept, { ...base, width: 62 }),
+    false,
+  );
 });
 
 void test("Blenderで確かめた範囲の端までは案内を出さず、その外は案内だけ出して形は変える", () => {
