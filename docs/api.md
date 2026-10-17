@@ -2,7 +2,7 @@
 
 ## 真上撮影の採寸（現在の方式）
 
-`POST /v1/detections`のoptionsは`{ category: "auto" | "short_sleeve_top" | "trousers", stage: "paper" | "garment" | "landmarks" | "cutout" | "all", paperCorners?: [number, number][], bbox?: [number, number, number, number] }`。stage省略時はall。画像を遠近補正せず、A4の長辺を29.7cm、短辺を21cmとして縮尺を自動計算する。四隅・bbox・ランドマークはすべて送信画像の座標。
+`POST /v1/detections`のoptionsは`{ category: "auto" | "short_sleeve_top" | "trousers", stage: "paper" | "garment" | "landmarks" | "cutout" | "all", paperCorners?: [number, number][], bbox?: [number, number, number, number], points?: LandmarkPoint[] }`。stage省略時はall。画像を遠近補正せず、A4の長辺を29.7cm、短辺を21cmとして縮尺を自動計算する。四隅・bbox・ランドマークはすべて送信画像の座標。
 
 画面の1回の操作からpaper→garment→landmarks→cutoutを順に呼び、工程の切り替わりと経過時間から進捗の目安を1%刻みで表示する。推論内部の実測割合や残り時間の予測値ではなく、100%は全処理の完了後だけ表示する。返却値に`cutoutBase64`（透過PNGまたはnull）と`cutoutWidthPx`・`cutoutHeightPx`（null可）を追加する。
 
@@ -49,11 +49,12 @@ multipartの`image`はJPEG、最大8MiB・1200万画素・各辺4096px。ブラ�
   category: "short_sleeve_top" | "trousers" | "auto";
   paperCorners?: [number, number][];
   bbox?: [number, number, number, number];
+  points?: { id: number; x: number; y: number; score: number | null }[];
   stage?: "paper" | "garment" | "landmarks" | "cutout" | "all";
 }
 ```
 
-四隅は送信画像上の外周順。長辺・短辺は画像上の長さから判断する。bboxは送信画像上の左上・右下で、手動指定する場合はカテゴリも必要。stage省略時は全工程を実行する。
+四隅は送信画像上の外周順。長辺・短辺は画像上の長さから判断する。bboxは送信画像上の左上・右下で、手動指定する場合はカテゴリも必要。stage省略時は全工程を実行する。pointsは前の工程のランドマークで、cutout工程の手がかりにだけ使う。ズボンでは14点で囲んだ輪郭の外を背景として教え、脚の間や腰の外側の床を除く（[ADR 0023](adr/0023-trousers-cutout-with-landmarks.md)）。all工程では同じリクエストで求めた点を使う。
 
 出力は`{ imageId, imageBase64, widthPx, heightPx, category, bbox, points, paperCorners, pixelsPerCm, modelVersion, warnings, elapsedMs, measurements, measurementVersion, cutoutBase64, cutoutWidthPx, cutoutHeightPx }`。
 
@@ -110,7 +111,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 裏面の写真を登録する。既にあれば差し替える。multipartの`image`（裏面のJPEG、必須）と`cutoutImage`（表示用の透過PNG、任意）を受け取り、roleは`back`と`back_cutout`。画像の条件は表の登録と同じ。cutoutImageを送らない場合、古いback_cutoutは消す。成功は`200 { id, texture }`（下を参照）。
 
-裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲→切り抜きの順に`POST /v1/detections`を呼び、範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
+裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲とランドマーク（landmarks工程）→切り抜きの順に`POST /v1/detections`を呼び、ランドマークを切り抜きの手がかりに渡す。範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
 裏面を保存すると、apiは服のカテゴリと表のmeasurement画像・裏面を推論サービスの`POST /textures`へ送り、生成依頼の受付まで待つ。変換の完了は待たない。PUTの応答は`{ id, texture: { status: "accepted" } }`、依頼に失敗した場合は`{ id, texture: { status: "failed", message: "…" } }`。写真は保存済みなので、生成依頼だけが失敗してもPUTは200を返す。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0022](adr/0022-garment-texture-on-pc.md)を参照。
 

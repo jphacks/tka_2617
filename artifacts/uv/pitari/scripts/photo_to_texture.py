@@ -59,25 +59,14 @@ def load_photo(path):
     return cv2.cvtColor(np.array(upright), cv2.COLOR_RGB2BGR), info
 
 
-def garment_mask(image, bbox, paper_corners):
-    """apps/inference/pitari/cutout.pyと同じGrabCutで、写真と同じ大きさの服の領域を返す（切り詰めない）。"""
-    height, width = image.shape[:2]
-    scale = min(1.0, 900 / max(height, width))
-    small = cv2.resize(image, (round(width * scale), round(height * scale)))
-    h, w = small.shape[:2]
-    x1, y1, x2, y2 = np.rint(np.array(bbox) * scale).astype(int)
-    x1, y1, x2, y2 = max(1, x1), max(1, y1), min(w - 2, x2), min(h - 2, y2)
-    mask = np.full((h, w), cv2.GC_BGD, dtype=np.uint8)
-    mask[y1 : y2 + 1, x1 : x2 + 1] = cv2.GC_PR_FGD
-    if len(paper_corners) == 4:
-        cv2.fillConvexPoly(mask, np.rint(np.array(paper_corners) * scale).astype(np.int32), cv2.GC_BGD)
-    cv2.grabCut(small, mask, None, np.zeros((1, 65)), np.zeros((1, 65)), 5, cv2.GC_INIT_WITH_MASK)
-    alpha = np.isin(mask, [cv2.GC_FGD, cv2.GC_PR_FGD]).astype(np.uint8)
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(alpha)
-    if count < 2:
-        raise SystemExit("服と背景を分離できませんでした。--front-bboxで服の範囲を指定してください")
-    alpha = (labels == 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])).astype(np.uint8) * 255
-    return cv2.resize(alpha, (width, height), interpolation=cv2.INTER_NEAREST)
+def garment_mask(image, bbox, paper_corners, points=(), category=None):
+    """apps/inference/pitari/cutout.pyのGrabCutで、写真と同じ大きさの服の領域を返す（切り詰めない）。"""
+    from pitari.cutout import garment_alpha
+
+    try:
+        return garment_alpha(image, bbox, paper_corners, points, category)
+    except ValueError as error:
+        raise SystemExit(f"{error}。--front-bboxなどで服の範囲を指定してください") from None
 
 
 class Inference:
@@ -432,7 +421,7 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
             if garment.shape != photo.shape[:2]:
                 raise SystemExit(f"{mask_path}の大きさが写真と一致しません")
         else:
-            garment = garment_mask(photo, record["bbox"], record["paperCorners"])
+            garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], category)
         garment = fill_holes(garment)
         if not mask_path:
             save_mask(garment > 0, out / f"mask_{view}.png")

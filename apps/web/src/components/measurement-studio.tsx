@@ -137,6 +137,7 @@ export function MeasurementStudio() {
           selectedCategory !== "auto"
             ? (current?.bbox ?? undefined)
             : undefined,
+        points: stage === "cutout" ? (current?.points ?? []) : [],
       }),
     );
     return requestJson<DetectionResult>("/api/detections", {
