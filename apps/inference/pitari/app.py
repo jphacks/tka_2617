@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field, ValidationError
 from pitari.geometry import paper_candidate, paper_scale
 from pitari.cutout import garment_cutout
 from pitari.models import Models, MODEL_VERSION
+from pitari import texture
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 models = Models()
@@ -44,6 +45,21 @@ class Options(BaseModel):
     stage: Literal["all", "paper", "garment", "landmarks", "cutout"] = "all"
 
 
+def read_jpeg(upload):
+    raw = upload.file.read(MAX_BYTES + 1)
+    if len(raw) > MAX_BYTES:
+        raise HTTPException(413, "画像は8MiB以下にしてください")
+    try:
+        with Image.open(io.BytesIO(raw)) as original:
+            if original.format != "JPEG" or original.width * original.height > 12_000_000 or original.getexif().get(274, 1) != 1:
+                raise ValueError()
+            # 四隅の座標を変えないため、向きの確定はブラウザ側で済ませる。
+            source = cv2.cvtColor(np.array(original.convert("RGB")), cv2.COLOR_RGB2BGR)
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
+        raise HTTPException(400, "向きを確定したJPEG画像を選んでください（最大1200万画素）") from None
+    return raw, source
+
+
 @app.get("/health")
 def health():
     return {"ok": True}
@@ -61,20 +77,11 @@ def detect(image: UploadFile = File(...), options: str = Form(...)):
         settings = Options.model_validate_json(options)
     except ValidationError:
         raise HTTPException(400, "撮影条件を確認してください") from None
-    if not processing.acquire(blocking=False):
+    # 裏で作っているテクスチャが推論を1回分使っていることがあるため、すぐには断らず少し待つ。
+    if not processing.acquire(timeout=60):
         raise HTTPException(429, "別の写真を処理しています。少し待って再試行してください")
     try:
-        raw = image.file.read(MAX_BYTES + 1)
-        if len(raw) > MAX_BYTES:
-            raise HTTPException(413, "画像は8MiB以下にしてください")
-        try:
-            with Image.open(io.BytesIO(raw)) as original:
-                if original.format != "JPEG" or original.width * original.height > 12_000_000 or original.getexif().get(274, 1) != 1:
-                    raise ValueError()
-                # 四隅の座標を変えないため、向きの確定はブラウザ側で済ませる。
-                source = cv2.cvtColor(np.array(original.convert("RGB")), cv2.COLOR_RGB2BGR)
-        except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
-            raise HTTPException(400, "向きを確定したJPEG画像を選んでください（最大1200万画素）") from None
+        raw, source = read_jpeg(image)
         height, width = source.shape[:2]
         bbox = list(settings.bbox) if settings.bbox is not None else None
         if bbox is not None and (not np.isfinite(bbox).all() or not (0 <= bbox[0] < bbox[2] < width and 0 <= bbox[1] < bbox[3] < height)):
@@ -132,3 +139,30 @@ def detect(image: UploadFile = File(...), options: str = Form(...)):
     finally:
         processing.release()
         image.file.close()
+
+
+@app.post("/textures", status_code=202, dependencies=[Depends(authorize)])
+def textures(
+    garmentId: str = Form(...),
+    category: Literal["short_sleeve_top", "trousers"] = Form(...),
+    front: UploadFile = File(...),
+    back: UploadFile | None = File(None),
+):
+    try:
+        garment_id = str(uuid.UUID(garmentId))
+    except ValueError:
+        raise HTTPException(400, "服のIDを確認してください") from None
+    if not texture.template_ready(category):
+        raise HTTPException(503, "この服の種類のUVテンプレートがありません。artifacts/uv/pitari/のREADMEの手順で作成してください")
+    try:
+        front_raw, _ = read_jpeg(front)
+        back_raw = read_jpeg(back)[0] if back else None
+    finally:
+        front.file.close()
+        if back:
+            back.file.close()
+    try:
+        texture.submit(garment_id, category, front_raw, back_raw, models, processing)
+    except texture.QueueFull:
+        raise HTTPException(429, "テクスチャの作成待ちが多すぎます。少し待って再試行してください") from None
+    return {"accepted": True}

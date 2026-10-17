@@ -27,6 +27,8 @@ __pycache__/
 apps/inference/models/*
 !apps/inference/models/.gitkeep
 apps/inference/.cache/
+# 服ごとのテクスチャはPCで確かめるための出力で、服の写真を含むため共有しない
+apps/inference/textures/
 .tools/
 
 # 作業用画像は共有しない。既存の追跡済みアイコン・デザイン資料は維持する
