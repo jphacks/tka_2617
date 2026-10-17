@@ -39,3 +39,18 @@ export async function readPng(file: File) {
     throw new HttpError(400, "切り抜き画像のサイズを確認してください");
   return { bytes, widthPx, heightPx };
 }
+
+// 推論サービスが作ったテクスチャ（RGBのPNG）の幅と高さを、先頭の署名とIHDRから読む。
+// 中身は推論サービスを信頼し、PNGであることと、DBに入る大きさであることだけを確かめる
+export function pngSize(bytes: Buffer) {
+  if (
+    bytes.length < 33 ||
+    bytes.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a" ||
+    bytes.toString("ascii", 12, 16) !== "IHDR"
+  )
+    return null;
+  const widthPx = bytes.readUInt32BE(16);
+  const heightPx = bytes.readUInt32BE(20);
+  if (!widthPx || !heightPx || widthPx > 4096 || heightPx > 4096) return null;
+  return { widthPx, heightPx };
+}

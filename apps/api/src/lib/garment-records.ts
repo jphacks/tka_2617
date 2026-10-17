@@ -13,6 +13,7 @@ export const imageRoleSchema = z.enum([
   "cutout",
   "back",
   "back_cutout",
+  "texture",
 ]);
 export const seasonSchema = z.enum(["spring", "summer", "autumn", "winter"]);
 export const purchasedMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);

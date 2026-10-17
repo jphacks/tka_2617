@@ -15,6 +15,7 @@ import { getGarmentImage } from "#src/services/get-garment-image";
 import { updateGarment } from "#src/services/update-garment";
 import { replaceGarmentBack } from "#src/services/replace-garment-back";
 import { requestGarmentTexture } from "#src/services/request-garment-texture";
+import { getGarmentTexture } from "#src/services/get-garment-texture";
 import { deleteGarment } from "#src/services/delete-garment";
 import type { TextureRequestResult } from "#src/lib/garment-texture";
 
@@ -186,6 +187,14 @@ export const garments = new Hono()
     }),
     async (c) =>
       c.json(await requestGarmentTexture(c.req.valid("param").id), 202),
+  )
+  .get(
+    "/:id/texture",
+    zValidator("param", idSchema, (result, c) => {
+      if (!result.success)
+        return c.json({ error: "服のIDを確認してください" }, 400);
+    }),
+    async (c) => c.json(await getGarmentTexture(c.req.valid("param").id)),
   )
   .delete(
     "/:id",

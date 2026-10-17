@@ -62,4 +62,5 @@ export type { GarmentView, Season } from "#src/lib/garment-records";
 export type {
   TextureRequestResult,
   BackPhotoResponse,
+  TextureStatus,
 } from "#src/lib/garment-texture";
