@@ -4,7 +4,7 @@
 
 ## 書き方
 
-ファイル名は `NNNN-内容.md`（4桁の連番）。中身は次の6つを短く書く。
+ファイル名は`NNNN-内容.md`（4桁の連番）。中身は次の6つを短く書く。
 
 - 背景：何に困っていたか
 - 決定：何を決めたか
@@ -40,6 +40,9 @@
 - [0023 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0023-trousers-cutout-with-landmarks.md)
 - [0024 ズボンのテクスチャは、脚ごとのUVの島を前後に分けて表と裏の写真を貼る](0024-trousers-uv-template.md)
 - [0025 ズボンのテクスチャを受領したモデルとUVへ切り替える](0025-trousers-template-from-delivered-uv.md)
+- [0022 Pythonのlintと整形にruffを使い、ディレクトリごとに入れていく](0022-python-lint-with-ruff.md)
+- [0023 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0023-garment-texture-on-pc.md)
+- [0024 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0024-trousers-cutout-with-landmarks.md)
 
 ## 参考文献
 
