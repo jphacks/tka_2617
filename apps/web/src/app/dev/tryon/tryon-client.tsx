@@ -49,6 +49,8 @@ export default function TryOnClient() {
     top,
     shirtFront,
     setShirtFront,
+    wearInner,
+    setWearInner,
     input,
     setInput,
     target,
@@ -263,6 +265,19 @@ export default function TryOnClient() {
                 </label>
               ))}
             </div>
+          )}
+          {top === "shirt" && (
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={wearInner}
+                onChange={(e) => {
+                  setWearInner(e.target.checked);
+                }}
+                className="accent-main"
+              />
+              中にTシャツを着る（実寸はサンプルのTシャツ）
+            </label>
           )}
           <table className="w-full border-collapse text-left">
             <thead>

@@ -128,6 +128,9 @@ export function AvatarClient() {
     top,
     shirtFront,
     setShirtFront,
+    wearInner,
+    setWearInner,
+    innerStatus,
     input,
     setInput,
     status,
@@ -152,6 +155,7 @@ export function AvatarClient() {
   } = useTryOn();
   const tight = [
     status === "tight" ? TOPS[top].label : null,
+    innerStatus === "tight" ? "中のTシャツ" : null,
     wearTrousers && trouserStatus === "tight" ? "ズボン" : null,
   ].filter((name) => name !== null);
 
@@ -274,6 +278,21 @@ export function AvatarClient() {
               }))}
               value={shirtFront}
               onChange={setShirtFront}
+            />
+          </Row>
+        )}
+        {top === "shirt" && (
+          <Row label="シャツの中">
+            <Segmented
+              label="シャツの中"
+              options={[
+                { id: "none", label: "なし" },
+                { id: "tshirt", label: "Tシャツ" },
+              ]}
+              value={wearInner ? "tshirt" : "none"}
+              onChange={(id) => {
+                setWearInner(id === "tshirt");
+              }}
             />
           </Row>
         )}

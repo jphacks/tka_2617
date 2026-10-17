@@ -153,16 +153,20 @@ const LAYER_ABOVE_M = 0.002;
 const LAYER_FADE_M = 0.02;
 // 水平に押すとき、斜めの面ほど多く押す。その割合の上限（cos がこれより小さくても、これで割る）
 const LAYER_MIN_COS = 0.5;
+// 包む服の面の最寄り点が、外側の服の頂点の真下からこれ以上ずれていたら、縁（襟ぐり・袖口・裾）の外とみなす
+const SURFACE_EDGE_M = 0.002;
 
 /**
  * 内側に着ている服の衝突判定（ワールド座標）。topYより上の頂点は比べない。
- * samplesは、外側の服の外へ出ていないかを確かめる点（頂点と辺の中点、xyzの並び）
+ * samplesは、外側の服の外へ出ていないかを確かめる点（頂点と辺の中点、xyzの並び）。
+ * wrapsは、上半身を包む服（シャツの下のTシャツ）のときtrue
  */
 export type GarmentCollider = {
   bvh: MeshBVH;
   geometry: BufferGeometry;
   topY: number;
   samples: Float32Array;
+  wraps: boolean;
 };
 
 export type PushOptions = {
@@ -238,7 +242,8 @@ export function updatePush(
   }
 
   for (const layer of layers) {
-    pushFromLayer(pos, push, topo, layer);
+    if (layer.wraps) pushFromWrappingLayer(pos, push, topo, layer);
+    else pushFromLayer(pos, push, topo, layer);
   }
 
   // 押し出し量を周りへなだらかに広げる（大きい方を残す）
@@ -304,6 +309,7 @@ export function updatePush(
         Array.from({ length: layer.samples.length / 3 }, (_, k) => k),
         LAYER_OFFSET_M,
         true,
+        layer.wraps,
       );
     }
   }
@@ -401,13 +407,65 @@ function pushFromLayer(
   }
 }
 
+/**
+ * 上半身を包む内側の服（Tシャツ）から LAYER_OFFSET_M 未満の頂点を、その面の法線に沿って外へ押し出す。
+ * ズボンの上端と違い、肩や胸の上にも重なるので、水平にだけ押すと肩で埋まる。
+ * 最寄り点が真下に無い頂点（襟ぐり・袖口・裾の縁の外）は比べない。縁を最寄りの面として拾い、横へ押してしまうため
+ */
+function pushFromWrappingLayer(
+  pos: Float32Array,
+  push: Float32Array,
+  topo: Topology,
+  layer: GarmentCollider,
+) {
+  const index = layer.geometry.getIndex();
+  if (!index) return;
+  const lpos = layer.geometry.getAttribute("position");
+  const done = new Uint8Array(topo.count);
+  const p = new Vector3(),
+    n = new Vector3(),
+    a = new Vector3(),
+    b = new Vector3(),
+    c = new Vector3(),
+    d = new Vector3();
+  const hit = { point: new Vector3(), distance: 0, faceIndex: 0 };
+  for (let i = 0; i < topo.weld.length; i++) {
+    const j = topo.weld[i];
+    if (done[j]) continue;
+    done[j] = 1;
+    p.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+    if (!layer.bvh.closestPointToPoint(p, hit, 0, LAYER_SEARCH_M)) continue;
+    const f = hit.faceIndex * 3;
+    a.fromBufferAttribute(lpos, index.getX(f));
+    b.fromBufferAttribute(lpos, index.getX(f + 1));
+    c.fromBufferAttribute(lpos, index.getX(f + 2));
+    n.subVectors(c, b).cross(a.sub(b)).normalize();
+    d.subVectors(p, hit.point);
+    const sd = d.dot(n);
+    if (sd >= LAYER_OFFSET_M) continue;
+    if (d.addScaledVector(n, -sd).length() > SURFACE_EDGE_M) continue;
+    const need = LAYER_OFFSET_M - sd;
+    if (need > Math.hypot(push[j * 3], push[j * 3 + 1], push[j * 3 + 2])) {
+      push[j * 3] = n.x * need;
+      push[j * 3 + 1] = n.y * need;
+      push[j * 3 + 2] = n.z * need;
+    }
+  }
+}
+
 function smooth01(t: number) {
   const x = Math.min(Math.max(t, 0), 1);
   return x * x * (3 - 2 * x);
 }
 
-/** 押し出した後の服の形（ワールド座標）から、外側に着る服のための衝突判定を作る */
-export function buildGarmentCollider(garment: Mesh): GarmentCollider {
+/**
+ * 押し出した後の服の形（ワールド座標）から、外側に着る服のための衝突判定を作る。
+ * wrapsは、上半身を包む服（シャツの下のTシャツ）のときtrue
+ */
+export function buildGarmentCollider(
+  garment: Mesh,
+  { wraps = false }: { wraps?: boolean } = {},
+): GarmentCollider {
   garment.updateWorldMatrix(true, false);
   const pos = morphedPositions(garment);
   if (garment.geometry.hasAttribute("pushOffset")) {
@@ -431,6 +489,7 @@ export function buildGarmentCollider(garment: Mesh): GarmentCollider {
     geometry,
     topY,
     samples: pointsWithEdgeMidpoints(pos, index?.array ?? []),
+    wraps,
   };
 }
 
@@ -474,6 +533,11 @@ function coverTips(
    * 体の_coverは基準の長さの服で決めてあるので、着丈を短くすると裾より下に出た体も「覆われる所」のままになる
    */
   skipBelowHem = false,
+  /**
+   * 一番近い服の面の真下に無い点は比べない（服の縁の外の点）。
+   * シャツの前の開きからのぞく内側のTシャツを、前の縁の面で覆おうとしないため
+   */
+  skipOutsideFaces = false,
 ) {
   if (indices.length === 0) return;
   const pushed = new Float32Array(pos.length);
@@ -508,8 +572,14 @@ function coverTips(
     b.fromArray(pushed, tri[1] * 3);
     c.fromArray(pushed, tri[2] * 3);
     n.subVectors(c, b).cross(a.sub(b)).normalize();
-    const out = p.clone().sub(hit.point).dot(n);
+    const toPoint = p.clone().sub(hit.point);
+    const out = toPoint.dot(n);
     if (out <= -gap) continue;
+    if (
+      skipOutsideFaces &&
+      toPoint.addScaledVector(n, -out).length() > SURFACE_EDGE_M
+    )
+      continue;
     const need = out + gap;
     for (const vi of tri) {
       const j = topo.weld[vi];

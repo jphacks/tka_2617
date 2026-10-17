@@ -94,6 +94,9 @@ const SAMPLE_SHIRT = GarmentSchema.parse({
   measurementVersion: "df2-a4-midpoint-v1",
 });
 
+/** シャツの中に着るTシャツの実寸。今はサンプルの服で固定する */
+const INNER_TARGET = topMeasurements(SAMPLE_GARMENT);
+
 /** 上の服。寸法の4項目とキーはどれも同じで、Blenderが書き出したglbと表だけが違う */
 export const TOPS = {
   tshirt: {
@@ -191,6 +194,8 @@ export function useTryOn() {
   );
   const [top, setTop] = useState<Top>("tshirt");
   const [shirtFront, setShirtFront] = useState<ShirtFront>("partly");
+  // シャツの中にTシャツを着るか（シャツのときだけ）
+  const [wearInner, setWearInner] = useState(false);
   const [input, setInput] = useState<Inputs>(() =>
     toInputs(topMeasurements(SAMPLE_GARMENT)),
   );
@@ -264,12 +269,27 @@ export function useTryOn() {
     }),
     [bodyMorphs, size, top, sleeveExcessCm, shirtFront],
   );
+  const innerFit = useMemo(
+    () => fitAt(build, heightCm, heightTable),
+    [build, heightCm],
+  );
+  const innerStatus = fitStatus(INNER_TARGET, innerFit);
+  const innerMorphs = useMemo(() => {
+    const innerSize = sizeKeyValues(INNER_TARGET, innerFit, heightTable);
+    return {
+      ...bodyMorphs,
+      ...innerSize,
+      width_folds: Math.max(innerSize.size_width, 0) / 10,
+    };
+  }, [bodyMorphs, innerFit]);
+  const showInner = top === "shirt" && wearInner && status !== "tooSmall";
   const trouserMorphs = useMemo(
     () => ({ ...bodyMorphs, ...(trouserSize ?? {}) }),
     [bodyMorphs, trouserSize],
   );
   const tooSmall = [
     status === "tooSmall" ? TOPS[top].label : null,
+    showInner && innerStatus === "tooSmall" ? "中のTシャツ" : null,
     wearTrousers && trouserStatus === "tooSmall" ? "ズボン" : null,
   ].filter((name) => name !== null);
 
@@ -280,6 +300,9 @@ export function useTryOn() {
     shirtUrl: TOPS[top].url,
     shirtMorphs,
     showShirt: status !== "tooSmall",
+    innerUrl: TOPS.tshirt.url,
+    innerMorphs,
+    showInner: showInner && innerStatus !== "tooSmall",
     trouserMorphs,
     showTrousers: wearTrousers && trouserStatus !== "tooSmall",
     skinColor,
@@ -301,6 +324,9 @@ export function useTryOn() {
     setTop,
     shirtFront,
     setShirtFront,
+    wearInner,
+    setWearInner,
+    innerStatus: showInner ? innerStatus : null,
     input,
     setInput,
     target,
