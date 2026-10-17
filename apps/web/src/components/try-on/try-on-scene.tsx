@@ -333,25 +333,22 @@ function Models({
           ? shirtMesh.geometry.getAttribute("_sleeve").array
           : null;
         armsHidden.current = [];
-        onPushStats?.(
-          updatePush(shirtMesh, bodyBVH.current, topo, {
-            layers,
-            ...(sleeve && {
-              coveredAfterPrepare: (
-                pos: Float32Array,
-                bodyPos: Float32Array,
-              ) => {
-                armsHidden.current = bodyInSleeves(
-                  pos,
-                  sleeve,
-                  bodyPos,
-                  HIDE_SLEEVE_MAX,
-                );
-                return bodyInSleeves(pos, sleeve, bodyPos);
-              },
-            }),
+        // onPushStats?.(updatePush(...))と書くと、onPushStatsが無いとき押し出し自体が呼ばれないので、先に計算する
+        const stats = updatePush(shirtMesh, bodyBVH.current, topo, {
+          layers,
+          ...(sleeve && {
+            coveredAfterPrepare: (pos: Float32Array, bodyPos: Float32Array) => {
+              armsHidden.current = bodyInSleeves(
+                pos,
+                sleeve,
+                bodyPos,
+                HIDE_SLEEVE_MAX,
+              );
+              return bodyInSleeves(pos, sleeve, bodyPos);
+            },
           }),
-        );
+        });
+        onPushStats?.(stats);
         updateHide();
         for (const layer of layers) layer.geometry.dispose();
       }
