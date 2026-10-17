@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useSyncExternalStore, type ReactNode } from "react";
+import { useId, useState, useSyncExternalStore, type ReactNode } from "react";
 import { AvatarErrorBoundary } from "@/components/avatar-error-boundary";
 import { AvatarFrame } from "@/components/avatar-frame";
 import { ColorChoices } from "@/components/try-on/color-choices";
@@ -102,33 +102,54 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** 寸法の入力欄（cm） */
+/** 寸法の入力欄（cm）。problemがあれば直す内容を、outsideなら形がずれうることを出す */
 function SizeInput({
   label,
   value,
   onChange,
+  problem,
+  outside,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  problem: string | undefined;
+  outside: boolean;
 }) {
+  // スクリーンリーダーでも、欄から直す内容や案内を読めるようにする
+  const noteId = useId();
   return (
-    <label className="flex items-center justify-between gap-2">
-      <span>{label}</span>
-      <span className="flex items-center gap-1">
-        <input
-          type="number"
-          inputMode="decimal"
-          step={0.5}
-          value={value}
-          onChange={(e) => {
-            onChange(e.target.value);
-          }}
-          className="w-18 rounded border border-line px-2 py-1 text-right text-base tabular-nums"
-        />
-        <span className="text-xs text-muted">cm</span>
-      </span>
-    </label>
+    <>
+      <label className="flex items-center justify-between gap-2">
+        <span>{label}</span>
+        <span className="flex items-center gap-1">
+          <input
+            type="number"
+            inputMode="decimal"
+            step={0.5}
+            value={value}
+            onChange={(e) => {
+              onChange(e.target.value);
+            }}
+            aria-invalid={problem !== undefined}
+            aria-describedby={problem || outside ? noteId : undefined}
+            className="w-18 rounded border border-line px-2 py-1 text-right text-base tabular-nums aria-invalid:border-red-600"
+          />
+          <span className="text-xs text-muted">cm</span>
+        </span>
+      </label>
+      {problem ? (
+        <p id={noteId} className="text-right text-xs text-red-600">
+          {problem}
+        </p>
+      ) : (
+        outside && (
+          <p id={noteId} className="text-right text-xs text-description">
+            確かめた範囲の外なので、形がずれることがあります
+          </p>
+        )
+      )}
+    </>
   );
 }
 
@@ -380,10 +401,12 @@ function AvatarEditor({
     setWearInner,
     input,
     setInput,
+    topCheck,
     wearTrousers,
     setWearTrousers,
     trouserInput,
     setTrouserInput,
+    trouserCheck,
     hairId,
     setHairId,
     hairColor,
@@ -606,6 +629,8 @@ function AvatarEditor({
                 onChange={(value) => {
                   setInput((s) => ({ ...s, [k]: value }));
                 }}
+                problem={topCheck.problems[k]}
+                outside={topCheck.outside.includes(k)}
               />
             ))}
             {wearTrousers && (
@@ -621,6 +646,8 @@ function AvatarEditor({
                     onChange={(value) => {
                       setTrouserInput((s) => ({ ...s, [k]: value }));
                     }}
+                    problem={trouserCheck.problems[k]}
+                    outside={trouserCheck.outside.includes(k)}
                   />
                 ))}
               </>
