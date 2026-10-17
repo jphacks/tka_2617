@@ -11,6 +11,7 @@
 - アプリのglbのUV（`TEXCOORD_0`）を正とする。テクスチャとglbの間で、UVを変換しない
 - Tシャツの型紙は作り直さない。`tshirt_male.glb`のUVは、`pitari.blend`の`pitari`のUVと同じだった
 - glbのUVを変えたら、型紙を作り直す。glbを書き出し直すPRには、UVを変えたかどうかを書く
+- 書き忘れても気づけるよう、型紙にはアプリのglbのUVのハッシュを記録し、照合のスクリプトでglbと比べる（スクリプトはテクスチャ担当が作る。#67）
 - three.jsで貼るときは、glTFのUVの向きに合わせて`texture.flipY = false`、色を正しく出すために`texture.colorSpace = SRGBColorSpace`にする（#73）
 
 ## 理由
