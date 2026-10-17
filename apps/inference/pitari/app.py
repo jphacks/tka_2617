@@ -9,6 +9,7 @@ import secrets
 import threading
 import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -24,9 +25,23 @@ from pitari.cutout import garment_cutout
 from pitari.models import Models, MODEL_VERSION
 from pitari import detections, texture
 
-app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 models = Models()
 processing = threading.Lock()
+
+
+def preload():
+    with processing:
+        models.preload()
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    # 読み込みの間も/healthに答えられるよう、裏のスレッドで読む。採寸はロックを待つ。
+    threading.Thread(target=preload, daemon=True).start()
+    yield
+
+
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 logger = logging.getLogger("pitari")
 MAX_BYTES = 8 * 1024 * 1024
 Image.MAX_IMAGE_PIXELS = 12_000_000

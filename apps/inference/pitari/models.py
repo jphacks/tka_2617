@@ -75,16 +75,29 @@ class Models:
             heatmaps = self.pose(tensor)[0].cpu().numpy()
         return decode_heatmaps(heatmaps, inverse, category, image.shape[1], image.shape[0])
 
-    def detect(self, image, category):
+    def load_detector(self):
+        if self.detector is not None:
+            return
         if not (DETECTOR / "config.json").is_file():
             raise FileNotFoundError("服の自動検出モデルが未配置です。カテゴリと服を囲む範囲を指定してください")
         import torch
-        from PIL import Image
         from transformers import AutoProcessor, AutoModelForZeroShotObjectDetection
         torch.set_num_threads(max(1, min(8, int(os.environ.get("INFERENCE_THREADS", "4")))))
-        if self.detector is None:
-            self.processor = AutoProcessor.from_pretrained(DETECTOR, local_files_only=True)
-            self.detector = AutoModelForZeroShotObjectDetection.from_pretrained(DETECTOR, local_files_only=True).cpu().eval()
+        self.processor = AutoProcessor.from_pretrained(DETECTOR, local_files_only=True)
+        self.detector = AutoModelForZeroShotObjectDetection.from_pretrained(DETECTOR, local_files_only=True).cpu().eval()
+
+    def preload(self):
+        """最初の採寸でモデルの読み込み（合わせて約30秒）を待たせないよう、起動時に読む。未配置のモデルは飛ばす。"""
+        for load in (self.load_pose, self.load_detector):
+            try:
+                load()
+            except FileNotFoundError:
+                pass
+
+    def detect(self, image, category):
+        self.load_detector()
+        import torch
+        from PIL import Image
         caption = {"auto": "short sleeve t-shirt. long sleeve top. trousers.", "short_sleeve_top": "short sleeve t-shirt.", "long_sleeve_top": "long sleeve top.", "trousers": "trousers."}[category]
         inputs = self.processor(images=Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)), text=caption, return_tensors="pt")
         with torch.inference_mode():
