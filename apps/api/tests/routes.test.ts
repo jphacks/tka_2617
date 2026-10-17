@@ -50,3 +50,37 @@ void test("壊れたJSON・ID・カテゴリをDB呼び出し前に拒否する"
     400,
   );
 });
+
+void test("裏面の不正な入力をDB呼び出し前に拒否する", async () => {
+  const path = "/v1/garments/11111111-1111-4111-8111-111111111111";
+  const empty = new FormData();
+  assert.equal(
+    (await app.request(`${path}/back`, { method: "PUT", headers, body: empty }))
+      .status,
+    400,
+  );
+  const notJpeg = new FormData();
+  notJpeg.set("image", new File(["not a jpeg"], "back.jpg"));
+  assert.equal(
+    (
+      await app.request(`${path}/back`, {
+        method: "PUT",
+        headers,
+        body: notJpeg,
+      })
+    ).status,
+    400,
+  );
+  const badId = new FormData();
+  badId.set("image", new File(["x"], "back.jpg"));
+  assert.equal(
+    (
+      await app.request("/v1/garments/not-a-uuid/back", {
+        method: "PUT",
+        headers,
+        body: badId,
+      })
+    ).status,
+    400,
+  );
+});

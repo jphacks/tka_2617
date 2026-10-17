@@ -7,10 +7,17 @@ import {
 } from "#src/lib/measurement-schema";
 
 export const bucket = "garments";
+export const imageRoleSchema = z.enum([
+  "original",
+  "measurement",
+  "cutout",
+  "back",
+  "back_cutout",
+]);
 export const imageRecordSchema = z.object({
   id: z.uuid(),
   storage_key: z.string(),
-  role: z.enum(["original", "measurement", "cutout"]),
+  role: imageRoleSchema,
   width_px: z.number(),
   height_px: z.number(),
   points: z.array(pointSchema),
@@ -37,7 +44,7 @@ export type GarmentView = {
   createdAt: string;
   images: {
     id: string;
-    role: "original" | "measurement" | "cutout";
+    role: z.infer<typeof imageRoleSchema>;
     url: string;
     widthPx: number;
     heightPx: number;
