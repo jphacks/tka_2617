@@ -8,29 +8,57 @@ on:
 permissions:
   contents: read
 
+# 検査をjobに分けて、並列に流す。PRでどれが落ちたかがすぐ分かり、落ちたjobだけを流し直せる
 jobs:
-  check:
+  # 整形・lint（ESLintとtextlint）・使っていないコード・型
+  static:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm format:check
       - run: pnpm lint
+      # 使っていないファイル・export・依存（knip.jsonc）
+      - run: pnpm knip
       - run: pnpm typecheck
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
       # バージョンはruff.tomlのrequired-versionと合わせる
       - run: pipx run ruff==0.17.1 format --check .
       - run: pipx run ruff==0.17.1 check .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - run: pnpm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
       # server-only の違反（クライアントからサーバー専用のコードを読み込む）は build でしか分からないため
       - run: pnpm build
 
-  # mainに入ったコードを、checkが通ってから本番に出す（docs/adr/0004-deploy-web-with-vercel-cli.md）
+  # workflowの書き間違い（式の誤り、無い入力など）を見つける。deployのようにmainでしか動かないjobは、
+  # ここで見つけないとマージした後まで気づけない
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # 作者が出しているイメージ。中身が勝手に変わらないよう、版をタグで固定する
+      - uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
+  # mainに入ったコードを、ほかのjobがすべて通ってから本番に出す（docs/adr/0004-deploy-web-with-vercel-cli.md）
   deploy:
-    needs: check
+    needs: [static, python, test, build, actionlint]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # 続けてマージしたとき、古いほうが後から本番を上書きしないよう、1つずつ順に出す

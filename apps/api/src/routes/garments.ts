@@ -14,7 +14,9 @@ import { getGarment } from "#src/services/get-garment";
 import { getGarmentImage } from "#src/services/get-garment-image";
 import { updateGarment } from "#src/services/update-garment";
 import { replaceGarmentBack } from "#src/services/replace-garment-back";
+import { requestGarmentTexture } from "#src/services/request-garment-texture";
 import { deleteGarment } from "#src/services/delete-garment";
+import type { TextureRequestResult } from "#src/lib/garment-texture";
 
 const idSchema = z.object({ id: z.uuid() });
 export const garments = new Hono()
@@ -158,7 +160,22 @@ export const garments = new Hono()
     async (c) => {
       const { id } = c.req.valid("param");
       const form = c.req.valid("form");
-      return c.json(await replaceGarmentBack(id, form.image, form.cutoutImage));
+      const saved = await replaceGarmentBack(id, form.image, form.cutoutImage);
+      // 写真の保存と生成依頼の成否を分け、依頼だけ失敗しても写真を再登録させない。
+      let texture: TextureRequestResult;
+      try {
+        texture = await requestGarmentTexture(id);
+      } catch (error) {
+        console.error("テクスチャの作成を依頼できませんでした", error);
+        texture = {
+          status: "failed",
+          message:
+            error instanceof HttpError
+              ? error.message
+              : "テクスチャの生成を依頼できませんでした",
+        };
+      }
+      return c.json({ ...saved, texture });
     },
   )
   .delete(

@@ -19,7 +19,10 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 mx-auto grid max-w-120 grid-cols-3 border-t border-line bg-white px-2 pt-1 pb-[calc(env(safe-area-inset-bottom)+8px)]"
     >
       {items.map(({ href, label, Icon }) => {
-        const isCurrent = pathname === href;
+        // 服の詳細はクローゼットの中の画面として扱う
+        const isCurrent =
+          pathname === href ||
+          (href === "/" && pathname.startsWith("/garments/"));
         return (
           <Link
             key={href}

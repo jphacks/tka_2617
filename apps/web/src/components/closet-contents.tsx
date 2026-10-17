@@ -1,5 +1,6 @@
 "use client";
 
+import { categoryLabels } from "@/lib/garment-category";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { GarmentView } from "@pitari/api";
@@ -77,7 +78,11 @@ export function ClosetContents() {
           {garments.map((garment) => {
             const photo = garmentPhotoUrl(garment);
             return (
-              <article key={garment.id} className="min-w-0">
+              <Link
+                key={garment.id}
+                href={`/garments/${encodeURIComponent(garment.id)}`}
+                className="block min-w-0 rounded transition active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main"
+              >
                 <svg
                   viewBox="0 0 300 360"
                   className="w-full rounded bg-surface"
@@ -97,13 +102,13 @@ export function ClosetContents() {
                   {garment.name || "名前なし"}
                 </h2>
                 <p className="mt-1 text-xs text-description">
-                  {garment.category === "trousers" ? "パンツ" : "Tシャツ"}
+                  {categoryLabels[garment.category]}
                 </p>
                 <GarmentMeasurements
                   category={garment.category}
                   measurements={garment.measurements}
                 />
-              </article>
+              </Link>
             );
           })}
         </section>

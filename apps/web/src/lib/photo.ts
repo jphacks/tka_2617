@@ -26,9 +26,17 @@ export async function preparePhoto(file: File) {
   };
 }
 
-export function jpegFile(base64: string) {
+function base64File(base64: string, name: string, type: string) {
   const bytes = Uint8Array.from(atob(base64), (character) =>
     character.charCodeAt(0),
   );
-  return new File([bytes], "garment.jpg", { type: "image/jpeg" });
+  return new File([bytes], name, { type });
+}
+
+export function jpegFile(base64: string) {
+  return base64File(base64, "garment.jpg", "image/jpeg");
+}
+
+export function pngFile(base64: string) {
+  return base64File(base64, "garment.png", "image/png");
 }
