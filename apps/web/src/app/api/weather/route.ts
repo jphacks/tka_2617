@@ -9,7 +9,7 @@ import {
 import { fetchTodayHourlyTemperatures } from "@/server/weather";
 
 // 天気はapiを通さず、webのサーバーからOpen-Meteoを呼ぶ（DBに触れないため）。
-// 緯度・経度は丸めてから使い、ログにも残さない
+// 緯度・経度は丸めてから使い、保存しない
 export async function GET(request: NextRequest) {
   const { latitude, longitude, place } = placeFromQuery(
     request.nextUrl.searchParams,
@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
         place,
       }
     : { season: seasonOf(tokyoMonth(), null), temperatures: null, place };
+  // 取れなかった答えをブラウザに残すと、Open-Meteoが戻っても気温なしのままになる
   return Response.json(body, {
-    headers: { "Cache-Control": "private, max-age=600" },
+    headers: {
+      "Cache-Control": hourly ? "private, max-age=600" : "no-store",
+    },
   });
 }
 

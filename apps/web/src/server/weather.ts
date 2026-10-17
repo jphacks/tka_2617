@@ -9,7 +9,9 @@ const forecastSchema = z.object({
 });
 
 // 鍵の要らないOpen-Meteoから、その土地の今日1日分の気温を取る。
-// つながらない・形が違うときはnullを返し、呼び出し側は気温なしで続ける
+// つながらない・形が違うときはnullを返し、呼び出し側は気温なしで続ける。
+// 位置は丸めてあるので、同じ地域の問い合わせを10分まとめ、Open-Meteoを呼ぶ回数を抑える。
+// Next.jsは200の応答だけを残すので、失敗は残らない
 export async function fetchTodayHourlyTemperatures(
   latitude: number,
   longitude: number,
@@ -24,7 +26,7 @@ export async function fetchTodayHourlyTemperatures(
   }).toString();
   try {
     const response = await fetch(url, {
-      cache: "no-store",
+      next: { revalidate: 600 },
       signal: AbortSignal.timeout(5_000),
     });
     if (!response.ok) return null;
