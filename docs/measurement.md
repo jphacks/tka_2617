@@ -1,6 +1,6 @@
 # 写真からの採寸
 
-初期版はローカルCPUで推論する。クラウドGPUは契約しない。1枚に1着を平置きし、実物のA4用紙（21cm×29.7cm）を同じ平面に置く。テクスチャは後回し。
+初期版はローカルCPUで推論する。クラウドGPUは契約しない。1枚に1着を平置きし、実物のA4用紙（21cm×29.7cm）を同じ平面に置く。表裏の写真を登録すると、PC内でテクスチャを生成する。
 
 ## 計算方法
 
@@ -12,6 +12,10 @@
 | short_sleeve_top | sleeveLengthCm  | 距離(7,9)          |
 | short_sleeve_top | bodyWidthCm     | 距離(12,20)        |
 | short_sleeve_top | bodyLengthCm    | 距離(1,16)         |
+| long_sleeve_top  | shoulderWidthCm | 距離(7,33)         |
+| long_sleeve_top  | sleeveLengthCm  | 距離(7,11)         |
+| long_sleeve_top  | bodyWidthCm     | 距離(16,24)        |
+| long_sleeve_top  | bodyLengthCm    | 距離(1,20)         |
 | trousers         | waistCm         | 距離(1,3)×2        |
 | trousers         | hipCm           | 距離(4,14)×2       |
 | trousers         | thighWidthCm    | 距離(9,14)         |
@@ -46,3 +50,5 @@ A4を自動検出して測定し、結果上で四隅をドラッグ修正でき
 - https://github.com/switchablenorms/DeepFashion2/blob/master/images/cls.jpg
 - https://github.com/svip-lab/HRNet-for-Fashion-Landmark-Estimation.PyTorch
 - https://docs.opencv.org/4.x/d9/dab/tutorial_homography.html
+
+長そではDeepFashion2のlong sleeve top（カテゴリ2、33点）を使う。HRNet出力の0始まり25〜57番をカテゴリ内の1〜33番へ戻す。サイズ項目と単位はTシャツと共通で、点番号だけが異なる。[公式のランドマーク図](https://github.com/switchablenorms/DeepFashion2/blob/master/images/cls.jpg)に対応する。袖丈は肩先から袖口までの直線距離なので、袖を伸ばし、身頃と重ならないように撮る。

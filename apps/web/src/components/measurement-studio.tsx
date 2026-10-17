@@ -456,6 +456,7 @@ export function MeasurementStudio() {
                   種類を選択
                 </option>
                 <option value="short_sleeve_top">Tシャツ</option>
+                <option value="long_sleeve_top">長そで</option>
                 <option value="trousers">パンツ</option>
               </select>
             </div>
@@ -575,7 +576,9 @@ export function MeasurementStudio() {
                   表と裏を登録すると、テクスチャを生成してPC内に保存します。
                   {result.category === "trousers"
                     ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
-                    : "表と同じように平置きして撮ってください。"}
+                    : result.category === "long_sleeve_top"
+                      ? "長そでは袖と身頃が重ならないように広げ、両方の袖口と裾まで写してください。"
+                      : "表と同じように平置きして撮ってください。"}
                 </p>
               )}
               <label
