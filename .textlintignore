@@ -1,0 +1,4 @@
+# JPHacksの提出テンプレートなので、形を崩さない。先頭に/を付けると外れない。下の階層のREADMEは見る
+README.md
+# Claude Designが書き出した資料
+docs/design_handoff_app_shell/**
