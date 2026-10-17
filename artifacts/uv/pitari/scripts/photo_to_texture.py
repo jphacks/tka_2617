@@ -12,6 +12,8 @@
 import argparse
 import json
 import sys
+import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import cv2
@@ -45,6 +47,24 @@ FONT = "C:/Windows/Fonts/BIZ-UDGothicB.ttc"
 TEMPLATE_ROOTS = {"short_sleeve_top": ROOT, "long_sleeve_top": ROOT / "longsleeve", "shirt": ROOT / "shirt", "trousers": ROOT / "trousers"}
 # DeepFashion2にシャツはないので、検出・点・切り抜きは長そでとして行い、テンプレートだけをシャツ用にする（ADR 0033）。
 MODEL_CATEGORIES = {"shirt": "long_sleeve_top"}
+
+
+class Stopwatch:
+    """工程ごとにかかった時間（ミリ秒）を足し上げる。どこが遅いかをreport.jsonで見るため。"""
+
+    def __init__(self):
+        self.ms = {}
+
+    @contextmanager
+    def measure(self, name):
+        started = time.perf_counter()
+        try:
+            yield
+        finally:
+            self.add(name, (time.perf_counter() - started) * 1000)
+
+    def add(self, name, ms):
+        self.ms[name] = round(self.ms.get(name, 0) + ms)
 
 
 def load_photo(path):
@@ -88,11 +108,15 @@ class Inference:
         if self.models is None:
             print("推論モデルを読み込んでいます（初回は数十秒かかります）")
             self.models = Models()
-        corners = paper_candidate(image)
+        clock = Stopwatch()
+        with clock.measure("paper"):
+            corners = paper_candidate(image)
         if bbox is None:
-            _, bbox = self.models.detect(image, category)
-        points = self.models.landmarks(image, category, bbox)
-        return {"bbox": [float(v) for v in bbox], "paperCorners": [[float(x), float(y)] for x, y in corners], "points": points, "modelVersion": MODEL_VERSION}
+            with clock.measure("detect"):
+                _, bbox = self.models.detect(image, category)
+        with clock.measure("landmarks"):
+            points = self.models.landmarks(image, category, bbox)
+        return {"bbox": [float(v) for v in bbox], "paperCorners": [[float(x), float(y)] for x, y in corners], "points": points, "modelVersion": MODEL_VERSION, "timingsMs": clock.ms}
 
 
 def df2_table(spec):
@@ -404,15 +428,17 @@ def template_ready(category="short_sleeve_top"):
 
 def make_texture(out, views, inference, fraction="3d", category="short_sleeve_top"):
     """views[view]は{"photo", "points", "mask", "bbox"}。photo以外は手で直したときだけ渡す。"""
+    clock = Stopwatch()
     root = TEMPLATE_ROOTS[category]
     model_category = MODEL_CATEGORIES.get(category, category)
-    template = json.loads((root / "uv_template.json").read_text(encoding="utf-8"))
-    size = template["texture"]["width"]
-    part_id = np.array(Image.open(root / template["part_id_image"]["path"]))
-    part_values = {name: int(value) for value, name in template["part_id_image"]["values"].items() if value != "0"}
-    all_uv = np.array(Image.open(root / template["coverage_spec"]["all_uv_mask"])) > 0
-    # 島の中だけで色を補う。Tシャツは前後、ズボンは左右の脚が島になる。
-    islands = {name: np.array(Image.open(root / spec["mask"])) > 0 for name, spec in template["islands"].items()}
+    with clock.measure("template"):
+        template = json.loads((root / "uv_template.json").read_text(encoding="utf-8"))
+        size = template["texture"]["width"]
+        part_id = np.array(Image.open(root / template["part_id_image"]["path"]))
+        part_values = {name: int(value) for value, name in template["part_id_image"]["values"].items() if value != "0"}
+        all_uv = np.array(Image.open(root / template["coverage_spec"]["all_uv_mask"])) > 0
+        # 島の中だけで色を補う。Tシャツは前後、ズボンは左右の脚が島になる。
+        islands = {name: np.array(Image.open(root / spec["mask"])) > 0 for name, spec in template["islands"].items()}
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -433,7 +459,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
             report["views"][view] = {"photo": None}
             continue
         notes = []
-        photo, info = load_photo(photo_path)
+        with clock.measure(f"{view}.photo"):
+            photo, info = load_photo(photo_path)
         height, width = photo.shape[:2]
         points_path = given.get("points")
         if points_path:
@@ -442,7 +469,11 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
                 raise SystemExit(f"{points_path}の画像サイズが写真と一致しません")
             notes.append(f"点は{Path(points_path).name}を使った")
         else:
-            result = inference.run(photo, given.get("bbox"), model_category)
+            # ロックの待ちも含む。モデルの時間は内訳として別に残す。
+            with clock.measure(f"{view}.inference"):
+                result = inference.run(photo, given.get("bbox"), model_category)
+            for step, ms in result.get("timingsMs", {}).items():
+                clock.add(f"{view}.{step}", ms)
             record = {
                 "imageId": f"photo_{view}.jpg",
                 "view": view,
@@ -458,33 +489,39 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
                 "howToEdit": "点がずれていたらx・yを直してsourceをmanualにする。足りない番号は追加する。袖付けの中点を指定するときはauxPointsに{name: aux_armhole_mid_right_front, x, y}を足す",
             }
             (out / f"points_{view}.json").write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
-        Image.fromarray(cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)).save(out / f"photo_{view}.jpg", quality=95)
+        with clock.measure("save"):
+            Image.fromarray(cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)).save(out / f"photo_{view}.jpg", quality=95)
         mask_path = given.get("mask")
-        if mask_path:
-            garment = np.where(np.array(Image.open(mask_path).convert("L")) > 127, 255, 0).astype(np.uint8)
-            if garment.shape != photo.shape[:2]:
-                raise SystemExit(f"{mask_path}の大きさが写真と一致しません")
-        else:
-            garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], model_category)
-        garment = fill_holes(garment)
-        # ズボンは股の付近で切り抜きの縁に細い割れ目や出っ張りができ、輪郭の点が行き来して三角形が裏返る。
-        # テンプレートが指定するときは、服の領域を丸めてから使う。
-        ratio = template.get("mask_smoothing_ratio")
-        if ratio and not mask_path:
-            size_px = max(3, round(ratio * max(garment.shape)) | 1)
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size_px, size_px))
-            garment = cv2.morphologyEx(cv2.morphologyEx(garment, cv2.MORPH_CLOSE, kernel), cv2.MORPH_OPEN, kernel)
+        with clock.measure(f"{view}.mask"):
+            if mask_path:
+                garment = np.where(np.array(Image.open(mask_path).convert("L")) > 127, 255, 0).astype(np.uint8)
+                if garment.shape != photo.shape[:2]:
+                    raise SystemExit(f"{mask_path}の大きさが写真と一致しません")
+            else:
+                garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], model_category)
+            garment = fill_holes(garment)
+            # ズボンは股の付近で切り抜きの縁に細い割れ目や出っ張りができ、輪郭の点が行き来して三角形が裏返る。
+            # テンプレートが指定するときは、服の領域を丸めてから使う。
+            ratio = template.get("mask_smoothing_ratio")
+            if ratio and not mask_path:
+                size_px = max(3, round(ratio * max(garment.shape)) | 1)
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size_px, size_px))
+                garment = cv2.morphologyEx(cv2.morphologyEx(garment, cv2.MORPH_CLOSE, kernel), cv2.MORPH_OPEN, kernel)
         if not mask_path:
-            save_mask(garment > 0, out / f"mask_{view}.png")
+            with clock.measure("save"):
+                save_mask(garment > 0, out / f"mask_{view}.png")
 
-        xs = np.flatnonzero(garment.any(axis=0))
-        anchors = resolve_anchors(view, record["points"], template, notes, xs.max() - xs.min() + 1)
-        for aux in record.get("auxPoints", []):
-            anchors[aux["name"]] = opencv_to_pixel([aux["x"], aux["y"]])
-        contour = outer_contour(garment)
-        points, estimated = photo_points(view, anchors, contour, template, notes, "fraction_uv" if fraction == "uv" else "fraction")
-        draw_debug(view, photo, garment, record["points"], anchors, points, estimated, template, out / f"debug_photo_{view}.jpg")
-        colors, seen, uncertain, flipped = warp_view(view, photo, garment, points, estimated, template, part_id, part_values)
+        with clock.measure(f"{view}.points"):
+            xs = np.flatnonzero(garment.any(axis=0))
+            anchors = resolve_anchors(view, record["points"], template, notes, xs.max() - xs.min() + 1)
+            for aux in record.get("auxPoints", []):
+                anchors[aux["name"]] = opencv_to_pixel([aux["x"], aux["y"]])
+            contour = outer_contour(garment)
+            points, estimated = photo_points(view, anchors, contour, template, notes, "fraction_uv" if fraction == "uv" else "fraction")
+        with clock.measure(f"{view}.debug"):
+            draw_debug(view, photo, garment, record["points"], anchors, points, estimated, template, out / f"debug_photo_{view}.jpg")
+        with clock.measure(f"{view}.warp"):
+            colors, seen, uncertain, flipped = warp_view(view, photo, garment, points, estimated, template, part_id, part_values)
         if flipped:
             notes.append(f"写真側で裏返った三角形が{len(flipped)}個あり、その部分は貼らなかった。点の位置を確認する")
         texture[seen] = cv2.cvtColor(colors, cv2.COLOR_BGR2RGB)[seen]
@@ -502,23 +539,26 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
         }
 
     # 写真の色がないテクセルを、同じ島の近い色で補う。島をまたいで補わない。
-    filled = np.zeros_like(observed)
-    for island in islands.values():
-        filled |= nearest_fill(texture, observed & island, island & ~observed, FILL_LIMIT_PX)
-    uncovered = all_uv & ~observed & ~filled
-    # 縫い目で背景色を拾わないよう、島の外へ色を広げる。塗り残しの判定には含めない。
-    nearest_fill(texture, all_uv & ~uncovered, ~all_uv, PAD_PX)
+    with clock.measure("fill"):
+        filled = np.zeros_like(observed)
+        for island in islands.values():
+            filled |= nearest_fill(texture, observed & island, island & ~observed, FILL_LIMIT_PX)
+        uncovered = all_uv & ~observed & ~filled
+        # 縫い目で背景色を拾わないよう、島の外へ色を広げる。塗り残しの判定には含めない。
+        nearest_fill(texture, all_uv & ~uncovered, ~all_uv, PAD_PX)
 
-    Image.fromarray(texture, "RGB").save(out / "texture.png")
-    save_mask(observed, out / "coverage_observed.png")
-    save_mask(filled, out / "coverage_filled.png")
-    save_mask(uncovered, out / "coverage_uncovered.png")
-    save_mask(low, out / "coverage_low_confidence.png")
-    debug = texture.astype(np.float32)
-    debug[filled] = debug[filled] * 0.4 + np.array([0, 200, 255]) * 0.6
-    debug[low] = debug[low] * 0.7 + np.array([255, 220, 0]) * 0.3
-    debug[uncovered] = (255, 0, 255)
-    Image.fromarray(debug.astype(np.uint8), "RGB").save(out / "debug_texture_coverage.png")
+    with clock.measure("save"):
+        Image.fromarray(texture, "RGB").save(out / "texture.png")
+        save_mask(observed, out / "coverage_observed.png")
+        save_mask(filled, out / "coverage_filled.png")
+        save_mask(uncovered, out / "coverage_uncovered.png")
+        save_mask(low, out / "coverage_low_confidence.png")
+        debug = texture.astype(np.float32)
+        debug[filled] = debug[filled] * 0.4 + np.array([0, 200, 255]) * 0.6
+        debug[low] = debug[low] * 0.7 + np.array([255, 220, 0]) * 0.3
+        debug[uncovered] = (255, 0, 255)
+        Image.fromarray(debug.astype(np.uint8), "RGB").save(out / "debug_texture_coverage.png")
+    report["timingsMs"] = clock.ms
     total = int(all_uv.sum())
     report["coverage"] = {
         "observed": round(float(observed.sum() / total), 4),

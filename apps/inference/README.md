@@ -127,11 +127,14 @@ cd apps/inference
 ./.venv/Scripts/python.exe -m unittest discover -s tests -v
 ```
 
-実際の推論速度は重みを配置後、JPEGと服の範囲を指定して測る。
+実際の推論速度は重みを配置後に測る。`landmarks`はJPEGと服の範囲を指定してランドマークだけを、`texture`は作業フォルダの`input_*.jpg`からテクスチャ1件を作り直して工程ごとの時間を測る。1回目はモデルの読み込みを含むため、2回目以降の時間を比べる。
 
 ```powershell
-./.venv/Scripts/python.exe benchmark.py --help
+./.venv/Scripts/python.exe benchmark.py landmarks 写真.jpg --category short_sleeve_top --bbox 100 80 900 1100
+./.venv/Scripts/python.exe benchmark.py texture textures/2026-10-17_11-01-58_長そで_d6156da4 --reference textures/2026-10-17_11-01-58_長そで_d6156da4/texture.png
 ```
+
+`--reference`を付けると、色の差が8を超えたテクセルの割合も出す。テクスチャの作業の`job.json`と`report.json`の`timingsMs`にも、同じ工程ごとの時間（ミリ秒）を残す。`front.inference`はモデルのロックを待つ時間を含み、その内訳が`front.paper`・`front.detect`・`front.landmarks`。
 
 学習済み重みがなければベンチマークは終了する。ランダムな重みの時間を実用性能として報告しない。
 

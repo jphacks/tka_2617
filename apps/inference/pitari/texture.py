@@ -147,7 +147,7 @@ def make(garment_id, category, front, back, models, lock, garment_created_at=Non
         # 画像だけを持ち出しても分かるよう、フォルダと同じ名前のコピーを置く。既存のBlender確認スクリプトが読むtexture.pngも残す。
         filename = f"{out.name}.png"
         shutil.copyfile(out / "texture.png", out / filename)
-        job.update(status="done", coverage=report["coverage"], textureFile=filename)
+        job.update(status="done", coverage=report["coverage"], textureFile=filename, timingsMs=report.get("timingsMs"))
     except SystemExit as error:
         # 点が足りないなど、写真の問題は試行用スクリプトがSystemExitで知らせる。
         job.update(status="failed", error=str(error))
