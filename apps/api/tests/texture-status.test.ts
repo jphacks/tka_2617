@@ -41,7 +41,7 @@ type Fake = {
   texture?: Buffer;
   // DBの関数の戻り値。引数は今回上げた画像のキー
   saved?: (uploadedKey: string) => {
-    image_id: string;
+    image_id: string | null;
     removed_key: string | null;
   };
 };
@@ -174,6 +174,7 @@ void test("完成した作業はStorageへ移し、古いテクスチャを消�
     {
       target_garment_id: id,
       target_profile_id: profileId,
+      expected_back_image_id: back.id,
       new_image: {
         storage_key: uploaded.key,
         width_px: 3,
@@ -277,6 +278,18 @@ void test("PNGでない画像は保存しない", async (t) => {
   });
   assert.equal((await request()).status, 503);
   assert.deepEqual(calls.uploaded, []);
+});
+
+void test("保存するまでの間に裏面が撮り直されたら、保存せず、上げた画像を消して作成中を返す", async (t) => {
+  const calls = fake(t, {
+    images: [back],
+    inference: { status: 200, body: { status: "done", job, error: null } },
+    // DBの関数は、裏面が変わっていると行を変えず、image_idをnullにして返す
+    saved: (uploadedKey) => ({ image_id: null, removed_key: uploadedKey }),
+  });
+  assert.deepEqual(await status(await request()), { status: "processing" });
+  assert.equal(calls.uploaded.length, 1);
+  assert.deepEqual(calls.removed, [calls.uploaded[0].key]);
 });
 
 void test("DBへの保存に失敗したら、上げた画像を消す", async (t) => {

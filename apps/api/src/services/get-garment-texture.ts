@@ -25,7 +25,12 @@ const jobSchema = z.object({
   backImageId: z.string().nullable().optional(),
 });
 const savedSchema = z
-  .array(z.object({ image_id: z.uuid(), removed_key: z.string().nullable() }))
+  .array(
+    z.object({
+      image_id: z.uuid().nullable(),
+      removed_key: z.string().nullable(),
+    }),
+  )
   .length(1);
 // Storageのバケットの上限と同じ
 const maxTextureBytes = 16 * 1024 * 1024;
@@ -90,10 +95,17 @@ export async function getGarmentTexture(id: string): Promise<TextureStatus> {
     return current
       ? { status: "done", imageId: current.id }
       : { status: "none" };
-  return { status: "done", imageId: await saveTexture(id, job.data.job) };
+  const imageId = await saveTexture(id, job.data.job, back.id);
+  // 保存するまでの間に裏面が撮り直されていたら、新しい写真の作業を待つ
+  return imageId ? { status: "done", imageId } : { status: "processing" };
 }
 
-async function saveTexture(garmentId: string, job: string) {
+// 保存したテクスチャの画像IDを返す。裏面がbackImageIdから変わっていたら、保存せずにnull
+async function saveTexture(
+  garmentId: string,
+  job: string,
+  backImageId: string,
+) {
   const response = await getFromInference(
     `/textures/${garmentId}/${encodeURIComponent(job)}/texture.png`,
   );
@@ -116,10 +128,12 @@ async function saveTexture(garmentId: string, job: string) {
     .upload(key, bytes, { contentType: "image/png", upsert: false });
   if (upload.error)
     throw new HttpError(503, "テクスチャを保存できませんでした");
-  // 古い行の削除と新しい行の追加は、DBの関数で1つのトランザクションにする
+  // 古い行の削除と新しい行の追加は、DBの関数で1つのトランザクションにする。
+  // 裏面が今もbackImageIdかも、同じロックの中で確かめ直す
   const result = await supabase.rpc("save_garment_texture", {
     target_garment_id: garmentId,
     target_profile_id: env.DEMO_PROFILE_ID,
+    expected_back_image_id: backImageId,
     new_image: {
       storage_key: key,
       width_px: size.widthPx,
@@ -138,10 +152,10 @@ async function saveTexture(garmentId: string, job: string) {
   }
   const [{ image_id: imageId, removed_key: removedKey }] = saved.data;
   if (removedKey) {
-    // 行はもう差し替わっているので、古い画像を消せなくても成功として返す
+    // 行はもう決まっているので、使わなくなった画像を消せなくても成功として返す
     const removed = await supabase.storage.from(bucket).remove([removedKey]);
     if (removed.error)
-      console.error("古いテクスチャを消せませんでした", removedKey);
+      console.error("使わなくなったテクスチャを消せませんでした", removedKey);
   }
   return imageId;
 }
