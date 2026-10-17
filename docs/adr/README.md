@@ -37,6 +37,7 @@
 - [0020 服の裏面の写真を別のroleで保存し、詳細画面で表と並べる](0020-back-photo-as-separate-role.md)
 - [0021 購入時期は年月、着る時期は春夏秋冬の複数選択で服に持つ](0021-purchase-month-and-seasons.md)
 - [0022 Pythonのlintと整形にruffを使い、ディレクトリごとに入れていく](0022-python-lint-with-ruff.md)
+- [0023 重ね着の「タイト」「小さすぎます」は、中の服1枚分の厚みを体の身幅に足して決める](0023-layered-fit-status.md)
 
 ## 参考文献
 

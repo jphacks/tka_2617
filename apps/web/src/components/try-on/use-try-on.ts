@@ -15,7 +15,9 @@ import {
   HeightTableSchema,
   MEASUREMENT_KEYS,
   sizeKeyValues,
+  STRETCH_RATIO,
   topMeasurements,
+  WOVEN_STRETCH_RATIO,
   type Build,
   type Measurements,
 } from "@/lib/garment";
@@ -104,18 +106,21 @@ export const TOPS = {
     url: "/models/tshirt_male.glb",
     table: heightTable,
     sample: SAMPLE_GARMENT,
+    stretchRatio: STRETCH_RATIO,
   },
   longsleeve: {
     label: "長袖",
     url: "/models/longsleeve_male.glb",
     table: HeightTableSchema.parse(longsleeveHeightJson),
     sample: SAMPLE_LONGSLEEVE,
+    stretchRatio: STRETCH_RATIO,
   },
   shirt: {
     label: "シャツ",
     url: "/models/shirt_male.glb",
     table: HeightTableSchema.parse(shirtHeightJson),
     sample: SAMPLE_SHIRT,
+    stretchRatio: WOVEN_STRETCH_RATIO,
   },
 };
 export type Top = keyof typeof TOPS;
@@ -232,7 +237,8 @@ export function useTryOn() {
     () => (target ? sizeKeyValues(target, fit, topTable) : null),
     [fit, target, topTable],
   );
-  const status = target ? fitStatus(target, fit) : null;
+  const stretchRatio = TOPS[top].stretchRatio;
+  const status = target ? fitStatus(target, fit, { stretchRatio }) : null;
   const trouserFit = useMemo(
     () => trouserFitAt(build, heightCm, trouserTable),
     [build, heightCm],
@@ -282,15 +288,40 @@ export function useTryOn() {
       width_folds: Math.max(innerSize.size_width, 0) / 10,
     };
   }, [bodyMorphs, innerFit]);
-  const showInner = top === "shirt" && wearInner && status !== "tooSmall";
+  // 中のTシャツを着られるときは、上の服をTシャツの上から着られるかも確かめる
+  const tryInner =
+    top === "shirt" &&
+    wearInner &&
+    status !== "tooSmall" &&
+    innerStatus !== "tooSmall";
+  const layeredStatus =
+    tryInner && target
+      ? fitStatus(target, fit, { stretchRatio, layered: true })
+      : null;
+  // Tシャツの上からだと小さすぎるときは、上の服だけを着せる
+  const showInner = tryInner && layeredStatus !== "tooSmall";
   const trouserMorphs = useMemo(
     () => ({ ...bodyMorphs, ...(trouserSize ?? {}) }),
     [bodyMorphs, trouserSize],
   );
   const tooSmall = [
     status === "tooSmall" ? TOPS[top].label : null,
-    showInner && innerStatus === "tooSmall" ? "中のTシャツ" : null,
+    top === "shirt" && wearInner && innerStatus === "tooSmall"
+      ? "中のTシャツ"
+      : null,
+    layeredStatus === "tooSmall" ? `Tシャツの上の${TOPS[top].label}` : null,
     wearTrousers && trouserStatus === "tooSmall" ? "ズボン" : null,
+  ].filter((name) => name !== null);
+  const tight = [
+    showInner
+      ? layeredStatus === "tight"
+        ? `Tシャツの上の${TOPS[top].label}`
+        : null
+      : status === "tight"
+        ? TOPS[top].label
+        : null,
+    showInner && innerStatus === "tight" ? "中のTシャツ" : null,
+    wearTrousers && trouserStatus === "tight" ? "ズボン" : null,
   ].filter((name) => name !== null);
 
   /** TryOnSceneにそのまま渡す値（計算時間の計測などは各画面で足す） */
@@ -302,7 +333,7 @@ export function useTryOn() {
     showShirt: status !== "tooSmall",
     innerUrl: TOPS.tshirt.url,
     innerMorphs,
-    showInner: showInner && innerStatus !== "tooSmall",
+    showInner,
     trouserMorphs,
     showTrousers: wearTrousers && trouserStatus !== "tooSmall",
     skinColor,
@@ -327,6 +358,7 @@ export function useTryOn() {
     wearInner,
     setWearInner,
     innerStatus: showInner ? innerStatus : null,
+    layeredStatus,
     input,
     setInput,
     target,
@@ -352,6 +384,7 @@ export function useTryOn() {
     sockColor,
     setSockColor,
     tooSmall,
+    tight,
     sceneProps,
     /** 上の服を選び直す（実寸はその服のサンプルにする） */
     selectTop: (t: Top) => {

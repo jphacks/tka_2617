@@ -130,15 +130,12 @@ export function AvatarClient() {
     setShirtFront,
     wearInner,
     setWearInner,
-    innerStatus,
     input,
     setInput,
-    status,
     wearTrousers,
     setWearTrousers,
     trouserInput,
     setTrouserInput,
-    trouserStatus,
     hairId,
     setHairId,
     hairColor,
@@ -150,14 +147,10 @@ export function AvatarClient() {
     sockColor,
     setSockColor,
     tooSmall,
+    tight,
     sceneProps,
     selectTop,
   } = useTryOn();
-  const tight = [
-    status === "tight" ? TOPS[top].label : null,
-    innerStatus === "tight" ? "中のTシャツ" : null,
-    wearTrousers && trouserStatus === "tight" ? "ズボン" : null,
-  ].filter((name) => name !== null);
 
   return (
     <main className="flex flex-col gap-5 px-4 py-5 text-[13px] motion-safe:animate-fade-in">
