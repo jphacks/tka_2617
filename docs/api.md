@@ -152,9 +152,10 @@ apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBear
 
 `GET /api/weather`はapiを通さず、webのサーバーがOpen-Meteoから今日の気温を取って返す。DBに触れない（[ADR 0040](adr/0040-today-weather-and-season.md)）。
 
-- 入力：任意の`lat`・`lon`。0.1度に丸めて使い、保存しない。無いか範囲の外なら東京駅にする。
+- 入力：任意の`lat`・`lon`。0.1度に丸めて使い、保存しない。無いか、空か、範囲の外なら東京駅にする。クエリはホスティングのアクセスログに残るので、画面は`@/lib/weather`の`roundCoordinate`で丸めてから送る。
 - 出力：`{ season, temperatures, place }`。`season`は服の`seasons`と同じ`spring`・`summer`・`autumn`・`winter`。`temperatures`は`{ morning, noon, night }`（7時・13時・19時の℃の整数、欠けたらnull）。`place`は`current`か`fallback`。
-- Open-Meteoにつながらないときも200で返し、`temperatures`はnull、季節は月だけで決める。
+- Open-Meteoにつながらないときも200で返し、`temperatures`はnull、季節は月だけで決める。この答えはブラウザに残さない（`no-store`）。
+- 同じ丸めた位置へのOpen-Meteoの問い合わせは、サーバーで10分まとめる。
 
 ## 共通の型
 
