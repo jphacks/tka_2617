@@ -117,3 +117,25 @@ def triangle_mask(points, xs, ys):
 def signed_area(points):
     x, y = points[:, 0], points[:, 1]
     return 0.5 * (np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
+
+
+def mean_value_embedding(source, triangles, boundary_count, boundary_target):
+    """三角形の辺に沿った平均値座標の重みで、内部の点の写り先を解く（Floater 2003の平均値パラメータ化）。
+
+    sourceの先頭boundary_count個が輪郭の点、残りが内部の点。写り先の輪郭が凸なら三角形は裏返らない。
+    輪郭全体からの重み（mean_value_weights）より局所的なので、ズボンの股のように形が大きく変わる所でも折れ返りにくい。
+    """
+    source = np.asarray(source, dtype=float)
+    count = len(source)
+    weights = np.zeros((count, count))
+    for triangle in triangles:
+        for k in range(3):
+            i, j, l = triangle[k], triangle[(k + 1) % 3], triangle[(k + 2) % 3]
+            a, b = source[j] - source[i], source[l] - source[i]
+            length_a, length_b = np.linalg.norm(a), np.linalg.norm(b)
+            half = np.tan(np.arccos(np.clip(a @ b / (length_a * length_b), -1.0, 1.0)) / 2)
+            weights[i, j] += half / length_a
+            weights[i, l] += half / length_b
+    inner = slice(boundary_count, count)
+    system = np.diag(weights[inner].sum(axis=1)) - weights[inner, inner]
+    return np.linalg.solve(system, weights[inner, :boundary_count] @ np.asarray(boundary_target, dtype=float))
