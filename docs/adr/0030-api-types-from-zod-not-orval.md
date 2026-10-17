@@ -12,7 +12,7 @@ AIがAPIの型を画面ごとに書くと、同じ形の型が何か所にもで
 - webは`import type { GarmentView } from "@pitari/api"`のように受け取る
 - webからapiは`src/server/api.ts`の`hc<AppType>`（Hono RPC）で呼び、入力と出力の型はapiのrouteから推論される
 
-webで手書きしたAPIの型は無く、`openapi.yaml`も無い（2026-10-17）。
+`openapi.yaml`は無い（2026-10-17）。ただ、webの画面が自分の`/api/*`を`requestJson<T>`で呼ぶところでは、応答の形を手で書いている。中身の型（`GarmentView`、`DetectionResult`など）は`@pitari/api`から受け取っているが、それを包む形（`{ garments: GarmentView[] }`、`{ id: string }`、`measurement-studio.tsx`の`DefinitionResponse`など）は手書きになっている。
 
 ## 決定
 
@@ -34,6 +34,7 @@ webで手書きしたAPIの型は無く、`openapi.yaml`も無い（2026-10-17�
 
 ## 影響
 
+- 今ある`requestJson<T>`の手書きの応答の形は、すぐには直さない。そのコードを触るときに、apiで応答全体の型を`z.infer`で作ってexportし、置き換える
 - `openapi.yaml`は作らない。APIの説明は、これまでどおり`docs/api.md`を手で直す。実装とずれる可能性は残る
 - 見直す条件：TypeScript以外からAPIを使うことになったとき（ネイティブのアプリ、外部の開発者など）。または、`docs/api.md`と実装のずれが問題になったとき。その場合は、先に`@hono/zod-openapi`を考える
 
