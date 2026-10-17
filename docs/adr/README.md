@@ -51,6 +51,7 @@
 - [0034 デモまではアバターを男性だけで作り、女性は時間があれば足す](0034-male-avatar-first.md)
 - [0035 撮影の画面で最初に服の種類を選び、シャツを種類に足す](0035-choose-garment-type-first.md)
 - [0036 アバターの設定は、ログインを入れるまでブラウザのlocalStorageに保存する](0036-avatar-settings-in-browser.md)
+- [0037 テクスチャのUVは、アプリのglbのUVを正とし、変換しない](0037-app-glb-uv-is-source.md)
 
 ## 参考文献
 
