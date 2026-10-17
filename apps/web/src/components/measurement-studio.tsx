@@ -1,6 +1,8 @@
 "use client";
 
+import { categoryLabels } from "@/lib/garment-category";
 import { useState } from "react";
+import Link from "next/link";
 import type {
   Category,
   DetectionOptions,
@@ -10,9 +12,14 @@ import type {
   MeasurementDefinition,
   GarmentView,
 } from "@pitari/api";
-import { preparePhoto, jpegFile } from "@/lib/photo";
+import { preparePhoto, jpegFile, pngFile } from "@/lib/photo";
 import { requestJson } from "@/lib/request";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
+import {
+  prepareBackPhoto,
+  uploadBackPhoto,
+  type BackPhoto,
+} from "@/lib/back-photo";
 import { MeasurementProgress } from "@/components/measurement-progress";
 import type { MeasurementProgressState } from "@/lib/measurement-progress";
 import { GarmentMeasurements } from "@/components/garment-measurements";
@@ -47,6 +54,7 @@ export function MeasurementStudio() {
     null,
   );
   const [photo, setPhoto] = useState<Photo | null>(null);
+  const [back, setBack] = useState<BackPhoto | null>(null);
   const [result, setResult] = useState<DetectionResult | null>(null);
   const [mode, setMode] = useState<AdjustmentMode | "dimensions">("dimensions");
   const [values, setValues] = useState<Measurements>({ ...emptyMeasurements });
@@ -268,6 +276,7 @@ export function MeasurementStudio() {
 
   async function changeCategory(chosen: Category) {
     if (!result) return;
+    setBack(null);
     const next = {
       ...result,
       category: chosen,
@@ -290,6 +299,7 @@ export function MeasurementStudio() {
 
   async function save() {
     await work(async () => {
+      let backFailed = false;
       if (editing) {
         await requestJson(`/api/garments/${editing.id}`, {
           method: "PATCH",
@@ -306,13 +316,7 @@ export function MeasurementStudio() {
           throw new Error("切り抜きに失敗しました。服の範囲を調整してください");
         const form = new FormData();
         form.set("image", jpegFile(ready.imageBase64));
-        const bytes = Uint8Array.from(atob(ready.cutoutBase64), (character) =>
-          character.charCodeAt(0),
-        );
-        form.set(
-          "cutoutImage",
-          new File([bytes], "garment.png", { type: "image/png" }),
-        );
+        form.set("cutoutImage", pngFile(ready.cutoutBase64));
         form.set(
           "metadata",
           JSON.stringify({
@@ -339,13 +343,24 @@ export function MeasurementStudio() {
           category: result.category,
           measurements: values,
         });
+        if (back) {
+          try {
+            await uploadBackPhoto(saved.id, back);
+            setBack(null);
+          } catch {
+            backFailed = true;
+          }
+        }
       }
       setMessage(
-        editing
+        (editing
           ? "名前・寸法を更新しました"
           : Object.values(values).some((value) => value !== null)
             ? "服と寸法をクローゼットに登録しました"
-            : "服を登録しました。寸法はあとから入力できます。",
+            : "服を登録しました。寸法はあとから入力できます。") +
+          (backFailed
+            ? "裏面は保存できなかったため、服の詳細から撮り直してください。"
+            : ""),
       );
       await loadGarments();
     });
@@ -384,6 +399,7 @@ export function MeasurementStudio() {
                 void work(async () => {
                   const prepared = await preparePhoto(file);
                   setPhoto(prepared);
+                  setBack(null);
                   setResult(null);
                   setEditing(null);
                   setValues({ ...emptyMeasurements });
@@ -516,6 +532,76 @@ export function MeasurementStudio() {
                 </svg>
               </div>
             )}
+            <section className="space-y-3 rounded border border-line p-4">
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="text-sm font-semibold">
+                  裏面
+                  <span className="ml-1 text-xs font-normal text-description">
+                    任意
+                  </span>
+                </h2>
+                {back && (
+                  <button
+                    className="min-h-8 text-xs text-description underline"
+                    onClick={() => {
+                      setBack(null);
+                    }}
+                  >
+                    外す
+                  </button>
+                )}
+              </div>
+              {back ? (
+                <div className="rounded bg-surface p-4">
+                  <svg
+                    viewBox={`0 0 ${String(back.previewWidthPx)} ${String(back.previewHeightPx)}`}
+                    className="mx-auto h-48 w-full"
+                    role="img"
+                    aria-label="登録する裏面の画像"
+                  >
+                    <image
+                      href={back.previewUrl}
+                      width={back.previewWidthPx}
+                      height={back.previewHeightPx}
+                    />
+                  </svg>
+                </div>
+              ) : (
+                <p className="text-xs leading-[1.7] text-description">
+                  表と同じように平置きして撮ってください。
+                </p>
+              )}
+              <label
+                className={`${secondary} flex cursor-pointer items-center justify-center ${result.category ? "" : "pointer-events-none opacity-40"}`}
+              >
+                {back ? "裏面を撮り直す" : "裏面を撮影"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="sr-only"
+                  disabled={!result.category}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    const chosen = result.category;
+                    event.target.value = "";
+                    if (file && chosen)
+                      void work(async () => {
+                        const prepared = await prepareBackPhoto(
+                          file,
+                          chosen,
+                          showProgress,
+                        );
+                        setBack(prepared);
+                        if (!prepared.cutoutImage)
+                          setMessage(
+                            "裏面の服を切り抜けなかったため、写真のまま登録します",
+                          );
+                      });
+                  }}
+                />
+              </label>
+            </section>
           </>
         )}
         {(result || editing) && (
@@ -594,6 +680,14 @@ export function MeasurementStudio() {
             >
               {editing ? "名前・寸法を更新" : "クローゼットに登録"}
             </button>
+            {editing && (
+              <Link
+                href={`/garments/${encodeURIComponent(editing.id)}`}
+                className="flex min-h-11 items-center justify-center text-xs text-description underline"
+              >
+                服の詳細で裏面・購入時期・時期を設定する
+              </Link>
+            )}
           </section>
         )}
       </fieldset>
@@ -630,8 +724,7 @@ export function MeasurementStudio() {
                 />
               </svg>
               <h3 className="mt-3 text-sm font-medium wrap-anywhere">
-                {garment.name ||
-                  (garment.category === "trousers" ? "パンツ" : "Tシャツ")}
+                {garment.name || categoryLabels[garment.category]}
               </h3>
               <GarmentMeasurements
                 category={garment.category}
@@ -645,6 +738,7 @@ export function MeasurementStudio() {
                     setEditing(garment);
                     setResult(null);
                     setPhoto(null);
+                    setBack(null);
                     setName(garment.name);
                     setValues(garment.measurements);
                     setOverrides({});

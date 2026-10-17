@@ -110,7 +110,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 裏面の写真を登録する。既にあれば差し替える。multipartの`image`（裏面のJPEG、必須）と`cutoutImage`（表示用の透過PNG、任意）を受け取り、roleは`back`と`back_cutout`。画像の条件は表の登録と同じ。cutoutImageを送らない場合、古いback_cutoutは消す。成功は`200 { id }`。
 
-裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
+裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲→切り抜きの順に`POST /v1/detections`を呼び、範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
 ## 共通の型
 
