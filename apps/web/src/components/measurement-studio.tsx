@@ -780,7 +780,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                   服の詳細で裏面・購入時期・時期を設定する
                 </Link>
                 <Link
-                  href="/"
+                  href="/closet"
                   className="flex min-h-11 items-center text-xs text-description underline"
                 >
                   クローゼットに戻る
