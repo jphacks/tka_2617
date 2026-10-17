@@ -41,7 +41,7 @@ type Fake = {
   texture?: Buffer;
   // DBの関数の戻り値。引数は今回上げた画像のキー
   saved?: (uploadedKey: string) => {
-    image_id: string;
+    image_id: string | null;
     removed_key: string | null;
   };
 };
@@ -174,6 +174,7 @@ void test("完成した作業はStorageへ移し、古いテクスチャを消�
     {
       target_garment_id: id,
       target_profile_id: profileId,
+      expected_back_image_id: back.id,
       new_image: {
         storage_key: uploaded.key,
         width_px: 3,
@@ -279,6 +280,18 @@ void test("PNGでない画像は保存しない", async (t) => {
   assert.deepEqual(calls.uploaded, []);
 });
 
+void test("保存するまでの間に裏面が撮り直されたら、保存せず、上げた画像を消して作成中を返す", async (t) => {
+  const calls = fake(t, {
+    images: [back],
+    inference: { status: 200, body: { status: "done", job, error: null } },
+    // DBの関数は、裏面が変わっていると行を変えず、image_idをnullにして返す
+    saved: (uploadedKey) => ({ image_id: null, removed_key: uploadedKey }),
+  });
+  assert.deepEqual(await status(await request()), { status: "processing" });
+  assert.equal(calls.uploaded.length, 1);
+  assert.deepEqual(calls.removed, [calls.uploaded[0].key]);
+});
+
 void test("DBへの保存に失敗したら、上げた画像を消す", async (t) => {
   const calls = fake(t, {
     images: [back],
@@ -298,6 +311,78 @@ void test("認証・IDを確かめ、服が無ければ404を返す", async (t) 
   );
   assert.equal((await request()).status, 404);
   assert.deepEqual(calls.inference, []);
+});
+
+void test("作り直しの間と、作り直しに失敗したときも、今の写真から前に作ったテクスチャを返す", async (t) => {
+  t.mock.method(console, "error", () => {});
+  for (const [state, expected] of [
+    ["running", { status: "processing", imageId: textureId }],
+    [
+      "failed",
+      {
+        status: "failed",
+        message:
+          "テクスチャを作れませんでした。裏面を撮り直すか、もう一度作ってください",
+        imageId: textureId,
+      },
+    ],
+  ] as const) {
+    await t.test(state, async (t) => {
+      fake(t, {
+        images: [back, savedTexture],
+        inference: {
+          status: 200,
+          body: {
+            status: state,
+            job: "次の作業",
+            error: "理由",
+            backImageId: back.id,
+          },
+        },
+      });
+      assert.deepEqual(await status(await request()), expected);
+    });
+  }
+});
+
+void test("撮り直す前の裏面から作った作業は、無い扱いにして保存しない", async (t) => {
+  const older = {
+    status: 200,
+    body: {
+      status: "done",
+      job,
+      error: null,
+      backImageId: "55555555-5555-4555-8555-555555555555",
+    },
+  };
+  await t.test("今の写真のテクスチャが無い", async (t) => {
+    const calls = fake(t, { images: [back], inference: older });
+    assert.deepEqual(await status(await request()), { status: "none" });
+    assert.deepEqual(calls.uploaded, []);
+  });
+  await t.test("今の写真から作ったテクスチャがある", async (t) => {
+    const calls = fake(t, {
+      images: [back, { ...savedTexture, texture_job: "前の作業" }],
+      inference: { ...older, body: { ...older.body, status: "running" } },
+    });
+    assert.deepEqual(await status(await request()), {
+      status: "done",
+      imageId: textureId,
+    });
+    assert.deepEqual(calls.uploaded, []);
+  });
+  await t.test("今の裏面の作業なら保存する", async (t) => {
+    const calls = fake(t, {
+      images: [back],
+      inference: { ...older, body: { ...older.body, backImageId: back.id } },
+      saved: () => ({ image_id: newTextureId, removed_key: null }),
+    });
+    assert.deepEqual(await status(await request()), {
+      status: "done",
+      imageId: newTextureId,
+    });
+    assert.equal(calls.uploaded.length, 1);
+  });
 });
 
 void test("服の詳細のimagesにはテクスチャを入れない（古いことがあるため）", async (t) => {

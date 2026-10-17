@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import trousersHeightJson from "@/../public/models/trousers_male_height.json";
-import { BUILDS } from "@/lib/garment";
+import { BUILDS } from "@/lib/avatar-settings";
 import {
   TROUSER_KEYS,
   TROUSER_STRETCH_RATIO,
