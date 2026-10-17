@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import trousersHeightJson from "@/../public/models/trousers_male_height.json";
 import longsleeveHeightJson from "@/../public/models/longsleeve_male_height.json";
+import shirtHeightJson from "@/../public/models/shirt_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import presetsJson from "@/../public/presets/presets.json";
 import type { Benchmark } from "@/app/dev/tryon/tryon-scene";
@@ -90,7 +91,26 @@ const SAMPLE_LONGSLEEVE = GarmentSchema.parse({
   measurementVersion: "df2-a4-midpoint-v1",
 });
 
-/** 上の服。寸法の4項目とキーはどちらも同じで、Blenderが書き出したglbと表だけが違う */
+const SAMPLE_SHIRT = GarmentSchema.parse({
+  id: "44444444-4444-4444-8444-444444444444",
+  name: "白いシャツ",
+  category: "long_sleeve_top",
+  measurements: {
+    shoulderWidthCm: 44,
+    sleeveLengthCm: 60,
+    bodyWidthCm: 53,
+    bodyLengthCm: 62,
+    waistCm: null,
+    hipCm: null,
+    thighWidthCm: null,
+    riseCm: null,
+    inseamCm: null,
+    hemWidthCm: null,
+  },
+  measurementVersion: "df2-a4-midpoint-v1",
+});
+
+/** 上の服。寸法の4項目とキーはどれも同じで、Blenderが書き出したglbと表だけが違う */
 const TOPS = {
   tshirt: {
     label: "Tシャツ",
@@ -104,8 +124,23 @@ const TOPS = {
     table: HeightTableSchema.parse(longsleeveHeightJson),
     sample: SAMPLE_LONGSLEEVE,
   },
+  shirt: {
+    label: "シャツ",
+    url: "/models/shirt_male.glb",
+    table: HeightTableSchema.parse(shirtHeightJson),
+    sample: SAMPLE_SHIRT,
+  },
 };
 type Top = keyof typeof TOPS;
+
+/** シャツの前の開け方。元の形（キーが両方0）が「少し開ける」 */
+const SHIRT_FRONTS = {
+  closed: { label: "閉める", morphs: { shirt_close: 1, shirt_open: 0 } },
+  partly: { label: "少し開ける", morphs: { shirt_close: 0, shirt_open: 0 } },
+  open: { label: "開ける", morphs: { shirt_close: 0, shirt_open: 1 } },
+};
+type ShirtFront = keyof typeof SHIRT_FRONTS;
+const SHIRT_FRONT_IDS = Object.keys(SHIRT_FRONTS) as ShirtFront[];
 const TOP_IDS = Object.keys(TOPS) as Top[];
 
 const SAMPLE_TROUSERS = GarmentSchema.parse({
@@ -197,6 +232,7 @@ export default function TryOnClient() {
     heightTable.standard_cm.toFixed(1),
   );
   const [top, setTop] = useState<Top>("tshirt");
+  const [shirtFront, setShirtFront] = useState<ShirtFront>("partly");
   const [input, setInput] = useState<Inputs>(() =>
     toInputs(topMeasurements(SAMPLE_GARMENT)),
   );
@@ -261,14 +297,17 @@ export default function TryOnClient() {
   );
   // 長袖の袖丈が腕より長いときは、余った袖が手に垂れた形（垂れ方のキー）を混ぜる
   const sleeveExcessCm =
-    top === "longsleeve" && target ? target.sleeve - fit.base.sleeve : 0;
+    top !== "tshirt" && target ? target.sleeve - fit.base.sleeve : 0;
   const shirtMorphs = useMemo(
     () => ({
       ...bodyMorphs,
       ...(size ?? {}),
-      ...(top === "longsleeve" ? drapeKeyValues(sleeveExcessCm) : {}),
+      // 身幅を大きくした分は、均等にふくらませず、脇・背中の縦のしわにする（値1で+10cm分）
+      width_folds: size ? Math.max(size.size_width, 0) / 10 : 0,
+      ...(top !== "tshirt" ? drapeKeyValues(sleeveExcessCm) : {}),
+      ...(top === "shirt" ? SHIRT_FRONTS[shirtFront].morphs : {}),
     }),
-    [bodyMorphs, size, top, sleeveExcessCm],
+    [bodyMorphs, size, top, sleeveExcessCm, shirtFront],
   );
   const trouserMorphs = useMemo(
     () => ({ ...bodyMorphs, ...(trouserSize ?? {}) }),
@@ -455,6 +494,26 @@ export default function TryOnClient() {
               </label>
             ))}
           </div>
+          {top === "shirt" && (
+            <div className="flex gap-4">
+              <span className="text-description">前</span>
+              {SHIRT_FRONT_IDS.map((f) => (
+                <label key={f} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="shirtFront"
+                    value={f}
+                    checked={shirtFront === f}
+                    onChange={() => {
+                      setShirtFront(f);
+                    }}
+                    className="accent-main"
+                  />
+                  {SHIRT_FRONTS[f].label}
+                </label>
+              ))}
+            </div>
+          )}
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="text-xs text-description">
