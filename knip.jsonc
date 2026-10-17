@@ -1,5 +1,5 @@
 {
-  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
   // 同じファイルの中で使っているexportは見逃す。消すべきなのは、どこでも使っていないものだけ
   "ignoreExportsUsedInFile": true,
   // Claude Designが書き出した資料で、どこからも読み込まない
