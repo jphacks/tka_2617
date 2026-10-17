@@ -75,3 +75,8 @@ Dockerを使うのはローカルSupabaseだけ。`supabase start`後にDocker D
 * **PRの大きさの警告**：ロックファイルやBlenderの書き出しなどの生成物に印を付けて除き（[.gitattributes](.gitattributes)）、400行を超えたら警告する。AIが作るPRは大きくなりやすいため（[scripts/pr-size.sh](scripts/pr-size.sh)）
 * **テストの書き忘れの警告**：処理（apiの`src/services`・`src/lib`、webの`src/lib`）を変えたのに、同じアプリの`tests/`が変わっていないPRで、そのファイルに警告を付ける。AIに処理を書かせても、テストが一緒に作られなかったため（[scripts/pr-tests.sh](scripts/pr-tests.sh)）
 * **migrationを空のDBで確かめる**：DBに関係するファイルを変えたPRと、mainへのマージのときに、SupabaseのDBを空の状態で起動する。migrationとseedが最後まで通るか、DBの関数に誤りが無いか、commitしたDBの型がmigrationと合っているかを確かめる（[.github/workflows/db.yml](.github/workflows/db.yml)）
+* **服の実寸どおりの形を、スマホの中で作る**：着丈・身幅・肩幅・袖丈のcmから、服のシェイプキーの値を解く。キー同士の連動と体型・身長による効き方の違いは、Blenderで体型4種×身長5点ごとに測った表を補間して吸収する（[ADR 0008](docs/adr/0008-height-keys-and-tables.md)、[apps/web/src/lib/garment.ts](apps/web/src/lib/garment.ts)）
+* **骨格を使わず、体型・身長を体と服・髪・靴の共通のシェイプキーで変える**：服・髪・靴はmhcloで体型・身長ごとに着せ直して同じ名前のキーを持たせ、ブラウザでは同じ値を入れるだけで体に合う（[ADR 0017](docs/adr/0017-presets-follow-body-with-shape-keys.md)）
+* **服が体を突き抜けない押し出し**：体の面をthree-mesh-bvhで探し、近すぎる服の頂点を外へ出す。服で覆われるはずの体が出ていれば面を足して押し、縁はならす。スマホで約0.27秒（[ADR 0007](docs/adr/0007-push-shirt-out-only.md)、[apps/web/src/lib/push-out.ts](apps/web/src/lib/push-out.ts)）
+* **着られるかを寸法で判定する**：服の身幅を、同じ高さで切った体の一周の半分と比べて「タイト」「小さすぎて着られません」と出す（[ADR 0007](docs/adr/0007-push-shirt-out-only.md)）
+* **余った袖と裾の形**：袖丈が腕より長いと、Blenderの布のシミュレーションで作った垂れた形を混ぜる。股下が長いと、裾を靴の甲の上でたまらせる（[apps/web/src/lib/sleeve-drape.ts](apps/web/src/lib/sleeve-drape.ts)、[apps/web/src/lib/hem-stack.ts](apps/web/src/lib/hem-stack.ts)）
