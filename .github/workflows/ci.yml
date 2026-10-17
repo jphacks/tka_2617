@@ -24,6 +24,9 @@ jobs:
       # 使っていないファイル・export・依存（knip.jsonc）
       - run: pnpm knip
       - run: pnpm typecheck
+      # バージョンはruff.tomlのrequired-versionと合わせる
+      - run: pipx run ruff==0.17.1 format --check .
+      - run: pipx run ruff==0.17.1 check .
       # server-only の違反（クライアントからサーバー専用のコードを読み込む）は build でしか分からないため
       - run: pnpm build
 
@@ -36,12 +39,14 @@ jobs:
     concurrency:
       group: deploy-production
       cancel-in-progress: false
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
           node-version-file: .node-version
-      - run: npx --yes vercel@59.23.2 deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+      - run: npx --yes vercel@59.23.2 deploy --prod --yes
+        # 鍵はこのstepだけに渡す。--tokenでも渡さない。コマンドの引数はプロセスの一覧やログに出ることがあるため
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

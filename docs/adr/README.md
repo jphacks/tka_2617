@@ -4,7 +4,7 @@
 
 ## 書き方
 
-ファイル名は `NNNN-内容.md`（4桁の連番）。中身は次の6つを短く書く。
+ファイル名は`NNNN-内容.md`（4桁の連番）。中身は次の6つを短く書く。
 
 - 背景：何に困っていたか
 - 決定：何を決めたか
@@ -34,6 +34,7 @@
 - [0017 髪・靴のプリセットは、骨格ではなく体と同じシェイプキーで体に合わせる](0017-presets-follow-body-with-shape-keys.md)
 - [0018 長袖は、Tシャツの袖を手首まで伸ばして作る](0018-longsleeve-from-tshirt.md)
 - [0019 長袖のシャツは、male_casualsuit03 のシャツを使い、前の開け閉めはキーで作る](0019-shirt-from-casualsuit03.md)
+- [0022 Pythonのlintと整形にruffを使い、ディレクトリごとに入れていく](0022-python-lint-with-ruff.md)
 
 ## 参考文献
 

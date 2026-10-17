@@ -3,19 +3,20 @@
 ## 必要なもの
 
 - Node.js 22（[.node-version](../.node-version)）
-- pnpm（バージョンは [package.json](../package.json) の `packageManager`）
-- Docker（ローカルの Supabase を動かすため）
+- pnpm（バージョンは [package.json](../package.json) の`packageManager`）
+- Docker（ローカルのSupabaseを動かすため）
 - [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)（Pythonを書く人だけ。commit前にruffを動かすため）：Macは`brew install uv`、Windowsは`winget install --id=astral-sh.uv -e`
 
 ## 手順
 
-1. 依存を入れる。commit 前の git hook（lefthook）もここで入る
+1. 依存を入れる。commit前のgit hook（lefthook）もここで入る
 
    ```bash
    pnpm install
    ```
 
-2. ローカルの Supabase を起動する
+2. ローカルのSupabaseを起動する
 
    ```bash
    supabase start
@@ -28,8 +29,8 @@
    cp apps/web/.env.example apps/web/.env.local
    ```
 
-   - `SUPABASE_SECRET_KEY`：`supabase status -o env` の `SECRET_KEY`（古い CLI では `SERVICE_ROLE_KEY`）
-   - `INTERNAL_API_TOKEN`：下のコマンドで作り、api と web の両方に同じ値を入れる
+   - `SUPABASE_SECRET_KEY`：`supabase status -o env`の`SECRET_KEY`（古いCLIでは`SERVICE_ROLE_KEY`）
+   - `INTERNAL_API_TOKEN`：下のコマンドで作り、apiとwebの両方に同じ値を入れる
 
    ```bash
    openssl rand -hex 32
@@ -41,7 +42,7 @@
    pnpm dev
    ```
 
-   web は http://localhost:3000 、api は http://localhost:3001 で動く。http://localhost:3000/api/health が `{"ok":true}` を返せば、web から api までつながっている。
+   webは http://localhost:3000 、apiは http://localhost:3001 で動く。http://localhost:3000/api/health が`{"ok":true}`を返せば、webからapiまでつながっている。
 
 ## 服の採寸を開発するとき
 
@@ -69,14 +70,16 @@ PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを確認する。スマ�
 
 ## commit前の確認
 
-lefthook が、staged のファイルを Prettier で整形し、ESLint で検査する。整形の結果は自動で staged に戻る。lint エラーがあると commit できない。
+lefthookが、stagedのファイルをPrettierで整形し、ESLintで検査する。mdは、Prettierの前にtextlintで英語と日本語の間の空白を消す。手で`pnpm lint:md --fix`したときは、続けて`pnpm format`する。整形の結果は自動でstagedに戻る。lintエラーがあるとcommitできない。
+
+Pythonのファイルは、uvがあればruffで検査して整形する（[ADR 0022](adr/0022-python-lint-with-ruff.md)）。uvが無いときは飛ばすが、PRのCIで同じ検査が走る。まだruffをかけていないディレクトリは、`ruff.toml`の`extend-exclude`にある。
 
 ## DB を変えるとき
 
-1. `supabase migration new <変更の名前>` で migration を作り、SQL を書く
-   - `profiles` を作るときは、`supabase/seed.sql` にデモユーザー（`apps/api/.env.example` の `DEMO_PROFILE_ID`）の行も入れる。`supabase db reset` のたびに流れる
-2. `supabase db reset` でローカルの DB に反映する
-3. `pnpm --filter @pitari/api db:types` で型を作り直す
+1. `supabase migration new <変更の名前>`でmigrationを作り、SQLを書く
+   - `profiles`を作るときは、`supabase/seed.sql`にデモユーザー（`apps/api/.env.example`の`DEMO_PROFILE_ID`）の行も入れる。`supabase db reset`のたびに流れる
+2. `supabase db reset`でローカルのDBに反映する
+3. `pnpm --filter @pitari/api db:types`で型を作り直す
 4. [docs/er.md](er.md) を更新する
 
 ## webをVercelにデプロイする
@@ -85,11 +88,11 @@ mainにマージすると、CIが通った後にGitHub Actionsが本番に出す
 
 ### Actionsに置いてあるsecret
 
-| 名前                | 中身                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `VERCEL_TOKEN`      | Vercelの鍵。VercelのAccount Settingsの「Tokens」で作る。スコープはpitariのプロジェクトのチームに絞り、有効期限を付ける |
-| `VERCEL_ORG_ID`     | `.vercel/project.json`の`orgId`                                                                                        |
-| `VERCEL_PROJECT_ID` | `.vercel/project.json`の`projectId`                                                                                    |
+| 名前                | 中身                                                                                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `VERCEL_TOKEN`      | Vercelの鍵。VercelのAccount Settingsの「Tokens」で作る。Scopeはpitariのプロジェクトだけにし（「All Projects」にしない）、有効期限を付ける |
+| `VERCEL_ORG_ID`     | `.vercel/project.json`の`orgId`                                                                                                           |
+| `VERCEL_PROJECT_ID` | `.vercel/project.json`の`projectId`                                                                                                       |
 
 鍵を作り直したら`gh secret set VERCEL_TOKEN`で入れ直す（値は画面に出さずに入力できる）。
 
@@ -123,4 +126,4 @@ Actionsが止まっているときなどは、手元のMacからも出せる。
 
 ## 参考文献
 
-- [【Lefthook】pre-commitで自動修正されたコードをステージングする方法（Qiita）](https://qiita.com/P-man_Brown/items/66b2349c529474033f64)：`stage_fixed` の使い方
+- [【Lefthook】pre-commitで自動修正されたコードをステージングする方法（Qiita）](https://qiita.com/P-man_Brown/items/66b2349c529474033f64)：`stage_fixed`の使い方
