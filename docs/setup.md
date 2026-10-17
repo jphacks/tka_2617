@@ -48,22 +48,24 @@
 
 他の人の変更をmainから取り込んだら、画面を確かめる前に、依存・DB・推論サービスを今のmainに合わせる。どれかが古いと、画面は開いても、登録・裏面の保存・テクスチャの生成が失敗する。
 
-1. mainを最新にする
+1. 動いている`pnpm dev`と推論サービスを止める。Windowsでは、動いているものがファイルをつかみ、次の`pnpm install`が失敗することがある
+
+2. mainの変更を取り込む
 
    ```bash
    git switch main
    git pull
    ```
 
-2. 依存を入れ直す。`pnpm-lock.yaml`が変わっていなくても、毎回実行してよい
+   作業中のブランチに取り込むときは、ブランチを切り替えずに`git fetch origin`→`git merge origin/main`とする。手順3からは同じ
+
+3. 依存を入れ直す。`pnpm-lock.yaml`が変わっていなくても、毎回実行してよい
 
    ```bash
    pnpm install
    ```
 
-   Windowsでは、動いている`pnpm dev`がファイルをつかんで失敗することがある。そのときは先に`pnpm dev`を止める。
-
-3. ローカルDBに、まだ当たっていないmigrationを当てる
+4. ローカルDBに、まだ当たっていないmigrationを当てる
 
    ```bash
    supabase migration list --local
@@ -72,15 +74,22 @@
 
    一覧で`Remote`（ローカルDBの側）が空の行が、まだ当たっていないmigration。`supabase db reset`はローカルのデータを消すので、ここでは使わない。
 
-4. `pnpm dev`を止めて、起動し直す。ファイルの変更は自動で読み直すが、依存を入れ直したあとは起動し直す
+5. `pnpm dev`を起動し直す
 
-5. 採寸やテクスチャを確かめるときは、推論サービスも止めて起動し直す。推論サービスはファイルの変更を読み直さない。`apps/inference/requirements.txt`が変わったときは、[推論サービスのREADME](../apps/inference/README.md)の手順で依存も入れ直す
-
-   ```powershell
-   ./apps/inference/.venv/Scripts/python.exe apps/inference/run.py
+   ```bash
+   pnpm dev
    ```
 
-6. つながっているか確かめる
+6. 採寸やテクスチャを確かめるときは、推論サービスも起動し直す。推論サービスはファイルの変更を読み直さないので、起動し直さないと古いコードのまま動く。`apps/inference/requirements.txt`が変わったときは、[推論サービスのREADME](../apps/inference/README.md)の手順で依存も入れ直す
+
+   ```bash
+   # Windows
+   ./apps/inference/.venv/Scripts/python.exe apps/inference/run.py
+   # Mac
+   ./apps/inference/.venv/bin/python apps/inference/run.py
+   ```
+
+7. つながっているか確かめる
    - http://localhost:3000/api/health が`{"ok":true}`を返す
    - http://localhost:3000/api/inference-status の`weightsPresent`と`detectorPresent`が`true`。`modelLoaded`は最初の採寸までは`false`のまま
 
