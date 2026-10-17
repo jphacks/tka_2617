@@ -10,15 +10,16 @@ pre-commit:
       glob: "*.{js,mjs,ts,tsx,json,md,yml,yaml,css}"
       run: pnpm exec prettier --write --ignore-unknown {staged_files}
       stage_fixed: true
+    # 生成物（DBの型など）はESLintの設定で外してある。名指しで渡したときの警告は出さない
     - name: lint web
       root: "apps/web/"
       glob: "*.{ts,tsx,mjs}"
-      run: pnpm exec eslint --fix {staged_files}
+      run: pnpm exec eslint --fix --no-warn-ignored {staged_files}
       stage_fixed: true
     - name: lint api
       root: "apps/api/"
       glob: "*.{ts,mjs}"
-      run: pnpm exec eslint --fix {staged_files}
+      run: pnpm exec eslint --fix --no-warn-ignored {staged_files}
       stage_fixed: true
     # uvが無い人のcommitは止めず、PRのCIで確かめる（docs/adr/0022-python-lint-with-ruff.md）
     - name: python
