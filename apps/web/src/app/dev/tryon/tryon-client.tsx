@@ -20,9 +20,9 @@ import {
   BUILDS,
   HEIGHT_MAX_CM,
   HEIGHT_MIN_CM,
+  LAYER_WIDTH_CM,
   MEASUREMENT_KEYS,
   MEASUREMENT_LABELS,
-  STRETCH_RATIO,
   topMeasurements,
 } from "@/lib/garment";
 import type { PushStats } from "@/lib/push-out";
@@ -49,6 +49,9 @@ export default function TryOnClient() {
     top,
     shirtFront,
     setShirtFront,
+    wearInner,
+    setWearInner,
+    layeredStatus,
     input,
     setInput,
     target,
@@ -264,6 +267,33 @@ export default function TryOnClient() {
               ))}
             </div>
           )}
+          {top === "shirt" && (
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={wearInner}
+                onChange={(e) => {
+                  setWearInner(e.target.checked);
+                }}
+                className="accent-main"
+              />
+              中にTシャツを着る（実寸はサンプルのTシャツ）
+            </label>
+          )}
+          {layeredStatus === "tight" && (
+            <p>
+              <span className="rounded border border-main px-2 py-0.5 text-[11px] font-semibold">
+                Tシャツの上からだとタイト
+              </span>
+            </p>
+          )}
+          {layeredStatus === "tooSmall" && (
+            <p className="text-red-600">
+              Tシャツを着た体の身幅より
+              {Math.round(TOPS[top].stretchRatio * 100)}
+              %以上小さいので、シャツだけを着せています
+            </p>
+          )}
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="text-xs text-description">
@@ -309,12 +339,14 @@ export default function TryOnClient() {
           )}
           {status === "tooSmall" && (
             <p className="text-red-600">
-              身幅が体より{Math.round(STRETCH_RATIO * 100)}
+              身幅が体より{Math.round(TOPS[top].stretchRatio * 100)}
               %以上小さいので、着せずに表示しています
             </p>
           )}
           <p className="text-xs text-muted tabular-nums">
             体の身幅 {fit.bodyWidth.toFixed(1)}cm
+            {layeredStatus &&
+              `（Tシャツの上から ${(fit.bodyWidth + LAYER_WIDTH_CM).toFixed(1)}cm）`}
           </p>
           <div className="flex flex-wrap gap-2">
             <button

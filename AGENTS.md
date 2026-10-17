@@ -10,7 +10,7 @@
 - 開発：`pnpm install`、`pnpm dev`。確認：`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build`。整形：`pnpm format`。
 - Python：`uvx ruff@0.17.1 check --fix`、`uvx ruff@0.17.1 format`。まだ対象外のディレクトリは`ruff.toml`の`extend-exclude`。
 - ローカルDB：`supabase start`。DB型生成：`pnpm --filter @pitari/api db:types`。
-- 必要なときに読む：[初回セットアップ](docs/setup.md)、[API一覧](docs/api.md)、[ER図](docs/er.md)、[候補要件](docs/requirements-candidates.md)、[ADR](docs/adr/README.md)。
+- 必要なときに読む：[初回セットアップとmainを取り込んだあと](docs/setup.md)、[API一覧](docs/api.md)、[ER図](docs/er.md)、[候補要件](docs/requirements-candidates.md)、[ADR](docs/adr/README.md)。
 
 ## 開発ルール
 
@@ -27,7 +27,7 @@
 ## commitとPR
 
 - ブランチは`feature/<自分の名前>/<内容>`。PRは目的を1つにする。
-- PRの差分は400行くらいまで。`bash scripts/pr-size.sh`で数える（生成物とバイナリは数えない。PRのマージ先と比べるので、積み上げたPRでもそのPRの分だけを数える）。超えそうなら先にPRを分け、分けないなら本文に理由を書く。
+- PRの差分は400行くらいまで。`bash scripts/pr-size.sh`で数える（生成物・バイナリ・テストは数えない。PRのマージ先と比べるので、積み上げたPRでもそのPRの分だけを数える）。超えそうなら先にPRを分け、分けないなら本文に理由を書く。
 - commitは、それだけで意味が通り、lintと型が通る単位に分ける。整形・名前の変更・生成物の更新は、機能の変更と別のcommitにする。
 - メッセージは`feat(web): 〜する`の形（`fix`・`docs`・`chore`・`ci`・`refactor`など）。本文に「なぜ」を書く。
 - PR本文は`.github/pull_request_template.md`に沿って書く。

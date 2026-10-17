@@ -163,7 +163,7 @@ if (selected) {
 - `original`：旧v1の遠近補正前JPEG。旧データではmeasurementが補正後JPEG、A4四隅はoriginalにある。
 - `back`・`back_cutout`：裏面のJPEGと表示用の透過PNG。採寸しないので点・A4四隅・縮尺を持たない。裏面がない服もある。
 
-服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。DB・Storage・APIには含めず、画面にも出さない（[ADR 0023](adr/0023-garment-texture-on-pc.md)）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせ、GLBとUVの一致を検証している。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
+服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。アプリからは`GET /api/garments/{服ID}/texture`で状態を聞き、`done`なら`/api/garments/{服ID}/images/{imageId}`のPNGを貼る（[API一覧](api.md)の「テクスチャの状態を聞く」、[ADR 0033](adr/0033-serve-texture-through-api.md)）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせ、GLBとUVの一致を検証している。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
 
 現在の画面からはmeasurementとcutoutの2枚を保存し、裏面を撮った場合はbackとback_cutoutも保存する。服1着につき各roleは最大1枚。クローゼットの一覧は表だけを出し、cutout→measurement→originalの順で選ぶ（`garmentPhotoUrl`）。点を見るときは必ずmeasurementを選ぶ。
 
@@ -268,6 +268,22 @@ await requestJson(`/api/garments/${garment.id}`, {
 measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過PNG。どちらもUV展開済みテクスチャではない。写真をそのままGLBへ貼れば柄が正しく合う、という契約にはしていない。また、少数の平置き寸法だけで実際の立体形状・厚み・着用時のしわは一意に決まらない。
 
 最初の接続確認は、手動で寸法を入れたTシャツを1着登録→APIで取得→3D画面にGLBを表示→1項目の寸法変更を反映、の順に進める。HRNetの精度検証と並行して進められる。
+
+## クローゼットからアバターへの服の渡し方
+
+服の詳細の「アバターに着せる」を押すと、次のURLでアバターの画面を開く（#69）。
+
+```text
+/avatar?top=<上の服のID>&bottom=<下の服のID>
+```
+
+- `top`は半袖（`short_sleeve_top`）と長袖（`long_sleeve_top`）、`bottom`はズボン（`trousers`）。服の種類と上下の対応は`apps/web/src/lib/outfit.ts`の`outfitSlot`にある
+- 片方だけのこともある。指定が無い側は、今までどおりの服（見本の服など）を着せる
+- 最後に着せた服は、ブラウザのlocalStorage（`pitari.outfit`）に覚えておく。別の服の詳細から押すと、同じ側だけが入れ替わり、もう片方は残る
+- 服を選び直すときは、下のナビの「クローゼット」に戻って服の詳細を開き、もう一度「アバターに着せる」を押す。上を選んだあとに下を選ぶときも同じで、覚えていた上はそのまま残る
+- アバターの画面で服を外すときは、外す側を`null`にした服を`saveOutfit`で保存し、`router.replace(avatarUrl(outfit))`でURLからもその側を消す（#70）。URLを消すだけでは、次に服の詳細から押したときに、覚えていた服がURLに戻ってくる
+- アバターの画面では、`readOutfit(useSearchParams())`で服のIDを読み、`GET /api/garments/{服ID}`で寸法を取る（#70）。IDの形でない値は、指定されていないものとして扱う
+- 服が消されていて取得できないときの表示は、#70で決める
 
 ## 長そでの受け渡し
 

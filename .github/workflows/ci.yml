@@ -29,6 +29,15 @@ jobs:
       # バージョンはruff.tomlのrequired-versionと合わせる
       - run: pipx run ruff==0.17.1 format --check .
       - run: pipx run ruff==0.17.1 check .
+      # 推論のテストのうち、numpyとOpenCVだけで動くもの（A4の縮尺、ランドマークの読み取り、切り抜き）。
+      # PyTorchやFastAPIは入れない。版の範囲はrequirements.txtに合わせる（-cで範囲だけを使う）
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - run: pip install numpy opencv-python-headless -c requirements.txt
+        working-directory: apps/inference
+      - run: python -m unittest tests.test_geometry tests.test_cutout -v
+        working-directory: apps/inference
 
   test:
     runs-on: ubuntu-latest

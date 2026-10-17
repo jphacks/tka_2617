@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { readPng } from "#src/lib/png";
+import { pngSize, readPng } from "#src/lib/png";
 
 const transparent = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAMAAAADCAYAAABWKLW/AAAAG0lEQVQIHWNkQAKMDECQYiT3f865R4yMDEgAAEVBBATEz/jIAAAAAElFTkSuQmCC",
@@ -34,4 +34,22 @@ void test("JPEGの偽装・破損PNG・透明度なし・過大な寸法を拒�
       readPng(new File([bytes], "cutout.png", { type: "image/png" })),
     );
   }
+});
+
+void test("テクスチャは透明度が無くてもよく、途中で切れたPNGと過大な寸法は拒否する", () => {
+  const rgb = Buffer.from(transparent);
+  rgb[25] = 2;
+  assert.deepEqual(pngSize(rgb), { widthPx: 3, heightPx: 3 });
+  const huge = Buffer.from(transparent);
+  huge.writeUInt32BE(5000, 16);
+  const invalidChunk = Buffer.from(transparent);
+  invalidChunk.writeUInt32BE(100000, 33);
+  for (const bytes of [
+    Buffer.from([255, 216, 255]),
+    // IENDの手前で切れている
+    transparent.subarray(0, transparent.length - 12),
+    invalidChunk,
+    huge,
+  ])
+    assert.equal(pngSize(bytes), null);
 });

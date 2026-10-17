@@ -39,3 +39,17 @@ export async function requestInference(
     );
   }
 }
+
+// テクスチャの状態と画像を読む。404（作業が無い）の扱いは呼び出し側で決めるので、応答をそのまま返す。
+// 設定が無い、またはつながらないときはnull
+export async function getFromInference(path: string): Promise<Response | null> {
+  if (!env.INFERENCE_TOKEN) return null;
+  try {
+    return await fetch(new URL(path, env.INFERENCE_URL), {
+      headers: { Authorization: `Bearer ${env.INFERENCE_TOKEN}` },
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch {
+    return null;
+  }
+}

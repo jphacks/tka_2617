@@ -128,14 +128,14 @@ export function AvatarClient() {
     top,
     shirtFront,
     setShirtFront,
+    wearInner,
+    setWearInner,
     input,
     setInput,
-    status,
     wearTrousers,
     setWearTrousers,
     trouserInput,
     setTrouserInput,
-    trouserStatus,
     hairId,
     setHairId,
     hairColor,
@@ -147,13 +147,10 @@ export function AvatarClient() {
     sockColor,
     setSockColor,
     tooSmall,
+    tight,
     sceneProps,
     selectTop,
   } = useTryOn();
-  const tight = [
-    status === "tight" ? TOPS[top].label : null,
-    wearTrousers && trouserStatus === "tight" ? "ズボン" : null,
-  ].filter((name) => name !== null);
 
   return (
     <main className="flex flex-col gap-5 px-4 py-5 text-[13px] motion-safe:animate-fade-in">
@@ -274,6 +271,21 @@ export function AvatarClient() {
               }))}
               value={shirtFront}
               onChange={setShirtFront}
+            />
+          </Row>
+        )}
+        {top === "shirt" && (
+          <Row label="シャツの中">
+            <Segmented
+              label="シャツの中"
+              options={[
+                { id: "none", label: "なし" },
+                { id: "tshirt", label: "Tシャツ" },
+              ]}
+              value={wearInner ? "tshirt" : "none"}
+              onChange={(id) => {
+                setWearInner(id === "tshirt");
+              }}
             />
           </Row>
         )}
