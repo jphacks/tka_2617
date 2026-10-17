@@ -46,6 +46,7 @@
 - [0029 DBの型をmigrationから作ってcommitし、apiのSupabaseのクライアントに付ける](0029-commit-db-types.md)
 - [0030 APIの型はapiのzodから作ってHono RPCで渡し、Orvalは入れない](0030-api-types-from-zod-not-orval.md)
 - [0031 テクスチャの保存フォルダを生成日時から始める](0031-texture-filenames-with-dates.md)
+- [0033 撮影の画面で最初に服の種類を選び、シャツを種類に足す](0033-choose-garment-type-first.md)
 
 ## 参考文献
 
