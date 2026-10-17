@@ -22,19 +22,20 @@ JSONはcamelCase、DBはsnake_case。エラーはHTTPステータスと`{ error:
 
 ## 実装済みの経路
 
-| メソッド | apiのパス               | 用途                                      |
-| -------- | ----------------------- | ----------------------------------------- |
-| GET      | `/health`               | 死活確認。ここだけ認証不要                |
-| GET      | `/v1/inference-status`  | モデルファイルの配置・読み込み状況        |
-| POST     | `/v1/detections`        | A4縮尺・服の検出・ランドマーク・切り抜き  |
-| GET      | `/v1/measurements`      | カテゴリ別の点番号・式・採寸バージョン    |
-| POST     | `/v1/measurements`      | 修正した点から寸法を再計算                |
-| GET      | `/v1/garments`          | 一覧。任意のcategoryで絞り込み、最新100件 |
-| POST     | `/v1/garments`          | 写真・点・確定した寸法を登録              |
-| GET      | `/v1/garments/:id`      | 詳細                                      |
-| PATCH    | `/v1/garments/:id`      | 名前・寸法・購入時期・季節を変更          |
-| PUT      | `/v1/garments/:id/back` | 裏面の写真を登録・差し替え                |
-| DELETE   | `/v1/garments/:id`      | 写真と服を削除                            |
+| メソッド | apiのパス                  | 用途                                       |
+| -------- | -------------------------- | ------------------------------------------ |
+| GET      | `/health`                  | 死活確認。ここだけ認証不要                 |
+| GET      | `/v1/inference-status`     | モデルファイルの配置・読み込み状況         |
+| POST     | `/v1/detections`           | A4縮尺・服の検出・ランドマーク・切り抜き   |
+| GET      | `/v1/measurements`         | カテゴリ別の点番号・式・採寸バージョン     |
+| POST     | `/v1/measurements`         | 修正した点から寸法を再計算                 |
+| GET      | `/v1/garments`             | 一覧。任意のcategoryで絞り込み、最新100件  |
+| POST     | `/v1/garments`             | 写真・点・確定した寸法を登録               |
+| GET      | `/v1/garments/:id`         | 詳細                                       |
+| PATCH    | `/v1/garments/:id`         | 名前・寸法・購入時期・季節を変更           |
+| PUT      | `/v1/garments/:id/back`    | 裏面の写真を登録・差し替え                 |
+| POST     | `/v1/garments/:id/texture` | 保存済みの表裏写真からテクスチャ生成を依頼 |
+| DELETE   | `/v1/garments/:id`         | 写真と服を削除                             |
 
 webは同じパス構成で中継する。例：`/api/garments`→`/v1/garments`。healthだけは`/api/health`→`/health`。
 
@@ -113,7 +114,15 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲とランドマーク（landmarks工程）→切り抜きの順に`POST /v1/detections`を呼び、ランドマークを切り抜きの手がかりに渡す。範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
-裏面を保存すると、apiは服のカテゴリと表のmeasurement画像・裏面を推論サービスの`POST /textures`へ送り、生成依頼の受付まで待つ。変換の完了は待たない。PUTの応答は`{ id, texture: { status: "accepted" } }`、依頼に失敗した場合は`{ id, texture: { status: "failed", message: "…" } }`。写真は保存済みなので、生成依頼だけが失敗してもPUTは200を返す。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0022](adr/0022-garment-texture-on-pc.md)を参照。
+裏面を保存すると、apiは服のカテゴリと表のmeasurement画像・裏面を推論サービスの`POST /textures`へ送り、生成依頼の受付まで待つ。変換の完了は待たない。PUTの応答は`{ id, texture: { status: "accepted" } }`、依頼に失敗した場合は`{ id, texture: { status: "failed", message: "…" } }`。写真は保存済みなので、生成依頼だけが失敗してもPUTは200を返す。
+
+### 保存済み写真からテクスチャを作る
+
+`POST /v1/garments/:id/texture`（webは`POST /api/garments/:id/texture`）。リクエスト本文は不要。現在のプロフィールの服を照合し、保存済みの表のmeasurement画像と裏面のback画像を使う。カテゴリ・保存キー・画像URLはクライアントから受け取らない。
+
+受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗はPC内の`job.json`で確認する。
+
+Tシャツとズボンでテンプレートが違い、ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0025](adr/0025-trousers-template-from-delivered-uv.md)）。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0022](adr/0022-garment-texture-on-pc.md)、[ADR 0026](adr/0026-request-texture-from-saved-photos.md)を参照。
 
 ## 共通の型
 

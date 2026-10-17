@@ -40,6 +40,7 @@
 - [0023 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0023-trousers-cutout-with-landmarks.md)
 - [0024 ズボンのテクスチャは、脚ごとのUVの島を前後に分けて表と裏の写真を貼る](0024-trousers-uv-template.md)
 - [0025 ズボンのテクスチャを受領したモデルとUVへ切り替える](0025-trousers-template-from-delivered-uv.md)
+- [0026 保存済みの表裏写真からテクスチャを再生成できるようにする](0026-request-texture-from-saved-photos.md)
 
 ## 参考文献
 
