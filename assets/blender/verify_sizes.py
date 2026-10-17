@@ -45,8 +45,9 @@ VIEWS = ((("front", (0, -1, 0)), ("side", (1, 0, 0)), ("three_quarter", (0.7, -0
          (("front", (0, -1, 0)), ("three_quarter", (0.7, -0.7, 0)), ("back", (0, 1, 0))))
 TOL = {"standard": 0.5}
 TOL_OTHER = 1.0
-# 標準の身長に加えて確かめる身長（cm）。測った身長（HEIGHT_SAMPLES_CM）の間も確かめる
-HEIGHTS_CM = [150.0, 155.0, 160.0, 167.0, 180.0, 185.0, 190.0, 195.0]
+# 標準の身長に加えて確かめる身長（cm）。測った身長（HEIGHT_SAMPLES_CM）の間も確かめる。女性は範囲を 10cm 下へずらす
+HEIGHTS_CM = ([140.0, 145.0, 150.0, 157.0, 170.0, 175.0, 180.0, 185.0] if FEMALE else
+              [150.0, 155.0, 160.0, 167.0, 180.0, 185.0, 190.0, 195.0])
 
 # 基準寸法からの差（着丈, 身幅, 肩幅, 袖丈）
 OFFSETS = [
@@ -65,11 +66,15 @@ CASES = [
     ("standard_width-16", "standard", (0, -16, 0, 0)),    # E で押し出したときの寸法のずれを見る
 ]
 # 身長を変えた組み合わせ（名前, 体型, 身長 cm, 基準寸法からの差）
-HEIGHT_CASES = [
+HEIGHT_CASES = ([
+    ("standard_h140", "standard", 140.0, (0, 0, 0, 0)),
+    ("broad_h185_width-6", "broad", 185.0, (0, -6, 0, 0)),
+    ("chubby_h145_length+7", "chubby", 145.0, (7, 0, 0, 0)),
+] if FEMALE else [
     ("standard_h150", "standard", 150.0, (0, 0, 0, 0)),
     ("broad_h195_width-6", "broad", 195.0, (0, -6, 0, 0)),
     ("chubby_h155_length+7", "chubby", 155.0, (7, 0, 0, 0)),
-]
+])
 
 
 def load_json(name):

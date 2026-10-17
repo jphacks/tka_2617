@@ -93,7 +93,7 @@ def main():
         return pf.body_width(P, pt.mixed_coords(fit, values), body_polys, z, float(P[nipples, 2].mean()))
 
     pt.write_json(os.path.join(bt.MODELS, "tshirt_female_height.json"),
-                  bt.height_table(shirt, body, lm, polys, standard_cm, body_width))
+                  bt.height_table(shirt, body, lm, polys, standard_cm, body_width, GENDER))
     moved = np.linalg.norm(pt.world_coords(body) - std_body[keep], axis=1).max()
     pt.log(f"avatar: 焼き込み後の Basis と標準体型の差 {moved * 1000:.3f}mm")
 
