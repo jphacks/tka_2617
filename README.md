@@ -30,7 +30,7 @@ pnpm dev
 
 Dockerを使うのはローカルSupabaseだけ。`supabase start`後にDocker Desktopにコンテナが表示される。webとapiは`pnpm dev`で直接起動する。
 
-停止は`pnpm dev`のターミナルで`Ctrl+C`、Supabaseは`supabase stop`。DB変更やデプロイの手順は[セットアップ](docs/setup.md)を参照する。
+停止は`pnpm dev`のターミナルで`Ctrl+C`、Supabaseは`supabase stop`。mainを取り込んだあとの準備（依存・migration・推論サービスの起動し直し）と、ブラウザで確かめることは[セットアップの「mainを取り込んだあと」](docs/setup.md#mainを取り込んだあと)にある。DB変更やデプロイの手順も[セットアップ](docs/setup.md)を参照する。
 
 ## 製品概要
 ### 背景(製品開発のきっかけ、課題等）
