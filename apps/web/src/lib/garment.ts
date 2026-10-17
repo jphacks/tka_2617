@@ -179,6 +179,13 @@ export function fitAt(build: Build, heightCm: number, table: HeightTable): Fit {
 
 /** 服の伸び。身幅が体の身幅よりこの割合を超えて小さい服は、伸ばしても着られないとみなす */
 export const STRETCH_RATIO = 0.1;
+/** 織物のシャツはほとんど伸びない */
+export const WOVEN_STRETCH_RATIO = 0.03;
+/**
+ * 中に1枚着たときに増える身幅（cm）。押し出しで外の服を中の服から4mm離すので、胴の一周が2π×0.4cm、身幅（一周÷2）がπ×0.4cm増える。
+ * 中の服が大きくても、余りは外の服に押されてしわになるとみなし、足さない
+ */
+export const LAYER_WIDTH_CM = Math.PI * 0.4;
 
 /**
  * 服がその体に着られるか。身幅だけで決める。
@@ -186,9 +193,18 @@ export const STRETCH_RATIO = 0.1;
  */
 export type FitStatus = "fits" | "tight" | "tooSmall";
 
-export function fitStatus(target: Measurements, fit: Fit): FitStatus {
-  if (target.width >= fit.bodyWidth) return "fits";
-  if (target.width >= fit.bodyWidth * (1 - STRETCH_RATIO)) return "tight";
+/** layeredは、中にもう1枚着ているときtrue。体の身幅にLAYER_WIDTH_CMを足して比べる */
+export function fitStatus(
+  target: Measurements,
+  fit: Fit,
+  {
+    stretchRatio = STRETCH_RATIO,
+    layered = false,
+  }: { stretchRatio?: number; layered?: boolean } = {},
+): FitStatus {
+  const under = fit.bodyWidth + (layered ? LAYER_WIDTH_CM : 0);
+  if (target.width >= under) return "fits";
+  if (target.width >= under * (1 - stretchRatio)) return "tight";
   return "tooSmall";
 }
 
