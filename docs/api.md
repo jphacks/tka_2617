@@ -114,7 +114,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲→切り抜きの順に`POST /v1/detections`を呼び、範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
-裏面を保存すると、apiは服のカテゴリと表のmeasurement画像・裏面を推論サービスの`POST /textures`へ送り、生成依頼の受付まで待つ。変換の完了は待たない。PUTの応答は`{ id, texture: { status: "accepted" } }`、依頼に失敗した場合は`{ id, texture: { status: "failed", message: "…" } }`。写真は保存済みなので、生成依頼だけが失敗してもPUTは200を返す。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0022](adr/0022-garment-texture-on-pc.md)を参照。
+裏面を保存すると、apiは服のカテゴリと表のmeasurement画像・裏面を推論サービスの`POST /textures`へ送り、生成依頼の受付まで待つ。変換の完了は待たない。PUTの応答は`{ id, texture: { status: "accepted" } }`、依頼に失敗した場合は`{ id, texture: { status: "failed", message: "…" } }`。写真は保存済みなので、生成依頼だけが失敗してもPUTは200を返す。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0023](adr/0023-garment-texture-on-pc.md)を参照。
 
 ## 共通の型
 
