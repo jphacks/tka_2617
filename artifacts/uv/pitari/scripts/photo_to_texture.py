@@ -37,6 +37,8 @@ PAD_PX = 8
 FAR_FROM_CONTOUR_PX = 30
 PAIRS = [(2, 6), (3, 5), (7, 25), (8, 24), (9, 23), (10, 22), (11, 21), (12, 20), (13, 19), (14, 18), (15, 17)]
 FONT = "C:/Windows/Fonts/BIZ-UDGothicB.ttc"
+# カテゴリごとのテンプレートの場所。
+TEMPLATE_ROOTS = {"short_sleeve_top": ROOT}
 
 
 def load_photo(path):
@@ -57,34 +59,23 @@ def load_photo(path):
     return cv2.cvtColor(np.array(upright), cv2.COLOR_RGB2BGR), info
 
 
-def garment_mask(image, bbox, paper_corners):
-    """apps/inference/pitari/cutout.pyと同じGrabCutで、写真と同じ大きさの服の領域を返す（切り詰めない）。"""
-    height, width = image.shape[:2]
-    scale = min(1.0, 900 / max(height, width))
-    small = cv2.resize(image, (round(width * scale), round(height * scale)))
-    h, w = small.shape[:2]
-    x1, y1, x2, y2 = np.rint(np.array(bbox) * scale).astype(int)
-    x1, y1, x2, y2 = max(1, x1), max(1, y1), min(w - 2, x2), min(h - 2, y2)
-    mask = np.full((h, w), cv2.GC_BGD, dtype=np.uint8)
-    mask[y1 : y2 + 1, x1 : x2 + 1] = cv2.GC_PR_FGD
-    if len(paper_corners) == 4:
-        cv2.fillConvexPoly(mask, np.rint(np.array(paper_corners) * scale).astype(np.int32), cv2.GC_BGD)
-    cv2.grabCut(small, mask, None, np.zeros((1, 65)), np.zeros((1, 65)), 5, cv2.GC_INIT_WITH_MASK)
-    alpha = np.isin(mask, [cv2.GC_FGD, cv2.GC_PR_FGD]).astype(np.uint8)
-    count, labels, stats, _ = cv2.connectedComponentsWithStats(alpha)
-    if count < 2:
-        raise SystemExit("服と背景を分離できませんでした。--front-bboxで服の範囲を指定してください")
-    alpha = (labels == 1 + np.argmax(stats[1:, cv2.CC_STAT_AREA])).astype(np.uint8) * 255
-    return cv2.resize(alpha, (width, height), interpolation=cv2.INTER_NEAREST)
+def garment_mask(image, bbox, paper_corners, points=(), category=None):
+    """apps/inference/pitari/cutout.pyのGrabCutで、写真と同じ大きさの服の領域を返す（切り詰めない）。"""
+    from pitari.cutout import garment_alpha
+
+    try:
+        return garment_alpha(image, bbox, paper_corners, points, category)
+    except ValueError as error:
+        raise SystemExit(f"{error}。--front-bboxなどで服の範囲を指定してください") from None
 
 
 class Inference:
-    """既存の推論を、HTTPを通さず同じ関数で呼ぶ。初回だけモデルを読み込む。"""
+    """既存の推論を、HTTPを通さず同じ関数で呼ぶ。modelsを渡さなければ初回だけ読み込む。"""
 
-    def __init__(self):
-        self.models = None
+    def __init__(self, models=None):
+        self.models = models
 
-    def run(self, image, bbox):
+    def run(self, image, bbox, category="short_sleeve_top"):
         from pitari.geometry import paper_candidate
         from pitari.models import MODEL_VERSION, Models
 
@@ -93,8 +84,8 @@ class Inference:
             self.models = Models()
         corners = paper_candidate(image)
         if bbox is None:
-            _, bbox = self.models.detect(image, "short_sleeve_top")
-        points = self.models.landmarks(image, "short_sleeve_top", bbox)
+            _, bbox = self.models.detect(image, category)
+        points = self.models.landmarks(image, category, bbox)
         return {"bbox": [float(v) for v in bbox], "paperCorners": [[float(x), float(y)] for x, y in corners], "points": points, "modelVersion": MODEL_VERSION}
 
 
@@ -365,57 +356,49 @@ def parse_box(text):
     return values
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--front", help="前面の写真")
-    parser.add_argument("--back", help="背面の写真")
-    parser.add_argument("--out", required=True, help="結果を書き出すフォルダ")
-    for view in ("front", "back"):
-        parser.add_argument(f"--{view}-points", help=f"手で直したpoints_{view}.json")
-        parser.add_argument(f"--{view}-mask", help=f"手で直したmask_{view}.png（白＝服）")
-        parser.add_argument(f"--{view}-bbox", help="服を囲む範囲 x1,y1,x2,y2（自動検出が外れるとき）")
-    # 実写は布の実寸に比例する3Dの長さで区切る。uvはUV画像から作った合成写真の検査用。
-    parser.add_argument("--fraction", choices=["3d", "uv"], default="3d", help=argparse.SUPPRESS)
-    args = parser.parse_args()
-    if not args.front and not args.back:
-        raise SystemExit("--frontか--backの少なくとも一方を指定してください")
+def template_ready(category="short_sleeve_top"):
+    return category in TEMPLATE_ROOTS and (TEMPLATE_ROOTS[category] / "uv_template.json").is_file()
 
-    template = json.loads((ROOT / "uv_template.json").read_text(encoding="utf-8"))
+
+def make_texture(out, views, inference, fraction="3d", category="short_sleeve_top"):
+    """views[view]は{"photo", "points", "mask", "bbox"}。photo以外は手で直したときだけ渡す。"""
+    root = TEMPLATE_ROOTS[category]
+    template = json.loads((root / "uv_template.json").read_text(encoding="utf-8"))
     size = template["texture"]["width"]
-    part_id = np.array(Image.open(ROOT / template["part_id_image"]["path"]))
+    part_id = np.array(Image.open(root / template["part_id_image"]["path"]))
     part_values = {name: int(value) for value, name in template["part_id_image"]["values"].items() if value != "0"}
-    all_uv = np.array(Image.open(ROOT / template["coverage_spec"]["all_uv_mask"])) > 0
-    islands = {view: np.array(Image.open(ROOT / template["islands"][view]["mask"])) > 0 for view in ("front", "back")}
-    out = Path(args.out)
+    all_uv = np.array(Image.open(root / template["coverage_spec"]["all_uv_mask"])) > 0
+    islands = {view: np.array(Image.open(root / template["islands"][view]["mask"])) > 0 for view in ("front", "back")}
+    out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
 
-    inference = Inference()
     texture = np.zeros((size, size, 3), np.uint8)
     observed = np.zeros((size, size), bool)
     low = np.zeros((size, size), bool)
     report = {
         "template": f"{template['template_id']} {template['template_version']}",
-        "fraction": args.fraction,
+        "category": category,
+        "fraction": fraction,
         "status": "推論とテンプレートによる自動処理の結果。正しく貼れたかは画像と3Dで目視確認する",
         "views": {},
     }
     for view in ("front", "back"):
-        photo_path = getattr(args, view)
+        given = views.get(view) or {}
+        photo_path = given.get("photo")
         if not photo_path:
             report["views"][view] = {"photo": None}
             continue
         notes = []
         photo, info = load_photo(photo_path)
         height, width = photo.shape[:2]
-        points_path = getattr(args, f"{view}_points")
+        points_path = given.get("points")
         if points_path:
             record = json.loads(Path(points_path).read_text(encoding="utf-8"))
             if [record["widthPx"], record["heightPx"]] != [width, height]:
                 raise SystemExit(f"{points_path}の画像サイズが写真と一致しません")
             notes.append(f"点は{Path(points_path).name}を使った")
         else:
-            bbox = parse_box(getattr(args, f"{view}_bbox")) if getattr(args, f"{view}_bbox") else None
-            result = inference.run(photo, bbox)
+            result = inference.run(photo, given.get("bbox"), category)
             record = {
                 "imageId": f"photo_{view}.jpg",
                 "view": view,
@@ -432,13 +415,13 @@ def main():
             }
             (out / f"points_{view}.json").write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
         Image.fromarray(cv2.cvtColor(photo, cv2.COLOR_BGR2RGB)).save(out / f"photo_{view}.jpg", quality=95)
-        mask_path = getattr(args, f"{view}_mask")
+        mask_path = given.get("mask")
         if mask_path:
             garment = np.where(np.array(Image.open(mask_path).convert("L")) > 127, 255, 0).astype(np.uint8)
             if garment.shape != photo.shape[:2]:
                 raise SystemExit(f"{mask_path}の大きさが写真と一致しません")
         else:
-            garment = garment_mask(photo, record["bbox"], record["paperCorners"])
+            garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], category)
         garment = fill_holes(garment)
         if not mask_path:
             save_mask(garment > 0, out / f"mask_{view}.png")
@@ -448,7 +431,7 @@ def main():
         for aux in record.get("auxPoints", []):
             anchors[aux["name"]] = opencv_to_pixel([aux["x"], aux["y"]])
         contour = outer_contour(garment)
-        points, estimated = photo_points(view, anchors, contour, template, notes, "fraction_uv" if args.fraction == "uv" else "fraction")
+        points, estimated = photo_points(view, anchors, contour, template, notes, "fraction_uv" if fraction == "uv" else "fraction")
         draw_debug(view, photo, garment, record["points"], anchors, points, estimated, template, out / f"debug_photo_{view}.jpg")
         colors, seen, uncertain, flipped = warp_view(view, photo, garment, points, estimated, template, part_id, part_values)
         if flipped:
@@ -493,6 +476,33 @@ def main():
         "low_confidence": round(float(low.sum() / total), 4),
     }
     (out / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    return report
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--front", help="前面の写真")
+    parser.add_argument("--back", help="背面の写真")
+    parser.add_argument("--out", required=True, help="結果を書き出すフォルダ")
+    for view in ("front", "back"):
+        parser.add_argument(f"--{view}-points", help=f"手で直したpoints_{view}.json")
+        parser.add_argument(f"--{view}-mask", help=f"手で直したmask_{view}.png（白＝服）")
+        parser.add_argument(f"--{view}-bbox", help="服を囲む範囲 x1,y1,x2,y2（自動検出が外れるとき）")
+    # 実写は布の実寸に比例する3Dの長さで区切る。uvはUV画像から作った合成写真の検査用。
+    parser.add_argument("--fraction", choices=["3d", "uv"], default="3d", help=argparse.SUPPRESS)
+    args = parser.parse_args()
+    if not args.front and not args.back:
+        raise SystemExit("--frontか--backの少なくとも一方を指定してください")
+    views = {
+        view: {
+            "photo": getattr(args, view),
+            "points": getattr(args, f"{view}_points"),
+            "mask": getattr(args, f"{view}_mask"),
+            "bbox": parse_box(getattr(args, f"{view}_bbox")) if getattr(args, f"{view}_bbox") else None,
+        }
+        for view in ("front", "back")
+    }
+    report = make_texture(args.out, views, Inference(), args.fraction)
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 

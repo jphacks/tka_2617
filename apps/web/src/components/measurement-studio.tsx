@@ -15,6 +15,7 @@ import type {
 import { preparePhoto, jpegFile, pngFile } from "@/lib/photo";
 import { requestJson } from "@/lib/request";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
+import { textureRequestMessage } from "@/lib/garment-texture";
 import {
   prepareBackPhoto,
   uploadBackPhoto,
@@ -136,6 +137,7 @@ export function MeasurementStudio() {
           selectedCategory !== "auto"
             ? (current?.bbox ?? undefined)
             : undefined,
+        points: stage === "cutout" ? (current?.points ?? []) : [],
       }),
     );
     return requestJson<DetectionResult>("/api/detections", {
@@ -300,6 +302,7 @@ export function MeasurementStudio() {
   async function save() {
     await work(async () => {
       let backFailed = false;
+      let textureMessage = "";
       if (editing) {
         await requestJson(`/api/garments/${editing.id}`, {
           method: "PATCH",
@@ -345,7 +348,8 @@ export function MeasurementStudio() {
         });
         if (back) {
           try {
-            await uploadBackPhoto(saved.id, back);
+            const backSaved = await uploadBackPhoto(saved.id, back);
+            textureMessage = textureRequestMessage(backSaved.texture);
           } catch {
             backFailed = true;
           }
@@ -361,7 +365,7 @@ export function MeasurementStudio() {
             : "服を登録しました。寸法はあとから入力できます。") +
           (backFailed
             ? "裏面は保存できなかったため、服の詳細から撮り直してください。"
-            : ""),
+            : textureMessage),
       );
       await loadGarments();
     });
@@ -569,7 +573,10 @@ export function MeasurementStudio() {
                 </div>
               ) : (
                 <p className="text-xs leading-[1.7] text-description">
-                  表と同じように平置きして撮ってください。
+                  表と裏を登録すると、テクスチャを生成してPC内に保存します。
+                  {result.category === "trousers"
+                    ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
+                    : "表と同じように平置きして撮ってください。"}
                 </p>
               )}
               <label

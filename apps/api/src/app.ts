@@ -59,3 +59,7 @@ export type {
 } from "#src/lib/measurement-schema";
 export type { MeasurementDefinition } from "#src/lib/measurements";
 export type { GarmentView, Season } from "#src/lib/garment-records";
+export type {
+  TextureRequestResult,
+  BackPhotoResponse,
+} from "#src/lib/garment-texture";
