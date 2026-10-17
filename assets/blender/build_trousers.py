@@ -36,11 +36,11 @@ def measure(P, lm, polys):
     return tr.measure_trousers(P, lm, polys)[0]
 
 
-def make_size_key(jeans, part, lm, polys):
+def make_size_key(jeans, part, lm, polys, displacements=tr.DISPLACEMENTS):
     """part の +10cm の形を作り（実測で +10.00cm になるよう倍率を探す）、0.1 倍で size_part にする。
     体からの押し出しはキーに入れない（理由は build_tshirt.make_size_key と同じ）"""
     B = pt.world_coords(jeans, "Basis")
-    disp = tr.DISPLACEMENTS[part]
+    disp = displacements[part]
     base = measure(B, lm, polys)[part]
 
     def shape(k):
@@ -57,9 +57,9 @@ def make_size_key(jeans, part, lm, polys):
     pt.log(f"size_{part}: 倍率 {k:.4f}, +10 の形で {gain(k):+.2f}cm")
 
 
-def height_table(jeans, body, lm, polys, standard_cm):
+def height_table(jeans, body, lm, polys, standard_cm, gender="male"):
     """体型ごとに、いくつかの身長で基準寸法とキーの効き方 M、体の寸法を測る（身長の昇順）"""
-    heights = sorted(pt.HEIGHT_SAMPLES_CM + [round(standard_cm, 2)])
+    heights = sorted(pt.HEIGHT_SAMPLES_CM[gender] + [round(standard_cm, 2)])
     body_polys = pt.polys_of(body)
     parts = tr.TROUSER_PARTS
     builds = {}
@@ -106,7 +106,7 @@ def main():
     for d, (_, co) in height_shapes.items():
         pt.set_key_from_world(jeans, pt.height_key(d), pt.height_key_world(std_jeans, co))
     for part in tr.TROUSER_PARTS:
-        make_size_key(jeans, part, lm, polys)
+        make_size_key(jeans, part, lm, polys, tr.FEMALE_DISPLACEMENTS if GENDER == "female" else tr.DISPLACEMENTS)
 
     mw = jeans.matrix_world.copy()
     jeans.parent = None
@@ -122,7 +122,7 @@ def main():
         pt.set_key_from_world(body, pt.height_key(d), pt.height_key_world(std_body[keep], body_co[keep]))
 
     pt.write_json(os.path.join(MODELS, f"trousers_{GENDER}_height.json"),
-                  height_table(jeans, body, lm, polys, standard_cm))
+                  height_table(jeans, body, lm, polys, standard_cm, GENDER))
 
     os.makedirs(OUT, exist_ok=True)
     blend = "build_trousers_female.blend" if GENDER == "female" else "build_trousers.blend"

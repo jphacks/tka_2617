@@ -34,7 +34,7 @@ GENDER = pf.gender_from_args()
 TOL = {"standard": 0.5}
 TOL_OTHER = 1.0
 RIDGE = 0.01                # キーの値を抑える強さ。web の RIDGE と同じ値にする
-HEIGHTS_CM = [150.0, 160.0, 185.0, 195.0]
+HEIGHTS_CM = pt.HEIGHT_SAMPLES_CM[GENDER]
 # 入力の実寸を作るときのサイズキーの値（waist, hip, thigh, rise, inseam, hem）
 KEY_SETS = [
     (0, 0, 0, 0, 0, 0), (5, 3, 1, 2, 4, 2), (-4, -2, -1, -2, -3, -2), (10, 0, 0, 3, 6, 0),

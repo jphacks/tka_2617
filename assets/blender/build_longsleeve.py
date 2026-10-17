@@ -104,7 +104,7 @@ def main():
         fit = pf.add_fit_body(body, keep, topo, std_body, shapes, height_shapes)
         width = pf.body_width_of(body, fit)
     pt.write_json(os.path.join(bt.MODELS, f"{NAME}_{GENDER}_height.json"),
-                  bt.height_table(shirt, body, lm, polys, standard_cm, width))
+                  bt.height_table(shirt, body, lm, polys, standard_cm, width, GENDER))
     # 袖丈が腕より長いときに、余った袖が手に垂れた形（標準体型・標準の身長で布のシミュレーション）
     ls.make_drape_keys(shirt, body, lm)
 
