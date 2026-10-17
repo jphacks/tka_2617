@@ -73,6 +73,30 @@ class GeometryTests(unittest.TestCase):
         cv2.rectangle(image, (50, 100), (260, 397), (255, 255, 255), -1)
         self.assertEqual(len(paper_candidate(image)), 4)
 
+    def desk(self):
+        # 木の机に近い、紙と明るさの近いベージュの背景。木目の代わりに小さなノイズを足す
+        rng = np.random.default_rng(0)
+        image = np.full((1600, 1200, 3), (150, 190, 215), dtype=np.uint8)
+        return cv2.add(image, rng.integers(0, 12, image.shape, dtype=np.uint8))
+
+    def test_white_paper_on_a_similar_desk_touching_a_bar(self):
+        image = self.desk()
+        # 11px/cmのA4を少し傾けて置き、灰色の棒を紙の角に触れさせる
+        rectangle = ((600, 1100), (21 * 11, 29.7 * 11), 86)
+        paper = cv2.boxPoints(rectangle)
+        cv2.fillConvexPoly(image, np.round(paper * 16).astype(np.int32), (238, 240, 242), cv2.LINE_AA, shift=4)
+        cv2.line(image, (300, 1500), (1100, 1180), (175, 175, 170), 18)
+        corners = paper_candidate(image)
+        self.assertEqual(len(corners), 4)
+        self.assertAlmostEqual(paper_scale(corners, 1200, 1600), 11, delta=11 * 0.005)
+
+    def test_white_things_that_are_not_a4_are_not_proposed(self):
+        for draw in (lambda image: cv2.ellipse(image, ((600, 800), (240, 340), 10), (240, 240, 240), -1),
+                     lambda image: cv2.rectangle(image, (400, 600), (700, 900), (240, 240, 240), -1)):
+            image = self.desk()
+            draw(image)
+            self.assertEqual(paper_candidate(image), [])
+
 
 if __name__ == "__main__":
     unittest.main()
