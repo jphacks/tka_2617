@@ -89,7 +89,7 @@ npx --yes pnpm@10.18.0 dev
 
 ## 服ごとのテクスチャ
 
-裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`（multipartの`garmentId`・`category`・`front`・`back`、Bearer認証）へ送る。推論サービスは受け付けたらすぐ202を返し、裏の作業スレッドで1件ずつ作る。画面には受付結果を表示し、生成物は次のPC内のフォルダだけに書き出す。CPUで数分かかる。
+Tシャツ・ズボンのいずれも、裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`（multipartの`garmentId`・`category`・`front`・`back`、Bearer認証）へ送る。服の詳細の「テクスチャを作る」から保存済み写真で再生成できる。推論サービスは受け付けたらすぐ202を返し、裏の作業スレッドで1件ずつ作る。画面には受付結果を表示し、生成物は次のPC内のフォルダだけに書き出す。CPUで数分かかる。
 
 ```text
 apps/inference/textures/{服ID}/{日時}/
@@ -105,9 +105,11 @@ apps/inference/textures/{服ID}/{日時}/
 
 生成のたびに新しい日時のフォルダができ、前の結果は残る。服IDはクローゼットの詳細画面のURL（`/garments/{服ID}`）で分かる。服を削除してもこのフォルダは消えない。点や服の領域を直して作り直す手順と、3Dモデルで見る手順は[UVテンプレートのREADME](../../artifacts/uv/pitari/README.md)の「写真で試す」と同じ。
 
-アプリでは、撮影画面で表の写真を入れ、裏面も追加して「クローゼットに登録」を押す。あとから裏面を加える場合は、服の詳細から登録する。生成依頼に失敗した場合は推論サービスの設定・起動とUVテンプレートを確認し、裏面を撮り直す。受付成功は完成を意味しない。`job.json`が`done`になったら`texture.png`を確認する。
+アプリでは、撮影画面で表の写真を入れ、カテゴリを「パンツ」にして裏面も追加し、「クローゼットに登録」を押す。あとから裏面を加える場合は、服の詳細から登録する。生成依頼に失敗した場合は推論サービスの設定・起動とUVテンプレートを確認し、詳細の「テクスチャを作る」で再試行する。受付成功は完成を意味しない。`job.json`が`done`になったら`texture.png`を確認する。
 
-- 変換の本体は`artifacts/uv/pitari/scripts/photo_to_texture.py`の`make_texture`。カテゴリでテンプレートを選ぶ。今はTシャツだけで、`artifacts/uv/pitari/uv_template.json`（Gitに含まれない）を使う。テンプレートがないカテゴリやPCでは503を返し、テクスチャは作らない。作り方は[UVテンプレートのREADME](../../artifacts/uv/pitari/README.md)。
+2026-10-15に、受領したズボン用のバージョン2テンプレートで、実際のジーンズの表裏写真をサービスと同じ`texture.make`へ渡し、自動推論から`job.json: done`と2048×2048のテクスチャの保存まで確認した（約163秒）。塗り残し0、反転した三角形0。手修正したマスクは渡していないため、写真の床や影の混入は目視確認が必要。
+
+- 変換の本体は`artifacts/uv/pitari/scripts/photo_to_texture.py`の`make_texture`。カテゴリでテンプレートを選ぶ。Tシャツは`artifacts/uv/pitari/uv_template.json`、ズボンは`artifacts/uv/pitari/trousers/uv_template.json`（どちらもGitに含まれない）。ないPCでは503を返し、テクスチャは作らない。作り方は[UVテンプレートのREADME](../../artifacts/uv/pitari/README.md)。
 - ズボンの切り抜きと服の領域は、ランドマークで囲んだ輪郭の外を背景として教えて作る（`pitari/cutout.py`の`garment_alpha`、[ADR 0024](../../docs/adr/0024-trousers-cutout-with-landmarks.md)）。テクスチャを作るときも同じ関数を使う。
 - モデルは採寸と共有する。テクスチャ作成がモデルを使っている間は、採寸のリクエストが最大60秒待ってから処理される。
 - 待ちの作業は5件まで。同じ服の作業が待っている間に新しい写真が届いたら置き換える。
@@ -152,3 +154,9 @@ web・api・推論・ローカルSupabaseの起動後、リポジトリ直下で
 
 - [DeepFashion2](https://github.com/switchablenorms/DeepFashion2)
 - [HRNet公式実装](https://github.com/svip-lab/HRNet-for-Fashion-Landmark-Estimation.PyTorch)
+
+## 長そでの登録
+
+`long_sleeve_top`を検出・採寸・切り抜きで受け付ける。長そでは33点で、サイズ入力はTシャツと同じ着丈・身幅・肩幅・袖丈。既存のHRNetの重みを使い、モデルの追加取得は不要。自動分類が違う場合は撮影後の「服の種類」で長そでを選び直す。
+
+DBには`supabase/migrations/20261017000100_long_sleeve_top.sql`の適用が必要。ローカルDBを起動して`supabase migration up --local`を実行する。クラウドへの適用はこの変更では行わない。

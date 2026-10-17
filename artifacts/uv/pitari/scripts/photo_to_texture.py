@@ -1,7 +1,8 @@
-"""服の前面・背面の写真を、UVテンプレートでpitariの半袖トップスのテクスチャへ変換する（試行用）。
+"""服の前面・背面の写真を、UVテンプレートでpitariの半袖トップス・ズボンのテクスチャへ変換する（試行用）。
 
 使い方（リポジトリ直下のPowerShell）：
   ./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/photo_to_texture.py --front 前面.jpg --back 背面.jpg --out artifacts/uv/pitari/trials/try1
+ズボンは --category trousers を付ける（テンプレートはbuild_trousers_template.pyで作る）。
 
 1回目は既存の推論（apps/inferenceのGrounding DINOとHRNet）で、服の範囲・ランドマーク・服の領域を求める。
 点がずれていたら、出力のpoints_front.jsonの座標を直して --front-points で渡す。
@@ -23,7 +24,7 @@ PROJECT = ROOT.parents[2]
 sys.path.insert(0, str(SCRIPTS))
 sys.path.insert(0, str(PROJECT / "apps/inference"))
 from uv_pixels import opencv_to_pixel, pixel_to_opencv, uv_to_pixel  # noqa: E402
-from warp_support import mean_value_weights, signed_area, triangle_mask  # noqa: E402
+from warp_support import mean_value_embedding, mean_value_weights, signed_area, triangle_mask  # noqa: E402
 
 # 撮影画面と同じく、向きを確定してから長辺1600px以下に縮小する。
 LONG_SIDE = 1600
@@ -35,10 +36,13 @@ FILL_LIMIT_PX = 64
 PAD_PX = 8
 # 輪郭の点から離れすぎたランドマークは、点か服の領域の誤りを疑う。
 FAR_FROM_CONTOUR_PX = 30
+# 以下の3つは、テンプレートにdf2_pairs・df2_spread_checks・df2_centersがないとき（Tシャツ）に使う。
 PAIRS = [(2, 6), (3, 5), (7, 25), (8, 24), (9, 23), (10, 22), (11, 21), (12, 20), (13, 19), (14, 18), (15, 17)]
+SPREAD_CHECKS = [(7, 25), (9, 23), (10, 22), (12, 20), (15, 17)]
+CENTERS = [1, 4, 16]
 FONT = "C:/Windows/Fonts/BIZ-UDGothicB.ttc"
-# カテゴリごとのテンプレートの場所。
-TEMPLATE_ROOTS = {"short_sleeve_top": ROOT}
+# カテゴリごとのテンプレートの場所。ズボンはbuild_trousers_template.pyで作る。
+TEMPLATE_ROOTS = {"short_sleeve_top": ROOT, "trousers": ROOT / "trousers"}
 
 
 def load_photo(path):
@@ -89,35 +93,45 @@ class Inference:
         return {"bbox": [float(v) for v in bbox], "paperCorners": [[float(x), float(y)] for x, y in corners], "points": points, "modelVersion": MODEL_VERSION}
 
 
+def df2_table(spec):
+    return spec.get("df2_table") or spec["df2_short_sleeve_top"]
+
+
+def entry_anchors(entry):
+    """番号に対応する固定点の名前。ズボンの股のように、左右の島に1つずつあるものは複数になる。"""
+    if entry.get("use") == "not_on_this_view":
+        return []
+    return entry.get("anchors") or ([entry["anchor"]] if entry.get("anchor") else [])
+
+
 def resolve_anchors(view, points, template, notes, garment_width):
     """DeepFashion2の番号から固定点を決める。左右のペアは番号でなく写真上のxで決め直す。"""
-    table = template["views"][view]["df2_short_sleeve_top"]
+    table = df2_table(template["views"][view])
     by_id = {int(p["id"]): opencv_to_pixel([p["x"], p["y"]]) for p in points}
     anchors = {}
-    # 肩先・袖口・脇・裾の角の左右が近すぎるときは、両方を同じ袖などに置いた推定の失敗を疑う。
-    for low, high in ((7, 25), (9, 23), (10, 22), (12, 20), (15, 17)):
+    # 肩先・袖口・裾の角など、左右が近すぎるときは、両方を同じ袖などに置いた推定の失敗を疑う。
+    for low, high in template.get("df2_spread_checks", SPREAD_CHECKS):
         if low in by_id and high in by_id and abs(by_id[low][0] - by_id[high][0]) < 0.25 * garment_width:
             notes.append(f"警告：{low}番と{high}番が左右で近すぎる（推定の失敗の可能性が高い）。debug_photo_{view}.jpgを見て点を直す")
 
     def put(number, xy):
-        entry = table[str(number)]
-        if entry["anchor"] and entry["use"] != "not_on_this_view":
-            anchors[entry["anchor"]] = np.asarray(xy, dtype=float)
+        for name in entry_anchors(table.get(str(number), {})):
+            anchors[name] = np.asarray(xy, dtype=float)
 
-    for low, high in PAIRS:
+    for low, high in template.get("df2_pairs", PAIRS):
         if low in by_id and high in by_id:
             a, b = by_id[low], by_id[high]
             if a[0] > b[0]:
                 notes.append(f"{low}番と{high}番が画像の左右逆だったため入れ替えた")
                 a, b = b, a
-            # 公式の図では小さい番号が画像の左。
+            # 組の先の番号が画像の左（Tシャツは公式の図、ズボンは実写の推論で確かめた）。
             put(low, a)
             put(high, b)
         elif low in by_id or high in by_id:
             number = low if low in by_id else high
             notes.append(f"{number}番の相方がないため、左右を確かめずに使った")
             put(number, by_id[number])
-    for number in (1, 4, 16):
+    for number in template.get("df2_centers", CENTERS):
         if number in by_id:
             put(number, by_id[number])
     return anchors
@@ -191,11 +205,26 @@ def photo_points(view, anchors, contour, template, notes, fraction_key):
     def blocked(*exclude):
         return {nearest(contour, anchors[n]) for n in contour_anchors if n in anchors and n not in exclude}
 
+    # ズボンの股は、推論の9番より脚の間のすき間の一番上（輪郭）のほうが確か。9番は前（後ろ）中心の縫い目の上に出やすい。
+    crotch = {"crotch_right", "crotch_left", "hem_inner_right", "hem_inner_left"}
+    if crotch <= set(anchors):
+        path, clean = contour_between(contour, anchors["hem_inner_right"], anchors["hem_inner_left"], blocked(*crotch))
+        apex = path[np.argmin(path[:, 1])]
+        hem_y = (anchors["hem_inner_right"][1] + anchors["hem_inner_left"][1]) / 2
+        waist_y = min(anchors[n][1] for n in ("waist_center_right", "waist_center_left") if n in anchors) if "waist_center_right" in anchors else apex[1]
+        moved = float(np.linalg.norm(apex - anchors["crotch_right"]))
+        # すき間が裾から3割以上上まで届いていなければ、脚が重なっていると見て推論の点を使う。
+        if clean and apex[1] < hem_y - 0.3 * (hem_y - waist_y):
+            anchors["crotch_right"] = anchors["crotch_left"] = apex
+            notes.append(f"股（9番）を脚の間の輪郭の一番上へ{moved:.0f}px動かした")
+        else:
+            notes.append("脚の間のすき間が見つからないため、股は推論の9番を使った。debug_photoで股の位置を確認する")
+
     # 写真から直接は出ない点を、輪郭や他の点から決める。
     if f"hem_center_{view}" not in anchors and {"hem_side_right", "hem_side_left"} <= set(anchors):
         path, _ = contour_between(contour, anchors["hem_side_right"], anchors["hem_side_left"], blocked("hem_side_right", "hem_side_left"))
         anchors[f"hem_center_{view}"] = sample(path, [0.5])[0]
-        notes.append("裾の中心（16番）がないため、裾の輪郭の中点で代用した")
+        notes.append("裾の中心がないため、裾の輪郭の中点で代用した")
     if view == "back" and {"neck_side_right", "neck_side_left"} <= set(anchors):
         path, _ = contour_between(contour, anchors["neck_side_right"], anchors["neck_side_left"], blocked("neck_side_right", "neck_side_left", "back_neck_center"))
         anchors["back_neck_center"] = sample(path, [0.5])[0]
@@ -219,7 +248,7 @@ def photo_points(view, anchors, contour, template, notes, fraction_key):
     required = {name for s in segments for name in (s["start"], s["end"])}
     missing = sorted(required - set(anchors))
     if missing:
-        numbers = sorted({int(k) for k, v in spec["df2_short_sleeve_top"].items() if v["anchor"] in missing})
+        numbers = sorted({int(k) for k, v in df2_table(spec).items() if set(entry_anchors(v)) & set(missing)})
         raise SystemExit(f"{view}：点が足りません。points_{view}.jsonに次の番号を追加してください：{numbers}（{missing}）")
     for name in required & contour_anchors:
         distance = np.linalg.norm(contour[nearest(contour, anchors[name])] - anchors[name])
@@ -239,6 +268,8 @@ def photo_points(view, anchors, contour, template, notes, fraction_key):
             polyline = neckline(start, anchors.get(f"front_neck_mid_{side}"), end)
             if f"front_neck_mid_{side}" not in anchors:
                 notes.append(f"{segment['name']}：3・5番がないため直線で代用した")
+        elif method == "straight":
+            polyline = np.array([start, end])
         else:
             polyline = place_like(uv_curve(segment["name"]), start, end)
         names = [s["name"] for s in segment["samples"]]
@@ -248,13 +279,21 @@ def photo_points(view, anchors, contour, template, notes, fraction_key):
             estimated.update(names)
 
     # 内部点：UV側の輪郭で求めた平均値座標の重みを、写真側の輪郭の点に掛ける。
+    # ズボンは三角形の辺に沿った重みで解く（interior_method）。輪郭全体の重みだと股で折れ返るため。
     template_points = spec["points"]
     for part in spec["parts"].values():
-        uv_polygon = np.array([template_points[n]["uv"] for n in part["polygon"]])
-        uv_interior = np.array([template_points[n]["uv"] for n in part["interior_points"]])
-        weights = mean_value_weights(uv_polygon, uv_interior)
         photo_polygon = np.array([points[n] for n in part["polygon"]])
-        for name, xy in zip(part["interior_points"], weights @ photo_polygon):
+        if part.get("interior_method") == "mean_value_embedding":
+            names = part["polygon"] + part["interior_points"]
+            index = {name: i for i, name in enumerate(names)}
+            source = np.array([template_points[n]["pixel"] for n in names])
+            triangles = [[index[n] for n in triangle] for triangle in part["triangles"]]
+            interior = mean_value_embedding(source, triangles, len(part["polygon"]), photo_polygon)
+        else:
+            uv_polygon = np.array([template_points[n]["uv"] for n in part["polygon"]])
+            uv_interior = np.array([template_points[n]["uv"] for n in part["interior_points"]])
+            interior = mean_value_weights(uv_polygon, uv_interior) @ photo_polygon
+        for name, xy in zip(part["interior_points"], interior):
             points[name] = xy
     return points, estimated
 
@@ -340,7 +379,7 @@ def draw_debug(view, photo, garment, raw_points, anchors, points, estimated, tem
     labels = {"right": "着用者の右", "left": "着用者の左"}
     for name, (x, y) in anchors.items():
         side = next((labels[s] for s in labels if f"_{s}" in name), "")
-        if side and name.startswith(("shoulder_", "cuff_top_")):
+        if side and name.startswith(("shoulder_", "cuff_top_", "waist_outer_", "hem_outer_")):
             draw.text((x - 40, y - 60), side, font=font, fill=(200, 0, 120, 255), stroke_width=3, stroke_fill=(255, 255, 255, 255))
     legend = "確認用。赤＝推論（または手で直した）点と番号、緑＝服の輪郭、青＝輪郭上の点、黄＝推定した点、白＝三角形"
     # 襟元の点を隠さないよう、説明は下に置く。
@@ -368,7 +407,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
     part_id = np.array(Image.open(root / template["part_id_image"]["path"]))
     part_values = {name: int(value) for value, name in template["part_id_image"]["values"].items() if value != "0"}
     all_uv = np.array(Image.open(root / template["coverage_spec"]["all_uv_mask"])) > 0
-    islands = {view: np.array(Image.open(root / template["islands"][view]["mask"])) > 0 for view in ("front", "back")}
+    # 島の中だけで色を補う。Tシャツは前後、ズボンは左右の脚が島になる。
+    islands = {name: np.array(Image.open(root / spec["mask"])) > 0 for name, spec in template["islands"].items()}
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -423,6 +463,13 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
         else:
             garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], category)
         garment = fill_holes(garment)
+        # ズボンは股の付近で切り抜きの縁に細い割れ目や出っ張りができ、輪郭の点が行き来して三角形が裏返る。
+        # テンプレートが指定するときは、服の領域を丸めてから使う。
+        ratio = template.get("mask_smoothing_ratio")
+        if ratio and not mask_path:
+            size_px = max(3, round(ratio * max(garment.shape)) | 1)
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (size_px, size_px))
+            garment = cv2.morphologyEx(cv2.morphologyEx(garment, cv2.MORPH_CLOSE, kernel), cv2.MORPH_OPEN, kernel)
         if not mask_path:
             save_mask(garment > 0, out / f"mask_{view}.png")
 
@@ -452,7 +499,7 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
 
     # 写真の色がないテクセルを、同じ島の近い色で補う。島をまたいで補わない。
     filled = np.zeros_like(observed)
-    for view, island in islands.items():
+    for island in islands.values():
         filled |= nearest_fill(texture, observed & island, island & ~observed, FILL_LIMIT_PX)
     uncovered = all_uv & ~observed & ~filled
     # 縫い目で背景色を拾わないよう、島の外へ色を広げる。塗り残しの判定には含めない。
@@ -490,6 +537,7 @@ def main():
         parser.add_argument(f"--{view}-bbox", help="服を囲む範囲 x1,y1,x2,y2（自動検出が外れるとき）")
     # 実写は布の実寸に比例する3Dの長さで区切る。uvはUV画像から作った合成写真の検査用。
     parser.add_argument("--fraction", choices=["3d", "uv"], default="3d", help=argparse.SUPPRESS)
+    parser.add_argument("--category", choices=sorted(TEMPLATE_ROOTS), default="short_sleeve_top", help="服の種類（ズボンはtrousers）")
     args = parser.parse_args()
     if not args.front and not args.back:
         raise SystemExit("--frontか--backの少なくとも一方を指定してください")
@@ -502,7 +550,7 @@ def main():
         }
         for view in ("front", "back")
     }
-    report = make_texture(args.out, views, Inference(), args.fraction)
+    report = make_texture(args.out, views, Inference(), args.fraction, args.category)
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
 

@@ -58,3 +58,16 @@ class DetectionTests(unittest.TestCase):
             result = self.request("paper")
             self.assertIsNone(result["pixelsPerCm"])
             self.assertEqual(result["paperCorners"], [])
+
+    def test_long_sleeve_keeps_category_and_33_points_through_cutout(self):
+        points = [{"id": i, "x": 320, "y": 90, "score": 0.9} for i in range(1, 34)]
+        with patch("pitari.app.models") as models, patch("pitari.app.garment_cutout", return_value=np.full((20, 20, 4), 255, dtype=np.uint8)) as cutout:
+            models.detect.return_value = ("long_sleeve_top", self.box)
+            models.landmarks.return_value = points
+            result = self.request("all", paperCorners=self.corners)
+            self.assertEqual(result["category"], "long_sleeve_top")
+            self.assertEqual(len(result["points"]), 33)
+            self.assertTrue(result["cutoutBase64"])
+            self.assertEqual(cutout.call_args.args[-2:], (points, "long_sleeve_top"))
+            staged = self.request("cutout", category="long_sleeve_top", bbox=self.box, points=points)
+            self.assertTrue(staged["cutoutBase64"])

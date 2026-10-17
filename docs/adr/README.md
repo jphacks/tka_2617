@@ -41,6 +41,8 @@
 - [0024 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0024-trousers-cutout-with-landmarks.md)
 - [0025 ズボンのテクスチャは、脚ごとのUVの島を前後に分けて表と裏の写真を貼る](0025-trousers-uv-template.md)
 - [0026 ズボンのテクスチャを受領したモデルとUVへ切り替える](0026-trousers-template-from-delivered-uv.md)
+- [0027 保存済みの表裏写真からテクスチャを再生成できるようにする](0027-request-texture-from-saved-photos.md)
+- [0028 長そでの登録と受領UVを使ったテクスチャ生成](0028-long-sleeve-top.md)
 - [0030 APIの型はapiのzodから作ってHono RPCで渡し、Orvalは入れない](0030-api-types-from-zod-not-orval.md)
 
 ## 参考文献

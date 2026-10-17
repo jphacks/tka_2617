@@ -5,11 +5,12 @@ import numpy as np
 
 # DeepFashion2のズボンの点を、写真の輪郭に沿う順に並べたもの。9番（股）で脚の間へ折り返す。
 TROUSERS_OUTLINE = [1, 2, 3, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4]
+LONG_SLEEVE_OUTLINE = [2, *range(7, 34), 6, 5, 4, 3]
 
 
 def landmark_outline(points, category):
-    """点がそろったズボンの輪郭を返す。"""
-    outline = {"trousers": TROUSERS_OUTLINE}.get(category)
+    """点がそろったズボン・長そでの輪郭を返す。"""
+    outline = {"trousers": TROUSERS_OUTLINE, "long_sleeve_top": LONG_SLEEVE_OUTLINE}.get(category)
     if outline is None:
         return None
     by_id = {int(p["id"]): (p["x"], p["y"]) for p in points}
