@@ -23,6 +23,7 @@ SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
 sys.path.insert(0, str(SCRIPTS))
 from uv_pixels import pixel_to_opencv  # noqa: E402
+from photo_to_texture import TEMPLATE_ROOTS, df2_table
 
 OUT = ROOT / "trials" / "selftest"
 CANVAS = (1200, 1600)
@@ -34,6 +35,8 @@ def synthetic_photo(view, grid, island, template):
     """島の画像を回転・縮小して背景とA4の上に置く。テクスチャのピクセル座標→写真の座標の変換も返す。"""
     angle, scale = POSES[view]
     ys, xs = np.nonzero(island)
+    # 長そでは袖を広げたUVが横長なので、袖口がキャンバスから切れない倍率にする。
+    scale = min(scale, (CANVAS[0] - 120) / (xs.max() - xs.min() + 1), 1000 / (ys.max() - ys.min() + 1))
     center = np.array([(xs.min() + xs.max() + 1) / 2, (ys.min() + ys.max() + 1) / 2])
     rotation = scale * np.array([[math.cos(math.radians(angle)), -math.sin(math.radians(angle))], [math.sin(math.radians(angle)), math.cos(math.radians(angle))]])
     destination = np.array([600.0, 620.0])
@@ -54,7 +57,7 @@ def synthetic_photo(view, grid, island, template):
     def transform(pixel):
         return rotation @ np.asarray(pixel, dtype=float) + shift
 
-    table = template["views"][view]["df2_short_sleeve_top"]
+    table = df2_table(template["views"][view])
     points = []
     for number, entry in table.items():
         anchor = template["anchors"].get(entry["anchor"]) if entry["anchor"] else None
@@ -98,9 +101,13 @@ def compare(reference, result_dir, template, part_id):
 
 
 def main():
+    global ROOT, OUT
     parser = argparse.ArgumentParser()
+    parser.add_argument("--category", choices=["short_sleeve_top", "long_sleeve_top"], default="short_sleeve_top")
     parser.add_argument("--with-model", action="store_true", help="既存の推論でも点を求めて比べる（数十秒かかる）")
     args = parser.parse_args()
+    ROOT = TEMPLATE_ROOTS[args.category]
+    OUT = SCRIPTS.parent / "trials" / ("selftest" if args.category == "short_sleeve_top" else f"selftest_{args.category}")
     template = json.loads((ROOT / "uv_template.json").read_text(encoding="utf-8"))
     grid = np.array(Image.open(ROOT / "check/check_grid.png").convert("RGB"))
     part_id = np.array(Image.open(ROOT / template["part_id_image"]["path"]))
@@ -121,14 +128,14 @@ def main():
     # uv：合成写真はUV画像そのものなので、輪郭をUV上の長さで区切れば内部まで一致するはず（仕組みの検査）。
     # 3d：実写と同じ設定。合成写真では長さの前提が合わず、外側ほどずれる（実写の精度を表さない）。
     for fraction in ("uv", "3d"):
-        command = [sys.executable, str(script), "--out", str(OUT / f"result_truth_{fraction}"), "--fraction", fraction]
+        command = [sys.executable, str(script), "--category", args.category, "--out", str(OUT / f"result_truth_{fraction}"), "--fraction", fraction]
         for view in ("front", "back"):
             command += [f"--{view}", str(files[view]["photo"]), f"--{view}-points", str(files[view]["points"]), f"--{view}-mask", str(files[view]["mask"])]
         subprocess.run(command, check=True)
         report[f"truth_points_fraction_{fraction}"] = compare(grid.astype(np.int16), OUT / f"result_truth_{fraction}", template, part_id)
 
     if args.with_model:
-        command = [sys.executable, str(script), "--out", str(OUT / "result_model"), "--fraction", "uv"]
+        command = [sys.executable, str(script), "--category", args.category, "--out", str(OUT / "result_model"), "--fraction", "uv"]
         for view in ("front", "back"):
             command += [f"--{view}", str(files[view]["photo"])]
         subprocess.run(command, check=True)

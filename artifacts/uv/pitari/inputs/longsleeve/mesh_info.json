@@ -1,0 +1,22 @@
+{
+  "object": "longsleeve",
+  "verts": 3942,
+  "faces": 3848,
+  "tshirt_faces": 2728,
+  "uv_maps": ["pitari"],
+  "topology_sha256": "cc134eaa99c6c8218956f1be50b0e73f672384360a95ea70eaedce5f8ee3b6bf",
+  "tshirt_part_topology_sha256": "d6a8a5736b3386957a97c2c63426cdd4374d2b9fa3795f2214d485a2e0e4432b",
+  "tshirt_part_matches_pitari_uv_work": true,
+  "pitari_transform_from_tshirt": {
+    "front": {
+      "scale": 1.161147,
+      "offset": [0.164728, 0.147153],
+      "max_error": 6.368756666486064e-8
+    },
+    "back": {
+      "scale": 1.161147,
+      "offset": [-0.336931, -0.327334],
+      "max_error": 6.280425046689686e-8
+    }
+  }
+}

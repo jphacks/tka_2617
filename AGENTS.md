@@ -20,7 +20,7 @@
 - deprecatedな書き方を避ける。Next.jsの実装前に`apps/web/node_modules/next/dist/docs`の該当ガイドを確認する。
 - docs・コメントは日本語。PR本文やレビューを含め、英語と日本語の間に半角スペースを入れない。コード・コマンド・URLの空白は維持する。mdは`pnpm lint`のtextlintで確かめる。
 - API追加は`docs/api.md`→zodスキーマ→apiのroute→webのBFFの順。
-- DB変更は`supabase/migrations`のみ。新しいテーブルはRLSを有効にし、`docs/er.md`を更新する。
+- DB変更は`supabase/migrations`のみ。新しいテーブルはRLSを有効にし、`docs/er.md`を更新する。DBの型は`db:types`で作り直してcommitする（手で書き換えない）。
 - 設計上の決定は`docs/adr/`に1件ずつ残す。候補要件は`docs/requirements-candidates.md`へ。
 
 ## commitとPR

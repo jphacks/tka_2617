@@ -74,15 +74,20 @@ lefthookが、stagedのファイルをPrettierで整形し、ESLintで検査す�
 
 Pythonのファイルは、uvがあればruffで検査して整形する（[ADR 0022](adr/0022-python-lint-with-ruff.md)）。uvが無いときは飛ばすが、PRのCIで同じ検査が走る。まだruffをかけていないディレクトリは、`ruff.toml`の`extend-exclude`にある。
 
+いちばん先に、gitleaksで、stagedの変更に鍵やトークンなどの秘密が混ざっていないかを調べる（`scripts/check-secrets.sh`）。gitleaksが無ければDockerで動かし、どちらも無ければ飛ばす。PRのCIの`secrets`は、履歴をすべて調べる。
+
+- 見つかったら、その変更をstagedから外す。誤検出なら、その行の末尾に`gitleaks:allow`と書く
+- 秘密をpushしてしまったら、履歴から消すだけでは足りない。公開リポジトリなので、見られた前提で鍵を無効にして作り直す
+
 ## DB を変えるとき
 
 1. `supabase migration new <変更の名前>`でmigrationを作り、SQLを書く
    - `profiles`を作るときは、`supabase/seed.sql`にデモユーザー（`apps/api/.env.example`の`DEMO_PROFILE_ID`）の行も入れる。`supabase db reset`のたびに流れる
 2. `supabase db reset`でローカルのDBに反映する
-3. `pnpm --filter @pitari/api db:types`で型を作り直す
+3. `pnpm --filter @pitari/api db:types`で型（`apps/api/src/lib/database.types.ts`）を作り直し、commitする。CLIの版で型の書き方が変わるので、手元のCLIではなく、`npx`で決まった版を使う（[ADR 0029](adr/0029-commit-db-types.md)）
 4. [docs/er.md](er.md) を更新する
 
-PRでは、CIの`db`（`.github/workflows/db.yml`）が、空のDBにmigrationと`seed.sql`を流し、`supabase db lint`でDBの関数を確かめる。`supabase/`を変えたPRだけで動く。
+PRでは、CIの`db`（`.github/workflows/db.yml`）が、空のDBにmigrationと`seed.sql`を流し、`supabase db lint`でDBの関数を確かめる。作り直した型がcommitした型と違えば落ちる。`supabase/`かDBの型を変えたPRだけで動く。
 
 ## webをVercelにデプロイする
 

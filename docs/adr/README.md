@@ -43,7 +43,8 @@
 - [0026 ズボンのテクスチャを受領したモデルとUVへ切り替える](0026-trousers-template-from-delivered-uv.md)
 - [0027 保存済みの表裏写真からテクスチャを再生成できるようにする](0027-request-texture-from-saved-photos.md)
 - [0028 長そでの登録と受領UVを使ったテクスチャ生成](0028-long-sleeve-top.md)
-- [0029 重ね着の「タイト」「小さすぎます」は、中の服1枚分の厚みを体の身幅に足して決める](0029-layered-fit-status.md)
+- [0029 DBの型をmigrationから作ってcommitし、apiのSupabaseのクライアントに付ける](0029-commit-db-types.md)
+- [0030 重ね着の「タイト」「小さすぎます」は、中の服1枚分の厚みを体の身幅に足して決める](0030-layered-fit-status.md)
 
 ## 参考文献
 
