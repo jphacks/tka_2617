@@ -103,7 +103,7 @@ def compare(reference, result_dir, template, part_id):
 def main():
     global ROOT, OUT
     parser = argparse.ArgumentParser()
-    parser.add_argument("--category", choices=["short_sleeve_top", "long_sleeve_top"], default="short_sleeve_top")
+    parser.add_argument("--category", choices=["short_sleeve_top", "long_sleeve_top", "shirt"], default="short_sleeve_top")
     parser.add_argument("--with-model", action="store_true", help="既存の推論でも点を求めて比べる（数十秒かかる）")
     args = parser.parse_args()
     ROOT = TEMPLATE_ROOTS[args.category]

@@ -351,8 +351,7 @@ export function MeasurementStudio() {
         if (back) {
           try {
             const backSaved = await uploadBackPhoto(saved.id, back);
-            if (ready.category !== "shirt")
-              textureMessage = textureRequestMessage(backSaved.texture);
+            textureMessage = textureRequestMessage(backSaved.texture);
           } catch {
             backFailed = true;
           }
@@ -589,9 +588,7 @@ export function MeasurementStudio() {
                 </div>
               ) : (
                 <p className="text-xs leading-[1.7] text-description">
-                  {result.category === "shirt"
-                    ? "シャツはまだテクスチャを作れないため、裏面は写真だけを保存します。"
-                    : "表と裏を登録すると、テクスチャを生成してPC内に保存します。"}
+                  表と裏を登録すると、テクスチャを生成してPC内に保存します。
                   {result.category === "trousers"
                     ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
                     : result.category === "long_sleeve_top" ||

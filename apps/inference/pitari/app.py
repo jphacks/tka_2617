@@ -155,7 +155,7 @@ def detect(image: UploadFile = File(...), options: str = Form(...)):
 @app.post("/textures", status_code=202, dependencies=[Depends(authorize)])
 def textures(
     garmentId: str = Form(...),
-    category: Literal["short_sleeve_top", "long_sleeve_top", "trousers"] = Form(...),
+    category: Literal["short_sleeve_top", "long_sleeve_top", "shirt", "trousers"] = Form(...),
     front: UploadFile = File(...),
     back: UploadFile | None = File(None),
     garmentCreatedAt: Annotated[datetime | None, Form()] = None,

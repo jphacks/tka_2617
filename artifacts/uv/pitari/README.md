@@ -417,8 +417,9 @@ MCPでつなぐと、Claude Codeが**起動中のBlenderの開いているファ
 - `inputs/tshirt/`：元のpitari.blend、バックアップ、Tシャツの表裏写真。
 - `inputs/longsleeve/`：受領した長そでのGLB・Blenderファイル・ランドマーク・mesh_info・UV展開図・確認画像。[再生成手順と検証結果](inputs/longsleeve/README.md)。
 - `inputs/trousers/`：受領したズボンの素材。
+- `inputs/shirt/`：受領したシャツのGLB・Blenderファイル・ランドマーク・mesh_info・UV展開図・確認画像。[再生成手順と検証結果](inputs/shirt/README.md)。
 - `inputs/df2_categories.jpg`：DeepFashion2公式のランドマーク図の参照用コピー。
-- `longsleeve/`・`trousers/`と直下の`data/`・`masks/`・`check/`：再生成できるテンプレートと検証データ。Gitには含めない。
+- `longsleeve/`・`shirt/`・`trousers/`と直下の`data/`・`masks/`・`check/`：再生成できるテンプレートと検証データ。Gitには含めない。
 - `trials/`：写真ごとの試行結果。アプリから生成した結果は`apps/inference/textures/`に置く。
 
 ルート直下にあった素材は上記へ移した。Blenderの元ファイルとバックアップは内容を変更せず保持する。元ファイル内の相対画像パスは移動前のままなので、外部画像を使う場合は読み込み先を確認する。生成処理はメッシュとUVだけを読み、欠落した外部材質画像には依存しない。
