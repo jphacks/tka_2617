@@ -10,8 +10,12 @@
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background assets/blender/out/build.blend --python assets/blender/verify_sizes.py
 長袖（build_longsleeve.py の後に）:
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background assets/blender/out/build_longsleeve.blend --python assets/blender/verify_sizes.py -- longsleeve
+女性（build_tshirt_female.py の後に。服の名前の後に female）:
+  "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background assets/blender/out/build_female.blend --python assets/blender/verify_sizes.py -- tshirt female
 
 合格条件：標準体型は全項目 ±0.5cm 以内、ほかの体型は ±1cm 以内。不合格なら終了コード 1
+女性は、押し出しを着せるための体（avatar_fit）に対して行い、さらに次も合格条件にする（check_bust）：
+  谷間に服の頂点が入っていない／胸の下に、着せるための体で埋めた深さの BUST_GAP_MIN 倍以上、服と体の間の空間がある
 """
 import json
 import os
@@ -24,13 +28,21 @@ import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 from mathutils import Vector  # noqa: E402
 from mathutils.bvhtree import BVHTree  # noqa: E402
+import pitari_female as pf  # noqa: E402
 import pitari_tshirt as pt  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 MODELS = os.path.join(ROOT, "apps", "web", "public", "models")
 # 確かめる服（"tshirt" か "longsleeve"）。オブジェクト名と、JSON・基準点のファイル名に使う
-GARMENT = sys.argv[sys.argv.index("--") + 1] if "--" in sys.argv else "tshirt"
-RENDERS = os.path.join(HERE, "out", "renders" if GARMENT == "tshirt" else f"renders_{GARMENT}")
+ARGS = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+GARMENT = ARGS[0] if ARGS else "tshirt"
+GENDER = ARGS[1] if len(ARGS) > 1 else "male"
+FEMALE = GENDER == "female"
+RENDERS = os.path.join(HERE, "out", "_".join(
+    ["renders"] + ([GARMENT] if GARMENT != "tshirt" else []) + ([GENDER] if FEMALE else [])))
+# 女性は胸の形を見るので、背面の代わりに横から描く
+VIEWS = ((("front", (0, -1, 0)), ("side", (1, 0, 0)), ("three_quarter", (0.7, -0.7, 0))) if FEMALE else
+         (("front", (0, -1, 0)), ("three_quarter", (0.7, -0.7, 0)), ("back", (0, 1, 0))))
 TOL = {"standard": 0.5}
 TOL_OTHER = 1.0
 # 標準の身長に加えて確かめる身長（cm）。測った身長（HEIGHT_SAMPLES_CM）の間も確かめる
@@ -214,6 +226,42 @@ def push_out_e(S, body_P, body_polys, shirt_polys, cover):
     return S + disp[weld]
 
 
+INSIDE_TOL = 0.001          # 着せるための体の面からこれより内側にある服の頂点を「入っている」とする
+BUST_GAP_MIN = 0.9          # 胸の下の、服と体の間の空間は、着せるための体で埋めた深さのこの倍以上
+BUST_GAP_DEPTH = 0.12       # 胸の下を、乳首の高さからこの深さまで調べる
+
+
+def check_bust(S, body_P, fit_P, polys, body_polys, nipples):
+    """女性の胸まわり。返り値は (谷間に入った服の頂点の数, [(左右, 服と体の間の空間 cm, 埋めた深さ cm)])。
+    谷間：乳首の間（|x| < 乳首の |x|）で、乳首の 3cm 下から谷間を埋めた高さまでにある服の頂点のうち、
+    着せるための体の内側（本物の体との間の、埋めた所）に入ったもの。
+    胸の下：乳首を通る縦の列で、着せるための体が本物の体より一番前に出た高さの、本物の体から服までの前後の距離"""
+    z_b, x_n = float(body_P[nipples, 2].mean()), float(np.abs(body_P[nipples, 0]).mean())
+    fit_bvh = bvh_of(fit_P, body_polys)
+    region = (np.abs(S[:, 0]) < x_n) & (S[:, 2] > z_b - 0.03) & (S[:, 2] < z_b + pf.FIT_BUST_RISE)
+    inside = 0
+    for p in S[region]:
+        loc, n, _, _ = fit_bvh.find_nearest(Vector(p))
+        inside += (Vector(p) - loc).dot(n) < -INSIDE_TOL
+    zs = np.arange(z_b - BUST_GAP_DEPTH, z_b, pf.FIT_STEP)
+    gaps = []
+    for side, x in (("左", x_n), ("右", -x_n)):
+        xs = np.array([x])
+        body_y = pf.front_profile(body_P, body_polys, zs, xs)[:, 0]
+        fill = body_y - pf.front_profile(fit_P, body_polys, zs, xs)[:, 0]
+        gap = body_y - pf.front_profile(S, polys, zs, xs)[:, 0]
+        i = int(np.nanargmax(fill))
+        gaps.append((side, float(gap[i]) * 100, float(fill[i]) * 100))
+    return int(inside), gaps
+
+
+def bust_ok(name, inside, gaps):
+    ok = inside == 0 and all(g >= BUST_GAP_MIN * f for _, g, f in gaps)
+    pt.log(f"  [{name}] 谷間に入った服の頂点 {inside} / 胸の下の空間 " + ", ".join(
+        f"{s} {g:.2f}cm（埋めた深さ {f:.2f}cm）" for s, g, f in gaps) + f" {'OK' if ok else 'NG'}")
+    return ok
+
+
 def render_case(name, shirt_P, body_P, shirt, body):
     """ブラウザと同じ形（服は体の外へ押し出した状態）で、正面・斜め・背面を描く"""
     os.makedirs(RENDERS, exist_ok=True)
@@ -244,7 +292,7 @@ def render_case(name, shirt_P, body_P, shirt, body):
     cam = bpy.data.objects.new("verify_cam", cam_data); sc.collection.objects.link(cam)
     sc.camera = cam
     paths = []
-    for view, d in (("front", (0, -1, 0)), ("three_quarter", (0.7, -0.7, 0)), ("back", (0, 1, 0))):
+    for view, d in VIEWS:
         target = Vector((0, 0, 1.08))
         cam.location = target + Vector(d) * 3
         cam.rotation_euler = (target - cam.location).to_track_quat("-Z", "Y").to_euler()
@@ -265,10 +313,14 @@ def render_case(name, shirt_P, body_P, shirt, body):
 
 def main():
     shirt, body = bpy.data.objects[GARMENT], bpy.data.objects["avatar"]
-    with open(os.path.join(HERE, "out", f"{GARMENT}_landmarks.json"), encoding="utf-8") as fp:
+    # 押し出しとめり込みの相手。女性は着せるための体（描かない）
+    collider = bpy.data.objects[pf.FIT_NAME] if FEMALE else body
+    collider.hide_render = FEMALE
+    lm_name = f"{GARMENT}_female_landmarks.json" if FEMALE else f"{GARMENT}_landmarks.json"
+    with open(os.path.join(HERE, "out", lm_name), encoding="utf-8") as fp:
         lm = json.load(fp)
-    base, corr = load_json(f"{GARMENT}_male_base.json"), load_json(f"{GARMENT}_male_correction.json")
-    height = load_json(f"{GARMENT}_male_height.json")
+    base, corr = load_json(f"{GARMENT}_{GENDER}_base.json"), load_json(f"{GARMENT}_{GENDER}_correction.json")
+    height = load_json(f"{GARMENT}_{GENDER}_height.json")
     polys = pt.polys_of(shirt)
     body_polys = pt.polys_of(body)
     cover = np.empty(len(body.data.vertices), dtype=np.float32)
@@ -277,6 +329,13 @@ def main():
     ok, _ = check_accuracy(shirt, lm, polys, base, corr, height)
 
     standard_cm = height["standard_cm"]
+    if FEMALE:
+        nipples = pf.group_verts(body, "nippleTip")
+        pt.log("着せ直したままの服（押し出す前、基準の寸法）")
+        for b in pt.BUILDS:
+            vals = pt.build_values(b)
+            ok &= bust_ok(b, *check_bust(pt.mixed_coords(shirt, vals), pt.mixed_coords(body, vals),
+                                         pt.mixed_coords(collider, vals), polys, body_polys, nipples))
     cases = [(name, b, standard_cm, off) for name, b, off in CASES] + HEIGHT_CASES
     for name, b, h_cm, off in cases:
         h = h_cm - standard_cm
@@ -285,14 +344,17 @@ def main():
         k = key_values(target, base_b, M)
         S = pt.mixed_coords(shirt, pt.build_values(b, k, h))
         Bd = pt.mixed_coords(body, pt.build_values(b, None, h))
+        Cd = pt.mixed_coords(collider, pt.build_values(b, None, h))
         got = pt.measure(S, lm, polys)
-        Se = push_out_e(S, Bd, body_polys, polys, cover)
+        Se = push_out_e(S, Cd, body_polys, polys, cover)
         got_e = pt.measure(Se, lm, polys)
-        a, c = penetration(Se, Bd, polys, body_polys, cover)
+        a, c = penetration(Se, Cd, polys, body_polys, cover)
         pt.log(f"[{name}] キー {', '.join(f'{p} {v:+.2f}' for p, v in k.items())}")
         pt.log(f"  実測 {', '.join(f'{p} {got[p]:.2f}' for p in pt.SIZE_PARTS)}（目標 {', '.join(f'{target[p]:.2f}' for p in pt.SIZE_PARTS)}）")
         pt.log(f"  押し出した後の入力とのずれ {', '.join(f'{p} {got_e[p] - target[p]:+.2f}' for p in pt.SIZE_PARTS)}")
         pt.log(f"  押し出した後、体の内側に入った Tシャツの頂点: {a} / Tシャツから出た体の頂点: {c}")
+        if FEMALE:
+            ok &= bust_ok("押し出した後", *check_bust(Se, Bd, Cd, polys, body_polys, nipples))
         for path in render_case(name, Se, Bd, shirt, body):
             pt.log("  画像:", path)
 
