@@ -81,7 +81,21 @@ lefthook が、staged のファイルを Prettier で整形し、ESLint で検�
 
 ## webをVercelにデプロイする
 
-GitHubとVercelはつないでいないので、手元のMacからVercelのCLIで出す（[ADR 0004](adr/0004-deploy-web-with-vercel-cli.md)）。今はwebだけを出している。
+mainにマージすると、CIが通った後にGitHub Actionsが本番に出す（`.github/workflows/ci.yml`の`deploy`、[ADR 0004](adr/0004-deploy-web-with-vercel-cli.md)）。ふだんは何もしなくてよい。今はwebだけを出している。
+
+### Actionsに置いてあるsecret
+
+| 名前                | 中身                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `VERCEL_TOKEN`      | Vercelの鍵。VercelのAccount Settingsの「Tokens」で作る。スコープはpitariのプロジェクトのチームに絞り、有効期限を付ける |
+| `VERCEL_ORG_ID`     | `.vercel/project.json`の`orgId`                                                                                        |
+| `VERCEL_PROJECT_ID` | `.vercel/project.json`の`projectId`                                                                                    |
+
+鍵を作り直したら`gh secret set VERCEL_TOKEN`で入れ直す（値は画面に出さずに入力できる）。
+
+### 手元から出すとき
+
+Actionsが止まっているときなどは、手元のMacからも出せる。
 
 1. mainの最新に切り替える。CLIは手元のファイルをそのまま送るので、commitしていない変更も載ってしまう
 
@@ -97,11 +111,12 @@ GitHubとVercelはつないでいないので、手元のMacからVercelのCLI�
 
    初めてのときだけ、ログインとプロジェクトの設定を聞かれる。
    - ログインは「Continue with GitHub」
-   - 「Link to existing project?」は、まだ無ければ`n`。プロジェクトの名前は`pitari`
-   - **「In which directory is your code located?」は`./apps/web`**
+   - 「Link to existing project?」は`y`で、`pitari`を選ぶ
    - Gitのリポジトリとつなぐか聞かれたら`n`（orgの許可が無いため）
 
 3. 表示された本番のURLを開いて確かめる。スマホで試すときも本番のURLを使う（`--prod`なしで出したお試しのURLは、Vercelにログインしないと見られない）
+
+### 気をつけること
 
 - `.env`などの秘密のファイルは、ルートの`.vercelignore`で送らないようにしてある。秘密のファイルを足したら、`.vercelignore`にも足す
 - Vercelでのインストールは、`apps/web/vercel.json`でスクリプトを動かさないようにしてある。送ったファイルには`.git`が無く、`lefthook install`が失敗するため
