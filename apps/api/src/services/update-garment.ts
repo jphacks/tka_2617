@@ -3,6 +3,8 @@ import { env } from "#src/lib/env";
 import { HttpError } from "#src/lib/http-error";
 import type { Measurements } from "#src/lib/measurement-schema";
 import type { Season } from "#src/lib/garment-records";
+import type { GarmentMaterialInput } from "#src/lib/materials";
+import { setGarmentMaterials } from "#src/lib/garment-materials";
 
 export async function updateGarment(
   id: string,
@@ -11,8 +13,11 @@ export async function updateGarment(
     measurements?: Measurements;
     purchasedMonth?: string | null;
     seasons?: Season[];
+    materials?: GarmentMaterialInput;
   },
 ) {
+  // 素材を先に保存する。一覧に無い素材や合計の誤りで止まったとき、名前などだけが変わらないように
+  if (values.materials) await setGarmentMaterials(id, values.materials);
   const { data, error } = await supabase
     .from("garments")
     .update({

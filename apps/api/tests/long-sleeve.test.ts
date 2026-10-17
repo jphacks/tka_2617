@@ -27,6 +27,9 @@ void test("長そでの写真・手入力寸法・33点を登録して一覧と�
         );
       if (url.pathname.startsWith("/storage/v1/object/"))
         return Promise.resolve(Response.json({ Key: "test.jpg" }));
+      // 素材は、素材のテスト（materials.test.ts）で確かめる
+      if (url.pathname === "/rest/v1/rpc/set_garment_materials")
+        return Promise.resolve(new Response(null, { status: 204 }));
       if (init?.method === "POST") {
         assert(typeof init.body === "string");
         const body = JSON.parse(init.body) as

@@ -5,6 +5,8 @@ import { readPng } from "#src/lib/png";
 import { HttpError } from "#src/lib/http-error";
 import { bucket } from "#src/lib/garment-records";
 import type { GarmentMetadata } from "#src/lib/measurement-schema";
+import { defaultMaterials } from "#src/lib/materials";
+import { setGarmentMaterials } from "#src/lib/garment-materials";
 
 export async function createGarment(
   image: File,
@@ -78,6 +80,7 @@ export async function createGarment(
     inserted = true;
     const images = await supabase.from("garment_images").insert(records);
     if (images.error) throw images.error;
+    await setGarmentMaterials(id, metadata.materials ?? defaultMaterials);
     return { id };
   } catch (error) {
     if (inserted) {
@@ -94,6 +97,8 @@ export async function createGarment(
       if (cleanup.error)
         console.error("登録失敗後の画像削除に失敗", cleanup.error);
     }
+    // 一覧に無い素材など、送った内容の誤りは、片付けたうえでそのまま返す
+    if (error instanceof HttpError && error.status === 400) throw error;
     console.error("服の登録に失敗", error);
     throw new HttpError(
       503,

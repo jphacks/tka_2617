@@ -36,6 +36,17 @@ export async function garmentView(row: GarmentRecord): Promise<GarmentView> {
     measurementVersion: row.measurement_version,
     purchasedMonth: row.purchased_month,
     seasons: row.seasons,
+    materials: [...row.garment_materials]
+      .sort(
+        (a, b) =>
+          b.percent - a.percent ||
+          a.materials.sort_order - b.materials.sort_order,
+      )
+      .map((value) => ({
+        materialId: value.materials.id,
+        label: value.materials.label,
+        percent: value.percent,
+      })),
     createdAt: row.created_at,
     images,
   };
