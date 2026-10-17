@@ -95,7 +95,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - 身長キー：`heightKeyValues(身長, table)`（体とTシャツの両方に入れる）
 - サイズキー：`fitAt(build, 身長, table)`で前後の身長の基準寸法とMを直線で補間し、`sizeKeyValues(実寸, fit, table)`がM（4×4）×キー＝（実寸−その体型・身長の基準寸法）を解く。同じ計算を`verify_sizes.fit_at`と`key_values`に持っている
 - 服の押し出しは`src/lib/push-out.ts`（three-mesh-bvh）。スマホでは1回0.3〜0.4秒かかるので、入力が止まってから（0.3秒後に）計算する。検証スクリプトは押し出した後の寸法のずれを出す（合否には使わない）
-- アバター画面は`/avatar`（`src/app/avatar/`）。開発用の確認ページは`/dev/tryon`（`src/app/dev/tryon/`、実寸の直接入力・キーの値・計算時間を出す）。どちらも状態と計算は`src/components/try-on/use-try-on.ts`、3D表示は`src/components/try-on/try-on-scene.tsx`
+- アバター画面は`/avatar`（`src/app/avatar/`）。開発用の確認ページは`/dev/tryon`（`src/app/dev/tryon/`、実寸の直接入力・キーの値・計算時間を出す）。本番では404で、`next dev`のときだけ開く。スマホではPCの`next dev`にLANでつなぐ（`docs/setup.md`の「スマホで撮影する」）。どちらも状態と計算は`src/components/try-on/use-try-on.ts`、3D表示は`src/components/try-on/try-on-scene.tsx`
 
 ## UV（写真から貼る用、`pitari`）
 
