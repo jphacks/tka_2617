@@ -27,9 +27,10 @@ function deniedStorage(): never {
   throw new Error("サイトのデータを禁止したブラウザ");
 }
 
-void test("半袖と長袖は上、ズボンは下に入る", () => {
+void test("半袖・長袖・シャツは上、ズボンは下に入る", () => {
   assert.equal(outfitSlot("short_sleeve_top"), "top");
   assert.equal(outfitSlot("long_sleeve_top"), "top");
+  assert.equal(outfitSlot("shirt"), "top");
   assert.equal(outfitSlot("trousers"), "bottom");
 });
 
