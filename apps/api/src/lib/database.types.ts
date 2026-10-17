@@ -46,6 +46,7 @@ export type Database = {
           points: Json
           role: string
           storage_key: string
+          texture_job: string | null
           width_px: number
         }
         Insert: {
@@ -59,6 +60,7 @@ export type Database = {
           points?: Json
           role: string
           storage_key: string
+          texture_job?: string | null
           width_px: number
         }
         Update: {
@@ -72,6 +74,7 @@ export type Database = {
           points?: Json
           role?: string
           storage_key?: string
+          texture_job?: string | null
           width_px?: number
         }
         Relationships: [
@@ -161,6 +164,17 @@ export type Database = {
           target_profile_id: string
         }
         Returns: {
+          removed_key: string
+        }[]
+      }
+      save_garment_texture: {
+        Args: {
+          new_image: Json
+          target_garment_id: string
+          target_profile_id: string
+        }
+        Returns: {
+          image_id: string
           removed_key: string
         }[]
       }
