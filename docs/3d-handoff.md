@@ -201,14 +201,14 @@ Storageのキーは`{profileId}/{garmentId}/measurement.jpg`または`cutout.png
 
 ### 3D表示の実装で主に使う場所
 
-| ファイル                                                                                      | 役割・扱い                                                                                    |
-| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| [apps/web/src/app/avatar/page.tsx](../apps/web/src/app/avatar/page.tsx)                       | 実在するアバター画面。今は準備中。ここに3D表示コンポーネントを組み込む                        |
-| `apps/web/src/components/avatar-viewer.tsx`                                                   | 新規作成の候補。3D表示・体型調整の操作を置く。まだ存在しない                                  |
-| `apps/web/src/lib/garment-to-model.ts`                                                        | 新規作成の候補。保存寸法からモデル固有パラメータへの変換を置く。まだ存在しない                |
-| `apps/web/public/models/`                                                                     | 共有可能な固定GLBの配置候補。まだモデルは置いていない。私的なユーザーデータの保存先にはしない |
-| [apps/web/src/lib/request.ts](../apps/web/src/lib/request.ts)                                 | 既存の画面側API取得ヘルパー                                                                   |
-| [apps/web/src/components/closet-contents.tsx](../apps/web/src/components/closet-contents.tsx) | 保存済みの服を取得して表示する実装例                                                          |
+| ファイル                                                                                      | 役割・扱い                                                                                         |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [apps/web/src/app/avatar/page.tsx](../apps/web/src/app/avatar/page.tsx)                       | アバター画面。体・髪・服・靴を選んで着せる（`avatar-client.tsx`）                                  |
+| `apps/web/src/components/try-on/`                                                             | 3D表示（`try-on-scene.tsx`）と、試着の状態と計算（`use-try-on.ts`）。`/avatar`と`/dev/tryon`で使う |
+| `apps/web/src/lib/garment-to-model.ts`                                                        | 新規作成の候補。保存寸法からモデル固有パラメータへの変換を置く。まだ存在しない                     |
+| `apps/web/public/models/`                                                                     | 体と服の固定GLB（Blenderのスクリプトが書き出す）。私的なユーザーデータの保存先にはしない           |
+| [apps/web/src/lib/request.ts](../apps/web/src/lib/request.ts)                                 | 既存の画面側API取得ヘルパー                                                                        |
+| [apps/web/src/components/closet-contents.tsx](../apps/web/src/components/closet-contents.tsx) | 保存済みの服を取得して表示する実装例                                                               |
 
 3Dライブラリは現時点のpackage.jsonに追加されていない。採用するものを決め、依存追加はプロジェクトルールに沿って確認する。window・canvas等を使う表示部分はクライアントコンポーネントとして実装し、共通レイアウトと下部ナビは維持する。
 
