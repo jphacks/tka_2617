@@ -15,18 +15,14 @@ import {
   toTrouserInputs,
   useTryOn,
 } from "@/components/try-on/use-try-on";
-import {
-  BUILD_LABELS,
-  BUILDS,
-  HEIGHT_MAX_CM,
-  HEIGHT_MIN_CM,
-} from "@/lib/avatar-settings";
+import { BUILD_LABELS, BUILDS } from "@/lib/avatar-settings";
 import {
   LAYER_WIDTH_CM,
   MEASUREMENT_KEYS,
   MEASUREMENT_LABELS,
   topMeasurements,
 } from "@/lib/garment";
+import type { ModelGender } from "@/lib/avatar-models";
 import type { PushStats } from "@/lib/push-out";
 import {
   TROUSER_KEYS,
@@ -34,6 +30,11 @@ import {
   TROUSER_STRETCH_RATIO,
   trouserMeasurements,
 } from "@/lib/trousers";
+
+const GENDER_CHOICES = [
+  ["male", "男性"],
+  ["female", "女性"],
+] as const satisfies readonly (readonly [ModelGender, string])[];
 
 // three.jsはブラウザでだけ動かす
 const TryOnScene = dynamic(() => import("@/components/try-on/try-on-scene"), {
@@ -43,6 +44,9 @@ const TryOnScene = dynamic(() => import("@/components/try-on/try-on-scene"), {
 /** 開発用の確認ページ。本番のアバター画面（/avatar）に無い、実寸の直接入力・キーの値・計算時間を出す */
 export default function TryOnClient() {
   const {
+    gender,
+    selectGender,
+    heightRangeCm: [heightMinCm, heightMaxCm],
     build,
     setBuild,
     heightInput,
@@ -109,6 +113,30 @@ export default function TryOnClient() {
           )}
         </div>
 
+        {/* 女性のアバターは、ブラウザで確かめるまでこのページでだけ出す */}
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="mb-2 text-[15px] font-semibold">
+            アバターの性別
+          </legend>
+          <div className="flex gap-4">
+            {GENDER_CHOICES.map(([g, label]) => (
+              <label key={g} className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="gender"
+                  value={g}
+                  checked={gender === g}
+                  onChange={() => {
+                    selectGender(g);
+                  }}
+                  className="accent-main"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <label className="flex flex-col gap-1">
           <span className="flex items-center justify-between gap-3">
             <span className="text-[15px] font-semibold">身長</span>
@@ -116,8 +144,8 @@ export default function TryOnClient() {
               <input
                 type="number"
                 inputMode="decimal"
-                min={HEIGHT_MIN_CM}
-                max={HEIGHT_MAX_CM}
+                min={heightMinCm}
+                max={heightMaxCm}
                 step={0.5}
                 value={heightInput}
                 onChange={(e) => {
@@ -131,7 +159,7 @@ export default function TryOnClient() {
           </span>
           {!isHeightValid && (
             <span className="text-right text-xs text-red-600">
-              {HEIGHT_MIN_CM}〜{HEIGHT_MAX_CM}cmで入力してください
+              {heightMinCm}〜{heightMaxCm}cmで入力してください
             </span>
           )}
         </label>

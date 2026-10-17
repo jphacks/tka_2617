@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { TOPS, trouserTable } from "@/components/try-on/use-try-on";
+import { AVATAR_MODELS } from "@/lib/avatar-models";
 import { fitAt, MEASUREMENT_KEYS } from "@/lib/garment";
 import {
   checkSizes,
@@ -10,7 +10,8 @@ import {
 } from "@/lib/size-check";
 import { TROUSER_KEYS, trouserFitAt } from "@/lib/trousers";
 
-const topBases = Object.entries(TOPS).map(([name, { table }]) => ({
+const { tops, trouserTable } = AVATAR_MODELS.male;
+const topBases = Object.entries(tops).map(([name, { table }]) => ({
   name,
   base: fitAt("standard", table.standard_cm, table).base,
 }));

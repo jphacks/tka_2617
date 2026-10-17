@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
-import { modelUrls, type ModelGender } from "@/lib/avatar-models";
+import { heightFromInput } from "@/lib/avatar-settings";
+import { AVATAR_MODELS, type ModelGender } from "@/lib/avatar-models";
 
 const PUBLIC = path.join(import.meta.dirname, "..", "public");
 const GENDERS: ModelGender[] = ["male", "female"];
@@ -47,14 +48,15 @@ function readGltf(url: string) {
 
 void test("どちらの性別も、体・ズボン・上の服のglbがある", () => {
   for (const gender of GENDERS) {
-    const urls = modelUrls(gender);
-    for (const url of [urls.avatar, urls.trousers, ...Object.values(urls.tops)])
+    const models = AVATAR_MODELS[gender];
+    const tops = Object.values(models.tops).map((top) => top.url);
+    for (const url of [models.avatar, models.trousers, ...tops])
       assert.ok(existsSync(path.join(PUBLIC, url)), `${url}がありません`);
   }
 });
 
 void test("女性の体のglbには、体と同じ頂点の並び・キー・_coverを持つ着せるための体がある", () => {
-  const { gltf, positions } = readGltf(modelUrls("female").avatar);
+  const { gltf, positions } = readGltf(AVATAR_MODELS.female.avatar);
   const mesh = (name: string) => {
     const node = gltf.nodes.find((n) => n.name === name);
     assert.ok(node?.mesh !== undefined, `${name}がありません`);
@@ -80,6 +82,35 @@ void test("女性の体のglbには、体と同じ頂点の並び・キー・_co
 });
 
 void test("男性の体のglbには、着せるための体は無い（体に対して押し出す）", () => {
-  const { gltf } = readGltf(modelUrls("male").avatar);
+  const { gltf } = readGltf(AVATAR_MODELS.male.avatar);
   assert.ok(!gltf.nodes.some((n) => n.name === "avatar_fit"));
+});
+
+void test("入力できる身長は性別ごと（女性は140〜185cm、男性は150〜195cm）で、標準の身長はその間にある", () => {
+  const female = AVATAR_MODELS.female.heightRangeCm;
+  assert.equal(heightFromInput("140", female), 140);
+  assert.equal(heightFromInput("139.5", female), null);
+  assert.equal(heightFromInput("190", female), null);
+  assert.equal(heightFromInput("190"), 190);
+  assert.equal(heightFromInput("145"), null);
+  type Table = {
+    standard_cm: number;
+    builds: Record<string, { height_cm: number }[]>;
+  };
+  for (const gender of GENDERS) {
+    const { tops, trouserTable, heightRangeCm } = AVATAR_MODELS[gender];
+    const [min, max] = heightRangeCm;
+    const tables: Table[] = [
+      ...Object.values(tops).map((top) => top.table),
+      trouserTable,
+    ];
+    for (const table of tables) {
+      assert.ok(min < table.standard_cm && table.standard_cm < max);
+      // Blenderが測った身長の表は、入力できる範囲の両端を含む
+      for (const rows of Object.values(table.builds)) {
+        assert.equal(rows[0].height_cm, min);
+        assert.equal(rows[rows.length - 1].height_cm, max);
+      }
+    }
+  }
 });

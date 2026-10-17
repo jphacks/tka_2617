@@ -1,10 +1,6 @@
 import { useMemo, useState } from "react";
-import trousersHeightJson from "@/../public/models/trousers_male_height.json";
-import longsleeveHeightJson from "@/../public/models/longsleeve_male_height.json";
-import shirtHeightJson from "@/../public/models/shirt_male_height.json";
-import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import presetsJson from "@/../public/presets/presets.json";
-import { modelUrls } from "@/lib/avatar-models";
+import { AVATAR_MODELS, type ModelGender } from "@/lib/avatar-models";
 import {
   defaultAvatarSettings,
   heightFromInput,
@@ -16,7 +12,6 @@ import {
   fitAt,
   fitStatus,
   heightKeyValues,
-  HeightTableSchema,
   MEASUREMENT_KEYS,
   sizeKeyValues,
   STRETCH_RATIO,
@@ -39,14 +34,10 @@ import {
   trouserFitStatus,
   trouserKeyValues,
   trouserMeasurements,
-  TrouserTableSchema,
   type TrouserMeasurements,
 } from "@/lib/trousers";
 import type { WornTop, WornTrousers } from "@/lib/worn-garment";
 
-// Blenderが書き出した表。小さいので、取りに行かずにバンドルに入れる
-export const heightTable = HeightTableSchema.parse(tshirtHeightJson);
-export const trouserTable = TrouserTableSchema.parse(trousersHeightJson);
 export const presets = PresetsSchema.parse(presetsJson);
 
 /** 確認用の服データ。服が指定されていないときに着せる */
@@ -112,29 +103,23 @@ const SAMPLE_SHIRT = {
 /** シャツの中に着るTシャツの実寸。今はサンプルの服で固定する */
 const INNER_TARGET = topMeasurements(SAMPLE_GARMENT);
 
-// 性別を切り替えるまでは男性（modelUrlsの説明）
-const MALE_TOPS = modelUrls("male").tops;
-
-/** 上の服。寸法の4項目とキーはどれも同じで、Blenderが書き出したglbと表だけが違う */
+/**
+ * 上の服。寸法の4項目とキーはどれも同じで、Blenderが書き出したglbと表だけが違う
+ * （性別ごとのglbと表は`AVATAR_MODELS`）
+ */
 export const TOPS = {
   tshirt: {
     label: "Tシャツ",
-    url: MALE_TOPS.tshirt,
-    table: heightTable,
     sample: SAMPLE_GARMENT,
     stretchRatio: STRETCH_RATIO,
   },
   longsleeve: {
     label: "長袖",
-    url: MALE_TOPS.longsleeve,
-    table: HeightTableSchema.parse(longsleeveHeightJson),
     sample: SAMPLE_LONGSLEEVE,
     stretchRatio: STRETCH_RATIO,
   },
   shirt: {
     label: "シャツ",
-    url: MALE_TOPS.shirt,
-    table: HeightTableSchema.parse(shirtHeightJson),
     sample: SAMPLE_SHIRT,
     stretchRatio: WOVEN_STRETCH_RATIO,
   },
@@ -208,12 +193,17 @@ export type Worn = { top: WornTop | null; bottom: WornTrousers | null };
 
 /**
  * 試着の状態（体・服・髪・靴の選択と服の実寸）と、そこから決まるmorphの値。
- * 本番のアバター画面と確認ページ（/dev/tryon）で使う。体と髪はinitialの値、服はwornの服で始める
+ * 本番のアバター画面と確認ページ（/dev/tryon）で使う。体と髪はinitialの値、服はwornの服で始める。
+ * 3Dモデルは男性で始める。女性に切り替える（selectGender）のは、ブラウザで確かめるまで確認ページだけ
  */
 export function useTryOn(
   initial: AvatarSettings = defaultAvatarSettings,
   worn: Worn = { top: null, bottom: null },
 ) {
+  const [gender, setGender] = useState<ModelGender>("male");
+  const models = AVATAR_MODELS[gender];
+  const heightTable = models.tops.tshirt.table;
+  const trouserTable = models.trouserTable;
   const [build, setBuild] = useState<Build>(initial.build);
   const [heightInput, setHeightInput] = useState(() =>
     initial.heightCm.toFixed(1),
@@ -228,7 +218,7 @@ export function useTryOn(
       ? toInputs(worn.top.measurements, 1)
       : toInputs(topMeasurements(SAMPLE_GARMENT)),
   );
-  const topTable = TOPS[top].table;
+  const topTable = models.tops[top].table;
   const [wearTrousers, setWearTrousers] = useState(true);
   const [trouserInput, setTrouserInput] = useState<TrouserInputs>(() =>
     worn.bottom
@@ -251,7 +241,7 @@ export function useTryOn(
   );
 
   // 範囲外や数値でない身長は、標準の身長で表示する
-  const heightValue = heightFromInput(heightInput);
+  const heightValue = heightFromInput(heightInput, models.heightRangeCm);
   const isHeightValid = heightValue !== null;
   const heightCm = heightValue ?? heightTable.standard_cm;
 
@@ -280,7 +270,7 @@ export function useTryOn(
   const status = target ? fitStatus(target, fit, { stretchRatio }) : null;
   const trouserFit = useMemo(
     () => trouserFitAt(build, heightCm, trouserTable),
-    [build, heightCm],
+    [build, heightCm, trouserTable],
   );
   const trouserCheck = useMemo(
     () =>
@@ -302,7 +292,7 @@ export function useTryOn(
       trouserTarget
         ? trouserKeyValues(trouserTarget, trouserFit, trouserTable)
         : null,
-    [trouserFit, trouserTarget],
+    [trouserFit, trouserTarget, trouserTable],
   );
   const trouserStatus = trouserTarget
     ? trouserFitStatus(trouserTarget, trouserFit)
@@ -313,7 +303,7 @@ export function useTryOn(
       ...buildKeyValues(build),
       ...heightKeyValues(heightCm, heightTable),
     }),
-    [build, heightCm],
+    [build, heightCm, heightTable],
   );
   // 長袖の袖丈が腕より長いときは、余った袖が手に垂れた形（垂れ方のキー）を混ぜる
   const sleeveExcessCm =
@@ -331,7 +321,7 @@ export function useTryOn(
   );
   const innerFit = useMemo(
     () => fitAt(build, heightCm, heightTable),
-    [build, heightCm],
+    [build, heightCm, heightTable],
   );
   const innerStatus = fitStatus(INNER_TARGET, innerFit);
   const innerMorphs = useMemo(() => {
@@ -341,7 +331,7 @@ export function useTryOn(
       ...innerSize,
       width_folds: Math.max(innerSize.size_width, 0) / 10,
     };
-  }, [bodyMorphs, innerFit]);
+  }, [bodyMorphs, innerFit, heightTable]);
   // 中のTシャツを着られるときは、上の服をTシャツの上から着られるかも確かめる
   const tryInner =
     top === "shirt" &&
@@ -381,11 +371,13 @@ export function useTryOn(
   /** TryOnSceneにそのまま渡す値（計算時間の計測などは各画面で足す） */
   const sceneProps = {
     heightScale: heightCm / heightTable.standard_cm,
+    avatarUrl: models.avatar,
+    trousersUrl: models.trousers,
     bodyMorphs,
-    shirtUrl: TOPS[top].url,
+    shirtUrl: models.tops[top].url,
     shirtMorphs,
     showShirt: status !== "tooSmall",
-    innerUrl: TOPS.tshirt.url,
+    innerUrl: models.tops.tshirt.url,
     innerMorphs,
     showInner,
     trouserMorphs,
@@ -399,6 +391,13 @@ export function useTryOn(
   };
 
   return {
+    gender,
+    /** 3Dモデルの性別を切り替え、身長をその性別の標準にする */
+    selectGender: (g: ModelGender) => {
+      setGender(g);
+      setHeightInput(AVATAR_MODELS[g].tops.tshirt.table.standard_cm.toFixed(1));
+    },
+    heightRangeCm: models.heightRangeCm,
     build,
     setBuild,
     heightInput,
