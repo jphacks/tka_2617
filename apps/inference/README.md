@@ -114,7 +114,7 @@ apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/
 2026-10-15に、受領したズボン用のバージョン2テンプレートで、実際のジーンズの表裏写真をサービスと同じ`texture.make`へ渡し、自動推論から`job.json: done`と2048×2048のテクスチャの保存まで確認した（約163秒）。塗り残し0、反転した三角形0。手修正したマスクは渡していないため、写真の床や影の混入は目視確認が必要。
 
 - 変換の本体は`artifacts/uv/pitari/scripts/photo_to_texture.py`の`make_texture`。カテゴリでテンプレートを選ぶ。Tシャツは`artifacts/uv/pitari/uv_template.json`、ズボンは`artifacts/uv/pitari/trousers/uv_template.json`（どちらもGitに含まれない）。ないPCでは503を返し、テクスチャは作らない。作り方は[UVテンプレートのREADME](../../artifacts/uv/pitari/README.md)。
-- ズボンの切り抜きと服の領域は、ランドマークで囲んだ輪郭の外を背景として教えて作る（`pitari/cutout.py`の`garment_alpha`、[ADR 0023](../../docs/adr/0023-trousers-cutout-with-landmarks.md)）。テクスチャを作るときも同じ関数を使う。
+- ズボンの切り抜きと服の領域は、ランドマークで囲んだ輪郭の外を背景として教えて作る（`pitari/cutout.py`の`garment_alpha`、[ADR 0024](../../docs/adr/0024-trousers-cutout-with-landmarks.md)）。テクスチャを作るときも同じ関数を使う。
 - モデルは採寸と共有する。テクスチャ作成がモデルを使っている間は、採寸のリクエストが最大60秒待ってから処理される。
 - 待ちの作業は5件まで。同じ服の作業が待っている間に新しい写真が届いたら置き換える。
 
@@ -171,4 +171,4 @@ DBには`supabase/migrations/20261017000100_long_sleeve_top.sql`の適用が必�
 
 フォルダと確認用画像の名前は`{生成日時}_{種類}_{服ID先頭8文字}`で、例は`2026-10-17_11-01-58_長そで_d6156da4.png`。生成日時は変換を開始した日本時間で、`年-月-日_時-分-秒`の順。処理の完了時刻は`job.json`の`completedAt`、服をクローゼットに登録した時刻は`garmentCreatedAt`で確認する。古い履歴など登録日時が不明なら`garmentCreatedAt`は`null`。
 
-確認用画像の名前は`job.json`の`textureFile`に記録する。生成に失敗したフォルダには完成画像がないため、最新画像を探すときは下から順に見て、`.png`のあるフォルダを選ぶ。既存の`texture.png`はBlender確認スクリプトとの互換性のため保持する。[命名の決定](../../docs/adr/0028-texture-filenames-with-dates.md)を参照。
+確認用画像の名前は`job.json`の`textureFile`に記録する。生成に失敗したフォルダには完成画像がないため、最新画像を探すときは下から順に見て、`.png`のあるフォルダを選ぶ。既存の`texture.png`はBlender確認スクリプトとの互換性のため保持する。[命名の決定](../../docs/adr/0029-texture-filenames-with-dates.md)を参照。

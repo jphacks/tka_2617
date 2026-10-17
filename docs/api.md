@@ -55,7 +55,7 @@ multipartの`image`はJPEG、最大8MiB・1200万画素・各辺4096px。ブラ�
 }
 ```
 
-四隅は送信画像上の外周順。長辺・短辺は画像上の長さから判断する。bboxは送信画像上の左上・右下で、手動指定する場合はカテゴリも必要。stage省略時は全工程を実行する。pointsは前の工程のランドマークで、cutout工程の手がかりにだけ使う。ズボンでは14点で囲んだ輪郭の外を背景として教え、脚の間や腰の外側の床を除く（[ADR 0023](adr/0023-trousers-cutout-with-landmarks.md)）。all工程では同じリクエストで求めた点を使う。
+四隅は送信画像上の外周順。長辺・短辺は画像上の長さから判断する。bboxは送信画像上の左上・右下で、手動指定する場合はカテゴリも必要。stage省略時は全工程を実行する。pointsは前の工程のランドマークで、cutout工程の手がかりにだけ使う。ズボンでは14点で囲んだ輪郭の外を背景として教え、脚の間や腰の外側の床を除く（[ADR 0024](adr/0024-trousers-cutout-with-landmarks.md)）。all工程では同じリクエストで求めた点を使う。
 
 出力は`{ imageId, imageBase64, widthPx, heightPx, category, bbox, points, paperCorners, pixelsPerCm, modelVersion, warnings, elapsedMs, measurements, measurementVersion, cutoutBase64, cutoutWidthPx, cutoutHeightPx }`。
 
@@ -124,7 +124,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗はPC内の`job.json`で確認する。apiはDBの服の登録日時`created_at`を内部の`POST /textures`の`garmentCreatedAt`として送る。作業フォルダと完成画像の確認用ファイル名は生成開始日時（JST）・カテゴリ・服IDの先頭8文字の順に並べる。`job.json`の`textureFile`に確認用ファイル名、`garmentCreatedAt`・`createdAt`・`completedAt`に各日時を記録する。
 
-Tシャツ・長そで・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0025](adr/0025-trousers-template-from-delivered-uv.md)）。生成物はPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0022](adr/0022-garment-texture-on-pc.md)、[ADR 0026](adr/0026-request-texture-from-saved-photos.md)を参照。
+Tシャツ・長そで・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0026](adr/0026-trousers-template-from-delivered-uv.md)）。生成物はPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0023](adr/0023-garment-texture-on-pc.md)、[ADR 0027](adr/0027-request-texture-from-saved-photos.md)を参照。
 
 ## 共通の型
 

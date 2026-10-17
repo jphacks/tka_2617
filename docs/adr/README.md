@@ -4,7 +4,7 @@
 
 ## 書き方
 
-ファイル名は `NNNN-内容.md`（4桁の連番）。中身は次の6つを短く書く。
+ファイル名は`NNNN-内容.md`（4桁の連番）。中身は次の6つを短く書く。
 
 - 背景：何に困っていたか
 - 決定：何を決めたか
@@ -36,13 +36,14 @@
 - [0019 長袖のシャツは、male_casualsuit03 のシャツを使い、前の開け閉めはキーで作る](0019-shirt-from-casualsuit03.md)
 - [0020 服の裏面の写真を別のroleで保存し、詳細画面で表と並べる](0020-back-photo-as-separate-role.md)
 - [0021 購入時期は年月、着る時期は春夏秋冬の複数選択で服に持つ](0021-purchase-month-and-seasons.md)
-- [0022 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0022-garment-texture-on-pc.md)
-- [0023 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0023-trousers-cutout-with-landmarks.md)
-- [0024 ズボンのテクスチャは、脚ごとのUVの島を前後に分けて表と裏の写真を貼る](0024-trousers-uv-template.md)
-- [0025 ズボンのテクスチャを受領したモデルとUVへ切り替える](0025-trousers-template-from-delivered-uv.md)
-- [0026 保存済みの表裏写真からテクスチャを再生成できるようにする](0026-request-texture-from-saved-photos.md)
-- [0027 長そでの登録と受領UVを使ったテクスチャ生成](0027-long-sleeve-top.md)
-- [0028 テクスチャの保存フォルダを生成日時から始める](0028-texture-filenames-with-dates.md)
+- [0022 Pythonのlintと整形にruffを使い、ディレクトリごとに入れていく](0022-python-lint-with-ruff.md)
+- [0023 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0023-garment-texture-on-pc.md)
+- [0024 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0024-trousers-cutout-with-landmarks.md)
+- [0025 ズボンのテクスチャは、脚ごとのUVの島を前後に分けて表と裏の写真を貼る](0025-trousers-uv-template.md)
+- [0026 ズボンのテクスチャを受領したモデルとUVへ切り替える](0026-trousers-template-from-delivered-uv.md)
+- [0027 保存済みの表裏写真からテクスチャを再生成できるようにする](0027-request-texture-from-saved-photos.md)
+- [0028 長そでの登録と受領UVを使ったテクスチャ生成](0028-long-sleeve-top.md)
+- [0029 テクスチャの保存フォルダを生成日時から始める](0029-texture-filenames-with-dates.md)
 
 ## 参考文献
 
