@@ -163,7 +163,7 @@ if (selected) {
 - `original`：旧v1の遠近補正前JPEG。旧データではmeasurementが補正後JPEG、A4四隅はoriginalにある。
 - `back`・`back_cutout`：裏面のJPEGと表示用の透過PNG。採寸しないので点・A4四隅・縮尺を持たない。裏面がない服もある。
 
-服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。アプリからは`GET /api/garments/{服ID}/texture`で状態を聞き、`imageId`があれば`/api/garments/{服ID}/images/{imageId}`のPNGを貼る。作り直しの間も、前に作ったものがあれば`imageId`が返る。`processing`の間は数秒おきに聞き直す（[API一覧](api.md)の「テクスチャの状態を聞く」、[ADR 0033](adr/0033-serve-texture-through-api.md)）。three.jsでは`TextureLoader`で読み、`texture.flipY = false`、`texture.colorSpace = SRGBColorSpace`にしてから`map`に入れる。glTFのUVの向きに合わせるため（runa、#67）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせている。テンプレートのUVは、3つともアプリのglbと一致することを確かめた（#67）。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
+服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。アプリからは`GET /api/garments/{服ID}/texture`で状態を聞き、`imageId`があれば`/api/garments/{服ID}/images/{imageId}`のPNGを貼る。作り直しの間も、前に作ったものがあれば`imageId`が返る。`processing`の間は数秒おきに聞き直す（[API一覧](api.md)の「テクスチャの状態を聞く」、[ADR 0033](adr/0033-serve-texture-through-api.md)）。three.jsでは`TextureLoader`で読み、`texture.flipY = false`、`texture.colorSpace = SRGBColorSpace`にしてから`map`に入れる。glTFのUVの向きに合わせるため（runa、#67）。アバターの画面では、着ている登録した服ごとに`useGarmentTexture`（`apps/web/src/components/try-on/use-garment-texture.ts`）が状態を聞き、3D側の`useTextureMap`が貼る。読み込む間とテクスチャが無いときは、材質の色のまま出す。貼る間は材質の色を白にする（色が画像に掛かるため）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせている。テンプレートのUVは、3つともアプリのglbと一致することを確かめた（#67）。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
 
 現在の画面からはmeasurementとcutoutの2枚を保存し、裏面を撮った場合はbackとback_cutoutも保存する。服1着につき各roleは最大1枚。クローゼットの一覧は表だけを出し、cutout→measurement→originalの順で選ぶ（`garmentPhotoUrl`）。点を見るときは必ずmeasurementを選ぶ。
 
@@ -301,4 +301,4 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 
 ## 長そでの受け渡し
 
-`long_sleeve_top`の登録・採寸・写真からのテクスチャ生成に対応した。寸法キーはTシャツと同じ4項目。素材は`artifacts/uv/pitari/inputs/longsleeve/`へ整理し、生成テンプレートは`artifacts/uv/pitari/longsleeve/`へ保存する。受領GLBとBlenderの頂点・UVの一致を検証済み。[再生成と制約](../artifacts/uv/pitari/inputs/longsleeve/README.md)を参照。アバター画面（`/avatar`）には長そでの形があるが、登録した服の実寸とテクスチャはまだ渡していない。
+`long_sleeve_top`の登録・採寸・写真からのテクスチャ生成に対応した。寸法キーはTシャツと同じ4項目。素材は`artifacts/uv/pitari/inputs/longsleeve/`へ整理し、生成テンプレートは`artifacts/uv/pitari/longsleeve/`へ保存する。受領GLBとBlenderの頂点・UVの一致を検証済み。[再生成と制約](../artifacts/uv/pitari/inputs/longsleeve/README.md)を参照。アバター画面（`/avatar`）では、登録した長そでの実寸とテクスチャで着せる。
