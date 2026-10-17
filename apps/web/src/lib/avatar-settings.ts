@@ -122,8 +122,22 @@ function load(storage: () => Pick<Storage, "getItem">): AvatarSettings | null {
   try {
     const value: unknown = JSON.parse(storage().getItem(storageKey) ?? "null");
     const parsed = AvatarSettingsSchema.safeParse(value);
-    return parsed.success ? parsed.data : null;
+    return parsed.success ? repair(parsed.data) : null;
   } catch {
     return null;
   }
+}
+
+// presets.jsonから髪を消しても、保存していた人に登録をやり直させない
+function repair(settings: AvatarSettings): AvatarSettings {
+  const hairExists =
+    settings.hairId === null ||
+    presetsJson.hair.some((hair) => hair.id === settings.hairId);
+  return withGender(
+    {
+      ...settings,
+      hairId: hairExists ? settings.hairId : defaultAvatarSettings.hairId,
+    },
+    settings.gender,
+  );
 }

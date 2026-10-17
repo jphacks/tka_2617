@@ -81,6 +81,19 @@ void test("壊れた値や、範囲の外の身長が保存されていたら、
     assert.equal(createAvatarSettingsStore(memoryStorage(saved)).get(), null);
 });
 
+void test("骨格が性別と食い違うか、一覧に無い髪なら、登録に戻さずに直して使う", () => {
+  const load = (saved: AvatarSettings) =>
+    createAvatarSettingsStore(memoryStorage(JSON.stringify(saved))).get();
+  assert.equal(load({ ...registered, bodyFrame: null })?.bodyFrame, "unknown");
+  assert.equal(load({ ...registered, gender: "male" })?.bodyFrame, null);
+  assert.equal(
+    load({ ...registered, hairId: "removed" })?.hairId,
+    defaultAvatarSettings.hairId,
+  );
+  assert.equal(load({ ...registered, hairId: null })?.hairId, null);
+  assert.deepEqual(load(registered), registered);
+});
+
 void test("localStorageを使えないブラウザでも、開いている間は登録した設定を使える", () => {
   const store = createAvatarSettingsStore(deniedStorage);
   assert.equal(store.get(), null);
