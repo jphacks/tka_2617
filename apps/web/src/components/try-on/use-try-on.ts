@@ -46,7 +46,7 @@ type SampleGarment = Pick<
   "id" | "name" | "category" | "measurements"
 >;
 
-export const SAMPLE_GARMENT = {
+const SAMPLE_GARMENT = {
   id: "11111111-1111-4111-8111-111111111111",
   name: "白いTシャツ",
   category: "short_sleeve_top",
@@ -100,9 +100,6 @@ const SAMPLE_SHIRT = {
   },
 } satisfies SampleGarment;
 
-/** シャツの中に着るTシャツの実寸。今はサンプルの服で固定する */
-const INNER_TARGET = topMeasurements(SAMPLE_GARMENT);
-
 /**
  * 上の服。寸法の4項目とキーはどれも同じで、Blenderが書き出したglbと表だけが違う
  * （性別ごとのglbと表は`AVATAR_MODELS`）
@@ -110,17 +107,14 @@ const INNER_TARGET = topMeasurements(SAMPLE_GARMENT);
 export const TOPS = {
   tshirt: {
     label: "Tシャツ",
-    sample: SAMPLE_GARMENT,
     stretchRatio: STRETCH_RATIO,
   },
   longsleeve: {
     label: "長袖",
-    sample: SAMPLE_LONGSLEEVE,
     stretchRatio: STRETCH_RATIO,
   },
   shirt: {
     label: "シャツ",
-    sample: SAMPLE_SHIRT,
     stretchRatio: WOVEN_STRETCH_RATIO,
   },
 };
@@ -136,7 +130,7 @@ export type ShirtFront = keyof typeof SHIRT_FRONTS;
 export const SHIRT_FRONT_IDS = Object.keys(SHIRT_FRONTS) as ShirtFront[];
 export const TOP_IDS = Object.keys(TOPS) as Top[];
 
-export const SAMPLE_TROUSERS = {
+const SAMPLE_TROUSERS = {
   id: "22222222-2222-4222-8222-222222222222",
   name: "ジーンズ",
   category: "trousers",
@@ -153,6 +147,96 @@ export const SAMPLE_TROUSERS = {
     hemWidthCm: 19,
   },
 } satisfies SampleGarment;
+
+// 女性の確認用の服。女性の体の基準寸法（標準体型・標準の身長）より少し大きい、レディースのMくらい。
+// 男性の服をそのまま着せると、身幅・肩幅が8cmほど大きく、太って見える
+const FEMALE_TSHIRT = {
+  id: "55555555-5555-4555-8555-555555555555",
+  name: "白いTシャツ（レディース）",
+  category: "short_sleeve_top",
+  measurements: {
+    shoulderWidthCm: 40,
+    sleeveLengthCm: 19,
+    bodyWidthCm: 46,
+    bodyLengthCm: 63,
+    waistCm: null,
+    hipCm: null,
+    thighWidthCm: null,
+    riseCm: null,
+    inseamCm: null,
+    hemWidthCm: null,
+  },
+} satisfies SampleGarment;
+
+const FEMALE_LONGSLEEVE = {
+  id: "66666666-6666-4666-8666-666666666666",
+  name: "白い長袖（レディース）",
+  category: "long_sleeve_top",
+  measurements: {
+    shoulderWidthCm: 40,
+    sleeveLengthCm: 52,
+    bodyWidthCm: 47,
+    bodyLengthCm: 63,
+    waistCm: null,
+    hipCm: null,
+    thighWidthCm: null,
+    riseCm: null,
+    inseamCm: null,
+    hemWidthCm: null,
+  },
+} satisfies SampleGarment;
+
+const FEMALE_SHIRT = {
+  id: "77777777-7777-4777-8777-777777777777",
+  name: "白いシャツ（レディース）",
+  category: "shirt",
+  measurements: {
+    shoulderWidthCm: 38,
+    sleeveLengthCm: 53,
+    bodyWidthCm: 47,
+    bodyLengthCm: 60,
+    waistCm: null,
+    hipCm: null,
+    thighWidthCm: null,
+    riseCm: null,
+    inseamCm: null,
+    hemWidthCm: null,
+  },
+} satisfies SampleGarment;
+
+const FEMALE_TROUSERS = {
+  id: "88888888-8888-4888-8888-888888888888",
+  name: "ジーンズ（レディース）",
+  category: "trousers",
+  measurements: {
+    shoulderWidthCm: null,
+    sleeveLengthCm: null,
+    bodyWidthCm: null,
+    bodyLengthCm: null,
+    waistCm: 84,
+    hipCm: 102,
+    thighWidthCm: 28,
+    riseCm: 23,
+    inseamCm: 68,
+    hemWidthCm: 17,
+  },
+} satisfies SampleGarment;
+
+/** 性別ごとの確認用の服（上の服とズボン）。服が指定されていないときに着せる */
+const SAMPLES = {
+  male: {
+    tshirt: SAMPLE_GARMENT,
+    longsleeve: SAMPLE_LONGSLEEVE,
+    shirt: SAMPLE_SHIRT,
+    trousers: SAMPLE_TROUSERS,
+  },
+  female: {
+    tshirt: FEMALE_TSHIRT,
+    longsleeve: FEMALE_LONGSLEEVE,
+    shirt: FEMALE_SHIRT,
+    trousers: FEMALE_TROUSERS,
+  },
+} satisfies Record<ModelGender, Record<Top | "trousers", SampleGarment>>;
 
 export type Inputs = Record<keyof Measurements, string>;
 export type TrouserInputs = Record<keyof TrouserMeasurements, string>;
@@ -202,6 +286,7 @@ export function useTryOn(
 ) {
   const [gender, setGender] = useState<ModelGender>("male");
   const models = AVATAR_MODELS[gender];
+  const samples = SAMPLES[gender];
   const heightTable = models.tops.tshirt.table;
   const trouserTable = models.trouserTable;
   const [build, setBuild] = useState<Build>(initial.build);
@@ -323,15 +408,17 @@ export function useTryOn(
     () => fitAt(build, heightCm, heightTable),
     [build, heightCm, heightTable],
   );
-  const innerStatus = fitStatus(INNER_TARGET, innerFit);
+  // シャツの中に着るTシャツの実寸。今は確認用の服で固定する
+  const innerTarget = useMemo(() => topMeasurements(samples.tshirt), [samples]);
+  const innerStatus = fitStatus(innerTarget, innerFit);
   const innerMorphs = useMemo(() => {
-    const innerSize = sizeKeyValues(INNER_TARGET, innerFit, heightTable);
+    const innerSize = sizeKeyValues(innerTarget, innerFit, heightTable);
     return {
       ...bodyMorphs,
       ...innerSize,
       width_folds: Math.max(innerSize.size_width, 0) / 10,
     };
-  }, [bodyMorphs, innerFit, heightTable]);
+  }, [bodyMorphs, innerFit, innerTarget, heightTable]);
   // 中のTシャツを着られるときは、上の服をTシャツの上から着られるかも確かめる
   const tryInner =
     top === "shirt" &&
@@ -399,11 +486,17 @@ export function useTryOn(
 
   return {
     gender,
-    /** 3Dモデルの性別を切り替え、身長をその性別の標準にする */
+    /** 3Dモデルの性別を切り替え、身長をその性別の標準に、服の実寸をその性別の確認用の服にする */
     selectGender: (g: ModelGender) => {
       setGender(g);
       setHeightInput(AVATAR_MODELS[g].tops.tshirt.table.standard_cm.toFixed(1));
+      setInput(toInputs(topMeasurements(SAMPLES[g][top])));
+      setTrouserInput(
+        toTrouserInputs(trouserMeasurements(SAMPLES[g].trousers)),
+      );
     },
+    /** 今の性別の確認用の服 */
+    samples,
     heightRangeCm: models.heightRangeCm,
     build,
     setBuild,
@@ -451,7 +544,7 @@ export function useTryOn(
     /** 上の服を選び直す（実寸はその服のサンプルにする） */
     selectTop: (t: Top) => {
       setTop(t);
-      setInput(toInputs(topMeasurements(TOPS[t].sample)));
+      setInput(toInputs(topMeasurements(samples[t])));
     },
   };
 }

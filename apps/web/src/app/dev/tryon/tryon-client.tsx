@@ -6,7 +6,6 @@ import { ColorChoices } from "@/components/try-on/color-choices";
 import type { Benchmark } from "@/components/try-on/try-on-scene";
 import {
   presets,
-  SAMPLE_TROUSERS,
   SHIRT_FRONT_IDS,
   SHIRT_FRONTS,
   TOP_IDS,
@@ -46,6 +45,7 @@ export default function TryOnClient() {
   const {
     gender,
     selectGender,
+    samples,
     heightRangeCm: [heightMinCm, heightMaxCm],
     build,
     setBuild,
@@ -398,11 +398,11 @@ export default function TryOnClient() {
             <button
               type="button"
               onClick={() => {
-                setInput(toInputs(topMeasurements(TOPS[top].sample)));
+                setInput(toInputs(topMeasurements(samples[top])));
               }}
               className="rounded border border-main px-3 py-1.5 text-xs font-semibold"
             >
-              服データ「{TOPS[top].sample.name}」
+              服データ「{samples[top].name}」
             </button>
           </div>
         </fieldset>
@@ -500,12 +500,12 @@ export default function TryOnClient() {
               type="button"
               onClick={() => {
                 setTrouserInput(
-                  toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
+                  toTrouserInputs(trouserMeasurements(samples.trousers)),
                 );
               }}
               className="rounded border border-main px-3 py-1.5 text-xs font-semibold"
             >
-              服データ「{SAMPLE_TROUSERS.name}」
+              服データ「{samples.trousers.name}」
             </button>
           </div>
         </fieldset>
