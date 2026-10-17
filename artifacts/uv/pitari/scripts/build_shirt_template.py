@@ -23,10 +23,14 @@ from PIL import Image, ImageDraw
 
 SCRIPTS = Path(__file__).resolve().parent
 ROOT = SCRIPTS.parent
+PROJECT = ROOT.parents[2]
 OUT = ROOT / "shirt"
+# テクスチャを貼るアプリのglb。このUVを正とする（ADR 0037）。
+APP_GLB = "apps/web/public/models/shirt_male.glb"
 sys.path.insert(0, str(SCRIPTS))
 from photo_to_texture import contour_between, outer_contour, sample  # noqa: E402
 from uv_pixels import pixel_to_uv, uv_to_pixel  # noqa: E402
+from verify_trousers_assets import glb_arrays  # noqa: E402
 from warp_support import delaunay, distance_to_boundary, point_in_polygon, signed_area  # noqa: E402
 
 SIZE = 2048
@@ -44,6 +48,13 @@ SOURCE_SHA256 = {
     "topology": "489aa0a5d98a796961ef5473ad9aa06695c0e2ba061cc4279780f194c117662a",
     "uvmap": "f3092f7ee7211d289783d1b650dae5468f80cb5935a458cf7a6954c7ab63f86b",
 }
+
+
+def glb_uv_sha256(path):
+    """glbのUV（TEXCOORD_0）のSHA-256。型紙に記録し、glbのUVが変わったら気づけるようにする。"""
+    document, read = glb_arrays(path)
+    primitive = document["meshes"][0]["primitives"][0]
+    return hashlib.sha256(read(primitive["attributes"]["TEXCOORD_0"]).astype("<f4").tobytes()).hexdigest()
 
 
 def df2_table(view):
@@ -292,7 +303,7 @@ def main():
         "category": "shirt",
         "status": "テンプレートの作成まで。合成写真で確かめた。実写の点の位置（特に襟元の2・4・6番）は未検証",
         "generated_by": "artifacts/uv/pitari/scripts/build_shirt_template.py",
-        "source": {"blend_file": "artifacts/uv/pitari/inputs/shirt/pitari_shirt.blend", "object": data["object"], "mesh": data["mesh"], "uv_map": "pitari", "materials": data["materials"], "topology_sha256": SOURCE_SHA256["topology"], "uvmap_sha256": SOURCE_SHA256["uvmap"]},
+        "source": {"blend_file": "artifacts/uv/pitari/inputs/shirt/pitari_shirt.blend", "object": data["object"], "mesh": data["mesh"], "uv_map": "pitari", "materials": data["materials"], "topology_sha256": SOURCE_SHA256["topology"], "uvmap_sha256": SOURCE_SHA256["uvmap"], "app_glb": {"path": APP_GLB, "uv_sha256": glb_uv_sha256(PROJECT / APP_GLB)}},
         "coordinate_systems": "uv：左下が(0,0)、vは上向き。pixel：テクスチャの左上が(0,0)、yは下向き（uv_pixels.py）",
         "texture": {"width": SIZE, "height": SIZE, "format": "PNG", "color_space": "sRGB"},
         "islands": {view: {"faces": view_of_face.count(view), "mask": f"masks/island_{view}.png"} for view in ("front", "back")},
