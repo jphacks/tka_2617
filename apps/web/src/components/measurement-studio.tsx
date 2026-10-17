@@ -350,10 +350,11 @@ export function MeasurementStudio() {
           try {
             const backSaved = await uploadBackPhoto(saved.id, back);
             textureMessage = textureRequestMessage(backSaved.texture);
-            setBack(null);
           } catch {
             backFailed = true;
           }
+          // 登録後は裏面の欄を出さないので、送れなかった裏面も持ち続けない
+          setBack(null);
         }
       }
       setMessage(

@@ -11,6 +11,8 @@
     "lint": "pnpm -r lint && pnpm lint:md",
     "lint:md": "textlint \"**/*.md\"",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "knip": "knip",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "lefthook install"
@@ -19,6 +21,7 @@
     "@eslint/js": "^9.39.5",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",
+    "knip": "6.41.0",
     "lefthook": "^2.1.17",
     "prettier": "^3.9.9",
     "textlint": "15.8.0",
