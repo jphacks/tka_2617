@@ -46,7 +46,9 @@
 
 - [Vercel: Deploying Git Repositories with Vercel](https://vercel.com/docs/git)：Hobbyでのorgのリポジトリの扱い
 - [Vercel: Limits](https://vercel.com/docs/limits)：「Connecting a project to a Git repository」
-- [Vercel: How can I use GitHub Actions with Vercel?](https://vercel.com/kb/guide/how-can-i-use-github-actions-with-vercel)：`VERCEL_ORG_ID`と`VERCEL_PROJECT_ID`は`.vercel/project.json`にあり、鍵は`--token`で渡す
+- [Vercel: How can I use GitHub Actions with Vercel?](https://vercel.com/kb/guide/how-can-i-use-github-actions-with-vercel)：`VERCEL_ORG_ID`と`VERCEL_PROJECT_ID`は`.vercel/project.json`にある
+- [Vercel: Access tokens](https://vercel.com/docs/accounts/access-tokens)：鍵のScopeは、アカウント全体、チーム、1つのプロジェクトから選べる。有効期限を付けられる
+- [Vercel: Global Options](https://vercel.com/docs/cli/global-options)：CLIは鍵を環境変数`VERCEL_TOKEN`から読む。引数はプロセスの一覧やログに出ることがあるので、CIでは環境変数を勧めている
 - [Vercel: Deployment Protection](https://vercel.com/docs/deployment-protection)：Standard Protectionは本番のドメイン以外を守る
 - [Vercel: Build Features](https://vercel.com/docs/builds/build-features)：CLIが標準で送らないファイルの一覧（`.env`は入っていない）
 - [Vercel: .vercelignore](https://vercel.com/docs/deployments/vercel-ignore)

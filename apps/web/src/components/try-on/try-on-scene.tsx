@@ -36,6 +36,14 @@ import {
 
 const AVATAR_URL = "/models/avatar_male.glb";
 const TROUSERS_URL = "/models/trousers_male.glb";
+
+// 読み込もうとしたglb。読み込みに失敗したとき、もう一度読み込めるようにキャッシュを消す
+const requestedUrls = new Set<string>([AVATAR_URL, TROUSERS_URL]);
+
+/** 読み込もうとしたglbのキャッシュを消す（失敗した読み込みも残るので、やり直す前に消す） */
+export function clearModelCache() {
+  for (const url of requestedUrls) useGLTF.clear(url);
+}
 // ズボンで覆われる体の印（_cover）はまだ無いので、頂点の間から体が出ていないかは確かめない
 const NO_COVERED = new Uint32Array(0);
 
@@ -87,7 +95,7 @@ type Props = {
   shoe: { id: string; path: string } | null;
   onPushStats?: (s: PushStats) => void;
   /** 増えるたびに、今の服と体で計算時間をBENCHMARK_RUNS回測る */
-  benchmarkRequest: number;
+  benchmarkRequest?: number;
   onBenchmark?: (b: Benchmark) => void;
 };
 
@@ -185,6 +193,7 @@ function PresetModel({
   /** 読み込んだら（外したらnullで）呼ぶ。靴の上に裾を乗せるのに使う */
   onScene?: (scene: Object3D | null) => void;
 }) {
+  requestedUrls.add(url);
   const gltf = useGLTF(url);
   useEffect(() => {
     onScene?.(gltf.scene);
@@ -227,6 +236,7 @@ function Models({
   onBenchmark,
 }: Omit<Props, "heightScale">) {
   const avatar = useGLTF(AVATAR_URL);
+  requestedUrls.add(shirtUrl);
   const shirt = useGLTF(shirtUrl);
   const trousers = useGLTF(TROUSERS_URL);
   const bodyMesh = useMemo(() => firstMesh(avatar.scene), [avatar.scene]);
@@ -323,25 +333,22 @@ function Models({
           ? shirtMesh.geometry.getAttribute("_sleeve").array
           : null;
         armsHidden.current = [];
-        onPushStats?.(
-          updatePush(shirtMesh, bodyBVH.current, topo, {
-            layers,
-            ...(sleeve && {
-              coveredAfterPrepare: (
-                pos: Float32Array,
-                bodyPos: Float32Array,
-              ) => {
-                armsHidden.current = bodyInSleeves(
-                  pos,
-                  sleeve,
-                  bodyPos,
-                  HIDE_SLEEVE_MAX,
-                );
-                return bodyInSleeves(pos, sleeve, bodyPos);
-              },
-            }),
+        // onPushStats?.(updatePush(...))と書くと、onPushStatsが無いとき押し出し自体が呼ばれないので、先に計算する
+        const stats = updatePush(shirtMesh, bodyBVH.current, topo, {
+          layers,
+          ...(sleeve && {
+            coveredAfterPrepare: (pos: Float32Array, bodyPos: Float32Array) => {
+              armsHidden.current = bodyInSleeves(
+                pos,
+                sleeve,
+                bodyPos,
+                HIDE_SLEEVE_MAX,
+              );
+              return bodyInSleeves(pos, sleeve, bodyPos);
+            },
           }),
-        );
+        });
+        onPushStats?.(stats);
         updateHide();
         for (const layer of layers) layer.geometry.dispose();
       }
