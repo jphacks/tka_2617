@@ -30,7 +30,7 @@ Gitで共有するのは、このREADME・`mesh_info.json`・`shirt_landmarks.js
 ./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/photo_to_texture.py --category shirt --front 前面.jpg --back 背面.jpg --out artifacts/uv/pitari/trials/shirt
 ```
 
-## 作り方（[ADR 0034](../../../../../docs/adr/0034-shirt-texture-from-projected-uv.md)）
+## 作り方（[ADR 0036](../../../../../docs/adr/0036-shirt-texture-from-projected-uv.md)）
 
 pitari UVは、前の面を正面から、後ろの面を背面からまっすぐ投影したもの。平置きの写真もほぼ真上から見た形なので、UVの前後の島の外周を写真の服の輪郭に合わせる。
 
