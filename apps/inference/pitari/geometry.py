@@ -28,6 +28,67 @@ def paper_scale(corners, width, height):
 
 
 def paper_candidate(image):
+    """A4らしい四角形の四隅。白い四角形を優先し、見つからなければ輪郭線の四角形から選ぶ。"""
+    white = white_candidates(image)
+    if white:
+        best = min(white, key=lambda item: item[0])[1]
+        # しきい値ごとに縁が少しずつ動くので、同じ紙の候補の四隅を平均する
+        same = [points for _, points in white if np.abs(points - best).max() < 10]
+        return np.mean(same, axis=0).tolist()
+    candidates = edge_candidates(image)
+    return min(candidates, key=lambda item: item[0])[1].tolist() if candidates else []
+
+
+def white_candidates(image):
+    # 木の机のように紙と色が近い背景では輪郭線が途切れ、紙に触れた物があると線がつながるので、色からも探す。
+    # 白い紙は3色とも明るい。ベージュの机や床は青が暗く、灰色の物は全体が暗い
+    height, width = image.shape[:2]
+    whiteness = cv2.GaussianBlur(image.min(axis=2), (5, 5), 0)
+    otsu, _ = cv2.threshold(whiteness, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    candidates = []
+    for threshold in sorted({max(int(otsu), 150), 170, 190, 210, 225}):
+        mask = cv2.morphologyEx((whiteness >= threshold).astype(np.uint8), cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if not width * height * 0.005 < area < width * height * 0.4:
+                continue
+            hull = cv2.convexHull(contour)
+            polygon = cv2.approxPolyDP(hull, 0.02 * cv2.arcLength(hull, True), True)
+            # 白い服や袋のように四角形でない物は、白い面積が四角形の面積に満たない
+            if len(polygon) != 4 or area < 0.93 * cv2.contourArea(polygon):
+                continue
+            x, y, w, h = cv2.boundingRect(polygon)
+            if x <= 1 or y <= 1 or x + w >= width - 1 or y + h >= height - 1:
+                continue
+            points = outer_edges(clockwise(polygon[:, 0, :].astype(np.float32)))
+            try:
+                paper_scale(points, width, height)
+            except ValueError:
+                continue
+            candidates.append((a4_ratio_error(points), points))
+    return candidates
+
+
+def outer_edges(points):
+    """白い画素の輪郭は外周の画素の中心を通り、紙の縁より半画素内側にあるので、各辺を半画素外へ出す。"""
+    center = points.mean(axis=0)
+    lines = []
+    for start, end in zip(points, np.roll(points, -1, axis=0)):
+        direction = (end - start) / max(np.linalg.norm(end - start), 1e-6)
+        normal = np.array([-direction[1], direction[0]])
+        if np.dot(normal, (start + end) / 2 - center) < 0:
+            normal = -normal
+        lines.append((start + normal * 0.5, direction))
+    corners = []
+    for (p, d), (q, e) in zip(lines, lines[1:] + lines[:1]):
+        t = np.linalg.solve(np.array([d, -e]).T, q - p)[0]
+        corners.append(p + d * t)
+    # 交点は各辺の終わりの角なので、1つずらして始点の角から並べる
+    return np.float32(np.roll(corners, 1, axis=0))
+
+
+def edge_candidates(image):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(cv2.GaussianBlur(gray, (5, 5), 0), 50, 150)
     contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -40,15 +101,26 @@ def paper_candidate(image):
             continue
         if not width * height * 0.005 < area < width * height * 0.4:
             continue
-        points = polygon[:, 0, :].astype(np.float32)
-        center = points.mean(axis=0)
-        points = points[np.argsort(np.arctan2(points[:, 1] - center[1], points[:, 0] - center[0]))]
-        points = np.roll(points, -np.argmin(points.sum(axis=1)), axis=0)
-        sides = np.linalg.norm(points - np.roll(points, -1, axis=0), axis=1)
-        ratio = max(sides[0] + sides[2], sides[1] + sides[3]) / max(1, min(sides[0] + sides[2], sides[1] + sides[3]))
-        if 1.1 < ratio < 2.1:
-            candidates.append((abs(ratio - 29.7 / 21), points))
-    return min(candidates, key=lambda item: item[0])[1].tolist() if candidates else []
+        points = clockwise(polygon[:, 0, :].astype(np.float32))
+        if 1.1 < side_ratio(points) < 2.1:
+            candidates.append((a4_ratio_error(points), points))
+    return candidates
+
+
+def clockwise(points):
+    """画像の座標で時計回りに並べ、左上に近い点から始める。"""
+    center = points.mean(axis=0)
+    points = points[np.argsort(np.arctan2(points[:, 1] - center[1], points[:, 0] - center[0]))]
+    return np.roll(points, -np.argmin(points.sum(axis=1)), axis=0)
+
+
+def side_ratio(points):
+    sides = np.linalg.norm(points - np.roll(points, -1, axis=0), axis=1)
+    return max(sides[0] + sides[2], sides[1] + sides[3]) / max(1, min(sides[0] + sides[2], sides[1] + sides[3]))
+
+
+def a4_ratio_error(points):
+    return abs(side_ratio(points) - 29.7 / 21)
 
 
 def crop_transform(bbox, output_width=288, output_height=384):
