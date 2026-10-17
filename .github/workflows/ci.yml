@@ -24,3 +24,22 @@ jobs:
       - run: pnpm typecheck
       # server-only の違反（クライアントからサーバー専用のコードを読み込む）は build でしか分からないため
       - run: pnpm build
+
+  # mainに入ったコードを、checkが通ってから本番に出す（docs/adr/0004-deploy-web-with-vercel-cli.md）
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # 続けてマージしたとき、古いほうが後から本番を上書きしないよう、1つずつ順に出す
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+      - run: npx --yes vercel@59.23.2 deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
