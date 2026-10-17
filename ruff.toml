@@ -1,0 +1,12 @@
+# Pythonのlintと整形（docs/adr/0022-python-lint-with-ruff.md）。ルールはruffの標準
+# lefthookとCIで、このバージョンを動かす。上げるときは3か所とも変える
+required-version = "==0.17.1"
+target-version = "py311"
+# lefthookがファイルを名指しで渡したときも、下のexcludeを効かせる
+force-exclude = true
+# まだ整形していないディレクトリ。持ち主の作業が一区切りしたら、整形してここから消す
+extend-exclude = ["apps/inference", "artifacts/uv", "assets/blender"]
+
+[format]
+# mdの中のPythonのコード例も整形するが、lefthookはmdをruffに渡さないので、CIだけで落ちないよう外す
+exclude = ["*.md"]
