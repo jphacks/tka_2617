@@ -30,7 +30,7 @@ pnpm dev
 
 Dockerを使うのはローカルSupabaseだけ。`supabase start`後にDocker Desktopにコンテナが表示される。webとapiは`pnpm dev`で直接起動する。
 
-停止は`pnpm dev`のターミナルで`Ctrl+C`、Supabaseは`supabase stop`。DB変更やデプロイの手順は[セットアップ](docs/setup.md)を参照する。
+停止は`pnpm dev`のターミナルで`Ctrl+C`、Supabaseは`supabase stop`。mainを取り込んだあとの準備（依存・migration・推論サービスの起動し直し）と、ブラウザで確かめることは[セットアップの「mainを取り込んだあと」](docs/setup.md#mainを取り込んだあと)にある。DB変更やデプロイの手順も[セットアップ](docs/setup.md)を参照する。
 
 ## 製品概要
 ### 背景(製品開発のきっかけ、課題等）
@@ -77,6 +77,6 @@ Dockerを使うのはローカルSupabaseだけ。`supabase start`後にDocker D
 * **migrationを空のDBで確かめる**：DBに関係するファイルを変えたPRと、mainへのマージのときに、SupabaseのDBを空の状態で起動する。migrationとseedが最後まで通るか、DBの関数に誤りが無いか、commitしたDBの型がmigrationと合っているかを確かめる（[.github/workflows/db.yml](.github/workflows/db.yml)）
 * **服の実寸どおりの形を、スマホの中で作る**：着丈・身幅・肩幅・袖丈のcmから、服のシェイプキーの値を解く。キー同士の連動と体型・身長による効き方の違いは、Blenderで体型4種×身長5点ごとに測った表を補間して吸収する（[ADR 0008](docs/adr/0008-height-keys-and-tables.md)、[apps/web/src/lib/garment.ts](apps/web/src/lib/garment.ts)）
 * **骨格を使わず、体型・身長を体と服・髪・靴の共通のシェイプキーで変える**：服・髪・靴はmhcloで体型・身長ごとに着せ直して同じ名前のキーを持たせ、ブラウザでは同じ値を入れるだけで体に合う（[ADR 0017](docs/adr/0017-presets-follow-body-with-shape-keys.md)）
-* **服が体を突き抜けない押し出し**：体の面をthree-mesh-bvhで探し、近すぎる服の頂点を外へ出す。服で覆われるはずの体が出ていれば面を足して押し、縁はならす。スマホで約0.27秒（[ADR 0007](docs/adr/0007-push-shirt-out-only.md)、[apps/web/src/lib/push-out.ts](apps/web/src/lib/push-out.ts)）
-* **着られるかを寸法で判定する**：服の身幅を、同じ高さで切った体の一周の半分と比べて「タイト」「小さすぎて着られません」と出す（[ADR 0007](docs/adr/0007-push-shirt-out-only.md)）
+* **服が体を突き抜けない押し出し**：体の面をthree-mesh-bvhで探し、近すぎる服の頂点を外へ出す。服で覆われるはずの体が出ていれば面を足して押し、縁はならす。スマホで約0.27秒。シャツの下のTシャツも同じ仕組みで、Tシャツの面に沿ってシャツを押し出す（[ADR 0007](docs/adr/0007-push-shirt-out-only.md)、[apps/web/src/lib/push-out.ts](apps/web/src/lib/push-out.ts)）
+* **着られるかを寸法で判定する**：服の身幅を、同じ高さで切った体の一周の半分と比べて「タイト」「小さすぎて着られません」と出す。シャツの下にTシャツを着たときは、外の服を、体にTシャツ1枚分の厚みを足した大きさと比べる（[ADR 0007](docs/adr/0007-push-shirt-out-only.md)、[ADR 0032](docs/adr/0032-layered-fit-status.md)）
 * **余った袖と裾の形**：袖丈が腕より長いと、Blenderの布のシミュレーションで作った垂れた形を混ぜる。股下が長いと、裾を靴の甲の上でたまらせる（[apps/web/src/lib/sleeve-drape.ts](apps/web/src/lib/sleeve-drape.ts)、[apps/web/src/lib/hem-stack.ts](apps/web/src/lib/hem-stack.ts)）
