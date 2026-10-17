@@ -8,11 +8,11 @@
 
 ## 決定
 
-アプリが`GET /v1/garments/:id/texture`で状態を聞くと、apiが推論サービスの`GET /textures/{garmentId}`に問い合わせる。完成していれば`GET /textures/{garmentId}/{job}/texture.png`で画像を受け取り、Storageの`garments`バケットに置いて、`garment_images`のrole`texture`として記録する。画像は、服の写真と同じ`GET /v1/garments/:id/images/:imageId`で配る。
+アプリが`GET /v1/garments/:id/texture`で状態を聞くと、apiが推論サービスの`GET /textures/{garmentId}`に問い合わせる。完成していれば`GET /textures/{garmentId}/{job}/texture.png`で画像を受け取り、Storageの`garments`バケットに置いて、`garment_images`のrole`texture`として記録する。画像は、服の写真と同じ`GET /v1/garments/:id/images/:imageId`で配る。服の一覧と詳細の`images`には入れず、画像のIDは`GET /v1/garments/:id/texture`だけで返す。
 
 作成中・失敗の状態は推論サービスだけが持ち、DBには完成したテクスチャだけを記録する。どの作業から作ったか（作業フォルダ名）を`texture_job`に持ち、同じ作業を2回保存しない。差し替えはDBの関数`save_garment_texture`で1つのトランザクションにする。
 
-裏面を撮り直す前に保存したテクスチャは使わない。推論サービスにつながらないときは、保存済みのテクスチャがあれば返す。失敗の理由は画面に出さず、apiのログに残す。
+裏面を撮り直す前に保存したテクスチャは使わない。新しいテクスチャができるまで古い行は残るので、古いかどうかを確かめる状態のAPIだけが画像のIDを渡す。推論サービスにつながらないときは、保存済みのテクスチャがあれば返す。失敗の理由は画面に出さず、apiのログに残す。
 
 ## 理由
 
@@ -35,6 +35,6 @@ apiが聞きに行く形なら、推論サービスはapiのURLやトークン�
 
 裏面を差し替えた直後、古い作業の完成から新しい作業の開始までの間に聞かれると、古い写真のテクスチャを保存することがある。新しい作業が完成すれば差し替わる。
 
-2048pxのテクスチャはPNGで8MiBを超えることがあるため、Storageの1ファイルの上限を16MiBに上げた。利用者が上げる写真は、apiが別に8MiBまでに抑える。服の一覧と詳細の`images`にも、roleが`texture`の画像が入る。
+2048pxのテクスチャはPNGで8MiBを超えることがあるため、Storageの1ファイルの上限を16MiBに上げた。利用者が上げる写真は、apiが別に8MiBまでに抑える。
 
 テクスチャのUVがアプリのglbと合うかは、まだ確かめていない。

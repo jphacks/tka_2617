@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test, type TestContext } from "node:test";
 import type { TextureStatus } from "#src/lib/garment-texture";
+import type { GarmentView } from "#src/lib/garment-records";
 
 // 外部通信をすべて差し替え、実際のDB・Storage・推論サービスには触れない。
 const profileId = "6f1c2b9e-3d4a-4f6b-9c2e-1a7d5e8b0c34";
@@ -297,4 +298,51 @@ void test("認証・IDを確かめ、服が無ければ404を返す", async (t) 
   );
   assert.equal((await request()).status, 404);
   assert.deepEqual(calls.inference, []);
+});
+
+void test("服の詳細のimagesにはテクスチャを入れない（古いことがあるため）", async (t) => {
+  const image = (imageId: string, role: string) => ({
+    id: imageId,
+    storage_key: `${role}.png`,
+    role,
+    width_px: 3,
+    height_px: 3,
+    points: [],
+    pixels_per_cm: null,
+    paper_corners: [],
+    model_version: null,
+    texture_job: role === "texture" ? job : null,
+  });
+  const signed: string[] = [];
+  t.mock.method(globalThis, "fetch", (input: string | URL | Request) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    if (url.pathname.startsWith("/storage/v1/object/sign/garments/")) {
+      signed.push(url.pathname.split("/").at(-1) ?? "");
+      return Promise.resolve(
+        Response.json({ signedURL: "/object/sign/garments/x?token=test" }),
+      );
+    }
+    assert.equal(url.pathname, "/rest/v1/garments");
+    return Promise.resolve(
+      Response.json({
+        id,
+        name: "",
+        category: "trousers",
+        measurements: {},
+        measurement_version: "df2-a4-flat-midpoint-v2",
+        purchased_month: null,
+        seasons: [],
+        created_at: "2026-10-17T00:00:00Z",
+        garment_images: [image(back.id, "back"), image(textureId, "texture")],
+      }),
+    );
+  });
+  const response = await app.request(`/v1/garments/${id}`, { headers });
+  assert.equal(response.status, 200);
+  const garment = (await response.json()) as GarmentView;
+  assert.deepEqual(
+    garment.images.map((item) => item.role),
+    ["back"],
+  );
+  assert.deepEqual(signed, ["back.png"]);
 });
