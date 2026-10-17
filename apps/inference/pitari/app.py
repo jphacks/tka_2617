@@ -15,6 +15,7 @@ from typing import Annotated, Literal
 import cv2
 import numpy as np
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile, Depends
+from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field, ValidationError
 
@@ -159,11 +160,13 @@ def textures(
     front: UploadFile = File(...),
     back: UploadFile | None = File(None),
     garmentCreatedAt: Annotated[datetime | None, Form()] = None,
+    backImageId: Annotated[str | None, Form()] = None,
 ):
+    garment_id = garment_uuid(garmentId)
     try:
-        garment_id = str(uuid.UUID(garmentId))
+        back_image_id = str(uuid.UUID(backImageId)) if backImageId else None
     except ValueError:
-        raise HTTPException(400, "服のIDを確認してください") from None
+        raise HTTPException(400, "裏面の画像のIDを確認してください") from None
     if garmentCreatedAt is not None and garmentCreatedAt.utcoffset() is None:
         raise HTTPException(400, "登録日時にはタイムゾーンが必要です")
     if not texture.template_ready(category):
@@ -176,7 +179,31 @@ def textures(
         if back:
             back.file.close()
     try:
-        texture.submit(garment_id, category, front_raw, back_raw, models, processing, garment_created_at=garmentCreatedAt)
+        texture.submit(garment_id, category, front_raw, back_raw, models, processing,
+                       garment_created_at=garmentCreatedAt, back_image_id=back_image_id)
     except texture.QueueFull:
         raise HTTPException(429, "テクスチャの作成待ちが多すぎます。少し待って再試行してください") from None
     return {"accepted": True}
+
+
+@app.get("/textures/{garmentId}", dependencies=[Depends(authorize)])
+def texture_status(garmentId: str):
+    status = texture.latest(garment_uuid(garmentId))
+    if status is None:
+        raise HTTPException(404, "この服のテクスチャの作業はありません")
+    return status
+
+
+@app.get("/textures/{garmentId}/{job}/texture.png", dependencies=[Depends(authorize)])
+def texture_image(garmentId: str, job: str):
+    path = texture.texture_file(garment_uuid(garmentId), job)
+    if path is None:
+        raise HTTPException(404, "完成したテクスチャがありません")
+    return FileResponse(path, media_type="image/png")
+
+
+def garment_uuid(value):
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        raise HTTPException(400, "服のIDを確認してください") from None
