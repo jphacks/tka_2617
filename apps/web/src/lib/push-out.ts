@@ -427,7 +427,8 @@ function pushFromWrappingLayer(
     a = new Vector3(),
     b = new Vector3(),
     c = new Vector3(),
-    d = new Vector3();
+    d = new Vector3(),
+    q = new Vector3();
   const hit = { point: new Vector3(), distance: 0, faceIndex: 0 };
   for (let i = 0; i < topo.weld.length; i++) {
     const j = topo.weld[i];
@@ -444,13 +445,23 @@ function pushFromWrappingLayer(
     const sd = d.dot(n);
     if (sd >= LAYER_OFFSET_M) continue;
     if (d.addScaledVector(n, -sd).length() > SURFACE_EDGE_M) continue;
-    const need = LAYER_OFFSET_M - sd;
-    if (need > Math.hypot(push[j * 3], push[j * 3 + 1], push[j * 3 + 2])) {
-      push[j * 3] = n.x * need;
-      push[j * 3 + 1] = n.y * need;
-      push[j * 3 + 2] = n.z * need;
-    }
+    q.fromArray(push, j * 3);
+    clearAlongNormal(q, n, sd, LAYER_OFFSET_M).toArray(push, j * 3);
   }
+}
+
+/**
+ * 押し出しpushを足した後も、内側の服の面から法線nの方向にgapだけ離れるよう、足りない分を法線の方向へ足す。
+ * sdは押し出す前の、面からの符号付き距離。体からの押し出しは斜めのことがあり、長さではなく法線の方向の成分で比べる
+ */
+export function clearAlongNormal(
+  push: Vector3,
+  n: Vector3,
+  sd: number,
+  gap: number,
+): Vector3 {
+  const need = gap - sd - push.dot(n);
+  return need > 0 ? push.addScaledVector(n, need) : push;
 }
 
 function smooth01(t: number) {
