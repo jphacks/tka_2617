@@ -52,3 +52,5 @@ artifacts/uv/pitari/renders/
 artifacts/uv/pitari/trials/
 # ズボンのテンプレートも生成物。build_trousers_template.pyで作り直す
 artifacts/uv/pitari/trousers/
+# 長そでのテンプレートも受領モデルから再生成する
+artifacts/uv/pitari/longsleeve/

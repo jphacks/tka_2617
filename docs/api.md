@@ -124,7 +124,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗はPC内の`job.json`で確認する。
 
-Tシャツとズボンでテンプレートが違い、ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0026](adr/0026-trousers-template-from-delivered-uv.md)）。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0023](adr/0023-garment-texture-on-pc.md)、[ADR 0027](adr/0027-request-texture-from-saved-photos.md)を参照。
+Tシャツ・長そで・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0026](adr/0026-trousers-template-from-delivered-uv.md)）。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0023](adr/0023-garment-texture-on-pc.md)、[ADR 0027](adr/0027-request-texture-from-saved-photos.md)を参照。
 
 ## 共通の型
 
