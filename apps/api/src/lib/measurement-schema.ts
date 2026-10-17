@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-export const categorySchema = z.enum(["short_sleeve_top", "trousers"]);
+export const categorySchema = z.enum([
+  "short_sleeve_top",
+  "long_sleeve_top",
+  "trousers",
+]);
+export const landmarkCounts = {
+  short_sleeve_top: 25,
+  long_sleeve_top: 33,
+  trousers: 14,
+} as const;
 export const coordinateSchema = z.tuple([
   z.number().nonnegative(),
   z.number().nonnegative(),
@@ -15,7 +24,7 @@ export const bboxSchema = z
   .refine(([x1, y1, x2, y2]) => x2 > x1 && y2 > y1);
 export const pointSchema = z
   .object({
-    id: z.number().int().min(1).max(25),
+    id: z.number().int().min(1).max(33),
     x: z.number().nonnegative(),
     y: z.number().nonnegative(),
     score: z.number().nullable(),
@@ -43,7 +52,7 @@ export const measurementInputSchema = z
     category: categorySchema,
     widthPx: z.number().int().positive().max(4096),
     heightPx: z.number().int().positive().max(4096),
-    points: z.array(pointSchema).max(25),
+    points: z.array(pointSchema).max(33),
     pixelsPerCm: z.number().min(2).max(100).nullable(),
   })
   .superRefine((value, context) => {
@@ -53,7 +62,7 @@ export const measurementInputSchema = z
         ids.has(point.id) ||
         point.x >= value.widthPx ||
         point.y >= value.heightPx ||
-        point.id > (value.category === "trousers" ? 14 : 25)
+        point.id > landmarkCounts[value.category]
       )
         context.addIssue({
           code: "custom",
@@ -71,7 +80,12 @@ export const metadataSchema = measurementInputSchema.safeExtend({
 });
 export const detectionOptionsSchema = z
   .object({
-    category: z.enum(["short_sleeve_top", "trousers", "auto"]),
+    category: z.enum([
+      "short_sleeve_top",
+      "long_sleeve_top",
+      "trousers",
+      "auto",
+    ]),
     paperCorners: z
       .array(coordinateSchema)
       .length(4)
@@ -79,7 +93,7 @@ export const detectionOptionsSchema = z
       .default([]),
     bbox: bboxSchema.optional(),
     // 切り抜きの手がかりにだけ使う、前の工程のランドマーク
-    points: z.array(pointSchema).max(25).default([]),
+    points: z.array(pointSchema).max(33).default([]),
     stage: z
       .enum(["all", "paper", "garment", "landmarks", "cutout"])
       .default("all"),
@@ -98,7 +112,7 @@ export const inferenceResultSchema = z.object({
   heightPx: z.number().int().positive().max(4096),
   category: categorySchema.nullable(),
   bbox: bboxSchema.nullable(),
-  points: z.array(pointSchema).max(25),
+  points: z.array(pointSchema).max(33),
   paperCorners: z.array(coordinateSchema).max(4),
   pixelsPerCm: z.number().min(2).max(100).nullable(),
   modelVersion: z.string().nullable(),

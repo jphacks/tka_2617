@@ -39,18 +39,18 @@ def authorize(authorization: str = Header(default="")):
 
 
 class Point(BaseModel):
-    id: int = Field(ge=1, le=25)
+    id: int = Field(ge=1, le=33)
     x: float
     y: float
     score: float | None = None
 
 
 class Options(BaseModel):
-    category: Literal["short_sleeve_top", "trousers", "auto"]
+    category: Literal["short_sleeve_top", "long_sleeve_top", "trousers", "auto"]
     paperCorners: list[tuple[float, float]] = Field(default_factory=list, max_length=4)
     bbox: tuple[float, float, float, float] | None = None
     # 切り抜きの手がかりにだけ使う、前の工程のランドマーク。
-    points: list[Point] = Field(default_factory=list, max_length=25)
+    points: list[Point] = Field(default_factory=list, max_length=33)
     stage: Literal["all", "paper", "garment", "landmarks", "cutout"] = "all"
 
 
@@ -154,7 +154,7 @@ def detect(image: UploadFile = File(...), options: str = Form(...)):
 @app.post("/textures", status_code=202, dependencies=[Depends(authorize)])
 def textures(
     garmentId: str = Form(...),
-    category: Literal["short_sleeve_top", "trousers"] = Form(...),
+    category: Literal["short_sleeve_top", "long_sleeve_top", "trousers"] = Form(...),
     front: UploadFile = File(...),
     back: UploadFile | None = File(None),
 ):
