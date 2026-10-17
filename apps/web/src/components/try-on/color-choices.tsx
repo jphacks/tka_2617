@@ -1,3 +1,5 @@
+"use client";
+
 /** 色の候補を丸いボタンで並べ、1つを選ぶ */
 export function ColorChoices({
   label,
