@@ -4,12 +4,12 @@
 
 ## どう確かめたか
 
-- [ ] `pnpm lint` と `pnpm typecheck` が通る
-- [ ] 画面や API を手で触って確かめた
+- [ ] `pnpm lint`と`pnpm typecheck`が通る
+- [ ] 画面やAPIを手で触って確かめた
 
 ## docs を更新したか
 
-- [ ] API を変えた → `docs/api.md`
-- [ ] DB を変えた → `docs/er.md` と migration
+- [ ] APIを変えた → `docs/api.md`
+- [ ] DBを変えた → `docs/er.md`とmigration
 - [ ] 何かを決めた → `docs/adr/`
-- [ ] AGENTS.md の「既知のリスク」を広げていない
+- [ ] AGENTS.mdの「既知のリスク」を広げていない
