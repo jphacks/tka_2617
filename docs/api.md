@@ -54,7 +54,7 @@ multipartの`image`はJPEG、最大8MiB・1200万画素・各辺4096px。ブラ�
 }
 ```
 
-四隅は送信画像上の外周順。長辺・短辺は画像上の長さから判断する。bboxは送信画像上の左上・右下で、手動指定する場合はカテゴリも必要。stage省略時は全工程を実行する。pointsは前の工程のランドマークで、cutout工程の手がかりにだけ使う。ズボンでは14点で囲んだ輪郭の外を背景として教え、脚の間や腰の外側の床を除く（[ADR 0023](adr/0023-trousers-cutout-with-landmarks.md)）。all工程では同じリクエストで求めた点を使う。
+四隅は送信画像上の外周順。長辺・短辺は画像上の長さから判断する。bboxは送信画像上の左上・右下で、手動指定する場合はカテゴリも必要。stage省略時は全工程を実行する。pointsは前の工程のランドマークで、cutout工程の手がかりにだけ使う。ズボンでは14点で囲んだ輪郭の外を背景として教え、脚の間や腰の外側の床を除く（[ADR 0024](adr/0024-trousers-cutout-with-landmarks.md)）。all工程では同じリクエストで求めた点を使う。
 
 出力は`{ imageId, imageBase64, widthPx, heightPx, category, bbox, points, paperCorners, pixelsPerCm, modelVersion, warnings, elapsedMs, measurements, measurementVersion, cutoutBase64, cutoutWidthPx, cutoutHeightPx }`。
 

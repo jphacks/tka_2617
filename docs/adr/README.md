@@ -36,10 +36,10 @@
 - [0019 長袖のシャツは、male_casualsuit03 のシャツを使い、前の開け閉めはキーで作る](0019-shirt-from-casualsuit03.md)
 - [0020 服の裏面の写真を別のroleで保存し、詳細画面で表と並べる](0020-back-photo-as-separate-role.md)
 - [0021 購入時期は年月、着る時期は春夏秋冬の複数選択で服に持つ](0021-purchase-month-and-seasons.md)
-- [0022 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0022-garment-texture-on-pc.md)
-- [0023 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0023-trousers-cutout-with-landmarks.md)
 - [0022 Pythonのlintと整形にruffを使い、ディレクトリごとに入れていく](0022-python-lint-with-ruff.md)
 - [0023 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0023-garment-texture-on-pc.md)
+- [0023 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0023-garment-texture-on-pc.md)
+- [0024 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0024-trousers-cutout-with-landmarks.md)
 
 ## 参考文献
 
