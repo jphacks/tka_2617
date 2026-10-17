@@ -25,6 +25,7 @@ import {
 } from "@/lib/garment";
 import type { GarmentView } from "@pitari/api";
 import { PresetsSchema } from "@/lib/presets";
+import { checkSizes, TOP_VERIFIED, TROUSER_VERIFIED } from "@/lib/size-check";
 import { drapeKeyValues } from "@/lib/sleeve-drape";
 import {
   TROUSER_KEYS,
@@ -219,8 +220,11 @@ export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
   const [shoeId, setShoeId] = useState<string | null>(presets.shoes[0].id);
   const [sockColor, setSockColor] = useState(presets.sockColors[0]);
 
-  const target = useMemo(() => parseInputs(MEASUREMENT_KEYS, input), [input]);
-  const trouserTarget = useMemo(
+  const parsedTarget = useMemo(
+    () => parseInputs(MEASUREMENT_KEYS, input),
+    [input],
+  );
+  const parsedTrouserTarget = useMemo(
     () => parseInputs(TROUSER_KEYS, trouserInput),
     [trouserInput],
   );
@@ -234,6 +238,14 @@ export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
     () => fitAt(build, heightCm, topTable),
     [build, heightCm, topTable],
   );
+  // 0や負数、基準寸法から極端に離れた値はモデルへ渡さず、直すまで最後の正常な形を保つ
+  const topCheck = useMemo(
+    () => checkSizes(MEASUREMENT_KEYS, input, fit.base, TOP_VERIFIED),
+    [input, fit.base],
+  );
+  const target = useLastValid(
+    Object.keys(topCheck.problems).length === 0 ? parsedTarget : null,
+  );
   const size = useMemo(
     () => (target ? sizeKeyValues(target, fit, topTable) : null),
     [fit, target, topTable],
@@ -243,6 +255,16 @@ export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
   const trouserFit = useMemo(
     () => trouserFitAt(build, heightCm, trouserTable),
     [build, heightCm],
+  );
+  const trouserCheck = useMemo(
+    () =>
+      checkSizes(TROUSER_KEYS, trouserInput, trouserFit.base, TROUSER_VERIFIED),
+    [trouserInput, trouserFit.base],
+  );
+  const trouserTarget = useLastValid(
+    Object.keys(trouserCheck.problems).length === 0
+      ? parsedTrouserTarget
+      : null,
   );
   const trouserSize = useMemo(
     () =>
@@ -363,6 +385,7 @@ export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
     input,
     setInput,
     target,
+    topCheck,
     fit,
     size,
     status,
@@ -371,6 +394,7 @@ export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
     trouserInput,
     setTrouserInput,
     trouserTarget,
+    trouserCheck,
     trouserFit,
     trouserSize,
     trouserStatus,
@@ -393,4 +417,11 @@ export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
       setInput(toInputs(topMeasurements(TOPS[t].sample)));
     },
   };
+}
+
+/** 入力の途中や不正な値でnullの間は、最後の正常な値を返す。valueは、中身が変わったときだけ別のオブジェクトにする */
+function useLastValid<T>(value: T | null): T | null {
+  const [last, setLast] = useState(value);
+  if (value !== null && value !== last) setLast(value);
+  return value ?? last;
 }

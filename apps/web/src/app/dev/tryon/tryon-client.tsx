@@ -56,7 +56,7 @@ export default function TryOnClient() {
     layeredStatus,
     input,
     setInput,
-    target,
+    topCheck,
     fit,
     size,
     status,
@@ -64,7 +64,7 @@ export default function TryOnClient() {
     setWearTrousers,
     trouserInput,
     setTrouserInput,
-    trouserTarget,
+    trouserCheck,
     trouserFit,
     trouserSize,
     trouserStatus,
@@ -331,7 +331,14 @@ export default function TryOnClient() {
               ))}
             </tbody>
           </table>
-          {!target && <p className="text-red-600">数値を入力してください</p>}
+          {MEASUREMENT_KEYS.map(
+            (k) =>
+              topCheck.problems[k] && (
+                <p key={k} className="text-red-600">
+                  {MEASUREMENT_LABELS[k]}：{topCheck.problems[k]}
+                </p>
+              ),
+          )}
           {status === "tight" && (
             <p>
               <span className="rounded border border-main px-2 py-0.5 text-[11px] font-semibold">
@@ -424,8 +431,13 @@ export default function TryOnClient() {
               ))}
             </tbody>
           </table>
-          {!trouserTarget && (
-            <p className="text-red-600">数値を入力してください</p>
+          {TROUSER_KEYS.map(
+            (k) =>
+              trouserCheck.problems[k] && (
+                <p key={k} className="text-red-600">
+                  {TROUSER_LABELS[k]}：{trouserCheck.problems[k]}
+                </p>
+              ),
           )}
           {trouserStatus === "tight" && (
             <p>
