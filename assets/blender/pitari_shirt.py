@@ -207,3 +207,40 @@ def open_displacement(P, lm):
         w = 1 - pt._smooth01(_front_angle(P, idx, cy, sign) / OPEN_SIDE_ANGLE)
         d[idx, :2] = _turn(P, idx, cy, sign * OPEN_ANGLE * w)
     return d
+
+
+# ---------------------------------------------------------------- 写真から貼る用の UV（pitari）
+
+UV_MARGIN = 0.02            # 画像の端と、前・後ろの島の間の余白（UV）
+
+
+def make_pitari_uv(shirt):
+    """シャツの写真用の UV（pitari）を作り、元の UVMap と置き換える（glTF の TEXCOORD_0 を pitari にする）。
+    前と後ろから 1 枚ずつ撮った写真を貼るので、面の向き（法線の y）で前と後ろに分け、
+    前は正面から、後ろは背面から（着用者の左が画像の左）まっすぐ投影する。
+    長袖の pitari と同じく、前を上半分、後ろを下半分に、同じ縮尺で並べる。
+    前を開けたときに見える裏側は、表と同じ UV（同じ所の柄）になる"""
+    me = shirt.data
+    P = pt.world_coords(shirt, "Basis") if me.shape_keys else pt.world_coords(shirt)
+    N = pt.vertex_normals(P, pt.polys_of(shirt))
+    uv = me.uv_layers.new(name="pitari")
+    front = np.array([N[list(p.vertices)].mean(0)[1] < 0 for p in me.polygons])
+    loops = [(p.index, li, me.loops[li].vertex_index) for p in me.polygons for li in p.loop_indices]
+    pts = {True: [], False: []}
+    for f, li, v in loops:
+        x, z = P[v][0], P[v][2]
+        pts[bool(front[f])].append((li, x if front[f] else -x, z))
+    w = max(max(p[1] for p in ps) - min(p[1] for p in ps) for ps in pts.values())
+    h = max(max(p[2] for p in ps) - min(p[2] for p in ps) for ps in pts.values())
+    scale = min((1 - 2 * UV_MARGIN) / w, (0.5 - 1.5 * UV_MARGIN) / h)
+    for is_front, ps in pts.items():
+        cx = (max(p[1] for p in ps) + min(p[1] for p in ps)) / 2
+        cz = (max(p[2] for p in ps) + min(p[2] for p in ps)) / 2
+        cv = 0.75 - UV_MARGIN / 4 if is_front else 0.25 + UV_MARGIN / 4
+        for li, x, z in ps:
+            uv.data[li].uv = (0.5 + (x - cx) * scale, cv + (z - cz) * scale)
+    me.uv_layers.remove(me.uv_layers["UVMap"])
+    uv = me.uv_layers["pitari"]
+    me.uv_layers.active = uv
+    uv.active_render = True
+    pt.log(f"pitari UV: 前の面 {int(front.sum())}、後ろの面 {int((~front).sum())}、縮尺 {scale:.3f}（1m あたり）")

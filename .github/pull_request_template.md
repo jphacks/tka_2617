@@ -4,8 +4,9 @@
 
 ## どう確かめたか
 
-- [ ] `pnpm lint`と`pnpm typecheck`が通る
+- [ ] `pnpm lint`、`pnpm typecheck`、`pnpm test`が通る
 - [ ] 画面やAPIを手で触って確かめた
+- [ ] `bash scripts/pr-size.sh`で400行くらいまで（超えるなら、上に理由を書いた）
 
 ## docs を更新したか
 
