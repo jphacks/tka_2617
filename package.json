@@ -11,6 +11,7 @@
     "lint": "pnpm -r lint && pnpm lint:md",
     "lint:md": "textlint \"**/*.md\"",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
     "knip": "knip",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
