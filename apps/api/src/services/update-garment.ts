@@ -16,6 +16,8 @@ export async function updateGarment(
     materials?: GarmentMaterialInput;
   },
 ) {
+  // 素材を先に保存する。一覧に無い素材や合計の誤りで止まったとき、名前などだけが変わらないように
+  if (values.materials) await setGarmentMaterials(id, values.materials);
   const { data, error } = await supabase
     .from("garments")
     .update({
@@ -31,6 +33,5 @@ export async function updateGarment(
     .maybeSingle();
   if (error) throw new HttpError(503, "服を更新できませんでした");
   if (!data) throw new HttpError(404, "服が見つかりません");
-  if (values.materials) await setGarmentMaterials(id, values.materials);
   return { id };
 }

@@ -115,7 +115,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons?, materials? 
 
 服は素材を混率で持つ（例：綿98%・ポリウレタン2%）。`GET /v1/materials`は`{ materials: { id: string; label: string }[] }`を、画面に並べる順で返す。素材は綿（`cotton`）・ポリエステル・ウール・麻・ナイロン・レーヨン・アクリル・ポリウレタン・シルク・カシミヤ・その他（`other`）。
 
-登録とPATCHの`materials`は`{ materialId: string; percent: number }[]`。1〜10件で、素材は重複せず、percentは1〜100の整数、合計は100。一覧に無い素材は400。PATCHは服の素材をまとめて差し替え、DBの関数`set_garment_materials`で1つのトランザクションにする。Garmentの`materials`は割合の多い順で、同じ割合なら一覧の順。素材を入れずに登録した服と、素材を足す前に登録した服は、綿100%になる。
+登録とPATCHの`materials`は`{ materialId: string; percent: number }[]`。1〜10件で、素材は重複せず、percentは1〜100の整数、合計は100。一覧に無い素材は400。PATCHは服の素材をまとめて差し替え、DBの関数`set_garment_materials`で1つのトランザクションにする。素材とほかの項目を一緒に送ったときは素材を先に保存するので、素材の誤りで400になったときは、ほかの項目も変わらない。Garmentの`materials`は割合の多い順で、同じ割合なら一覧の順。素材を入れずに登録した服と、素材を足す前に登録した服は、綿100%になる。
 
 ### PUT /v1/garments/:id/back
 

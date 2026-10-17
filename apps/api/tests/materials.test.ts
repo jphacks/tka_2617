@@ -124,14 +124,16 @@ void test("素材を差し替えるときは、DBの関数に服・プロフィ�
   ]);
 });
 
-void test("一覧に無い素材は400を返す", async (t) => {
-  mockBackend(t, {
+void test("一覧に無い素材は400を返し、一緒に送った名前も変えない", async (t) => {
+  const calls = mockBackend(t, {
     rpcError: { code: "23503", message: "foreign key violation" },
   });
   const response = await patch({
+    name: "新しい名前",
     materials: [{ materialId: "unknown", percent: 100 }],
   });
   assert.equal(response.status, 400);
+  assert.deepEqual(calls.paths, ["/rest/v1/rpc/set_garment_materials"]);
 });
 
 void test("服の素材は、割合の多い順、同じ割合なら一覧の順に並べる", async (t) => {
