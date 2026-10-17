@@ -280,6 +280,8 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 - `top`は半袖（`short_sleeve_top`）と長袖（`long_sleeve_top`）、`bottom`はズボン（`trousers`）。服の種類と上下の対応は`apps/web/src/lib/outfit.ts`の`outfitSlot`にある
 - 片方だけのこともある。指定が無い側は、今までどおりの服（見本の服など）を着せる
 - 最後に着せた服は、ブラウザのlocalStorage（`pitari.outfit`）に覚えておく。別の服の詳細から押すと、同じ側だけが入れ替わり、もう片方は残る
+- 服を選び直すときは、下のナビの「クローゼット」に戻って服の詳細を開き、もう一度「アバターに着せる」を押す。上を選んだあとに下を選ぶときも同じで、覚えていた上はそのまま残る
+- アバターの画面で服を外すときは、外す側を`null`にした服を`saveOutfit`で保存し、`router.replace(avatarUrl(outfit))`でURLからもその側を消す（#70）。URLを消すだけでは、次に服の詳細から押したときに、覚えていた服がURLに戻ってくる
 - アバターの画面では、`readOutfit(useSearchParams())`で服のIDを読み、`GET /api/garments/{服ID}`で寸法を取る（#70）。IDの形でない値は、指定されていないものとして扱う
 - 服が消されていて取得できないときの表示は、#70で決める
 
