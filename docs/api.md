@@ -112,6 +112,8 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 裏面の写真を登録する。既にあれば差し替える。multipartの`image`（裏面のJPEG、必須）と`cutoutImage`（表示用の透過PNG、任意）を受け取り、roleは`back`と`back_cutout`。画像の条件は表の登録と同じ。cutoutImageを送らない場合、古いback_cutoutは消す。成功は`200 { id, texture }`（下を参照）。
 
+画像を新しいキーで上げてから、DBの関数`replace_garment_back`で古い裏面の行の削除と新しい行の追加を1つのトランザクションで行う。服の行をロックするので、同じ服への同時の差し替えは順番に処理される。DBで失敗したら上げた画像を消して503を返し、前の裏面はそのまま残る。古い画像のファイルは行を差し替えた後に消し、その削除に失敗しても成功として返す。
+
 裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲とランドマーク（landmarks工程）→切り抜きの順に`POST /v1/detections`を呼び、ランドマークを切り抜きの手がかりに渡す。範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
 裏面を保存すると、apiは服のカテゴリと表のmeasurement画像・裏面を推論サービスの`POST /textures`へ送り、生成依頼の受付まで待つ。変換の完了は待たない。PUTの応答は`{ id, texture: { status: "accepted" } }`、依頼に失敗した場合は`{ id, texture: { status: "failed", message: "…" } }`。写真は保存済みなので、生成依頼だけが失敗してもPUTは200を返す。
