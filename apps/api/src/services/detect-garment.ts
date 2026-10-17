@@ -17,12 +17,22 @@ export async function detectGarment(
   options: DetectionOptions,
 ): Promise<DetectionResult> {
   await readJpeg(image);
+  const shirt = options.category === "shirt";
   const form = new FormData();
   form.set("image", image);
-  form.set("options", JSON.stringify(options));
-  const result = inferenceResultSchema.parse(
+  form.set(
+    "options",
+    JSON.stringify(
+      shirt ? { ...options, category: "long_sleeve_top" } : options,
+    ),
+  );
+  const detected = inferenceResultSchema.parse(
     await requestInference("/detect", form),
   );
+  const result =
+    shirt && detected.category === "long_sleeve_top"
+      ? { ...detected, category: "shirt" as const }
+      : detected;
   const measurements = result.category
     ? calculateMeasurements(measurementInputSchema.parse(result))
     : measurementsSchema.parse({});

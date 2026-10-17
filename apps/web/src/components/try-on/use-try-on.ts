@@ -14,7 +14,6 @@ import {
   buildKeyValues,
   fitAt,
   fitStatus,
-  GarmentSchema,
   heightKeyValues,
   HeightTableSchema,
   MEASUREMENT_KEYS,
@@ -24,6 +23,7 @@ import {
   WOVEN_STRETCH_RATIO,
   type Measurements,
 } from "@/lib/garment";
+import type { GarmentView } from "@pitari/api";
 import { PresetsSchema } from "@/lib/presets";
 import { drapeKeyValues } from "@/lib/sleeve-drape";
 import {
@@ -41,8 +41,13 @@ export const heightTable = HeightTableSchema.parse(tshirtHeightJson);
 export const trouserTable = TrouserTableSchema.parse(trousersHeightJson);
 export const presets = PresetsSchema.parse(presetsJson);
 
-/** 確認用の服データ（チーム共通の形式・仮） */
-export const SAMPLE_GARMENT = GarmentSchema.parse({
+/** 確認用の服データ。服が指定されていないときに着せる */
+type SampleGarment = Pick<
+  GarmentView,
+  "id" | "name" | "category" | "measurements"
+>;
+
+export const SAMPLE_GARMENT = {
   id: "11111111-1111-4111-8111-111111111111",
   name: "白いTシャツ",
   category: "short_sleeve_top",
@@ -58,10 +63,9 @@ export const SAMPLE_GARMENT = GarmentSchema.parse({
     inseamCm: null,
     hemWidthCm: null,
   },
-  measurementVersion: "df2-a4-midpoint-v1",
-});
+} satisfies SampleGarment;
 
-const SAMPLE_LONGSLEEVE = GarmentSchema.parse({
+const SAMPLE_LONGSLEEVE = {
   id: "33333333-3333-4333-8333-333333333333",
   name: "白い長袖",
   category: "long_sleeve_top",
@@ -77,13 +81,12 @@ const SAMPLE_LONGSLEEVE = GarmentSchema.parse({
     inseamCm: null,
     hemWidthCm: null,
   },
-  measurementVersion: "df2-a4-midpoint-v1",
-});
+} satisfies SampleGarment;
 
-const SAMPLE_SHIRT = GarmentSchema.parse({
+const SAMPLE_SHIRT = {
   id: "44444444-4444-4444-8444-444444444444",
   name: "白いシャツ",
-  category: "long_sleeve_top",
+  category: "shirt",
   measurements: {
     shoulderWidthCm: 44,
     sleeveLengthCm: 60,
@@ -96,8 +99,7 @@ const SAMPLE_SHIRT = GarmentSchema.parse({
     inseamCm: null,
     hemWidthCm: null,
   },
-  measurementVersion: "df2-a4-midpoint-v1",
-});
+} satisfies SampleGarment;
 
 /** シャツの中に着るTシャツの実寸。今はサンプルの服で固定する */
 const INNER_TARGET = topMeasurements(SAMPLE_GARMENT);
@@ -138,7 +140,7 @@ export type ShirtFront = keyof typeof SHIRT_FRONTS;
 export const SHIRT_FRONT_IDS = Object.keys(SHIRT_FRONTS) as ShirtFront[];
 export const TOP_IDS = Object.keys(TOPS) as Top[];
 
-export const SAMPLE_TROUSERS = GarmentSchema.parse({
+export const SAMPLE_TROUSERS = {
   id: "22222222-2222-4222-8222-222222222222",
   name: "ジーンズ",
   category: "trousers",
@@ -154,8 +156,7 @@ export const SAMPLE_TROUSERS = GarmentSchema.parse({
     inseamCm: 76,
     hemWidthCm: 19,
   },
-  measurementVersion: "df2-a4-flat-midpoint-v2",
-});
+} satisfies SampleGarment;
 
 export type Inputs = Record<keyof Measurements, string>;
 export type TrouserInputs = Record<keyof TrouserMeasurements, string>;

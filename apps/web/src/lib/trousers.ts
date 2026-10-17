@@ -4,7 +4,7 @@ import {
   heightBlend,
   solveLinear,
   type FitStatus,
-  type Garment,
+  type GarmentSize,
 } from "@/lib/garment";
 
 /* ---------------------------------------------------------------- 3D側の寸法 */
@@ -40,7 +40,7 @@ export const TrouserMeasurementsSchema = z.object({
 export type TrouserMeasurements = z.infer<typeof TrouserMeasurementsSchema>;
 
 /** 服データ（trousers）からズボンの6項目を取り出す */
-export function trouserMeasurements(g: Garment): TrouserMeasurements {
+export function trouserMeasurements(g: GarmentSize): TrouserMeasurements {
   if (g.category !== "trousers")
     throw new Error(`ズボンではありません: ${g.category}`);
   const m = g.measurements;

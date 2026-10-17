@@ -12,6 +12,12 @@ export type MeasurementDefinition = {
   end: number | [number, number];
   multiplier: number;
 };
+const longSleeveDefinitions: MeasurementDefinition[] = [
+  { key: "shoulderWidthCm", label: "肩幅", start: 7, end: 33, multiplier: 1 },
+  { key: "sleeveLengthCm", label: "袖丈", start: 7, end: 11, multiplier: 1 },
+  { key: "bodyWidthCm", label: "身幅", start: 16, end: 24, multiplier: 1 },
+  { key: "bodyLengthCm", label: "着丈", start: 1, end: 20, multiplier: 1 },
+];
 export const measurementDefinitions: Record<Category, MeasurementDefinition[]> =
   {
     short_sleeve_top: [
@@ -26,24 +32,8 @@ export const measurementDefinitions: Record<Category, MeasurementDefinition[]> =
       { key: "bodyWidthCm", label: "身幅", start: 12, end: 20, multiplier: 1 },
       { key: "bodyLengthCm", label: "着丈", start: 1, end: 16, multiplier: 1 },
     ],
-    long_sleeve_top: [
-      {
-        key: "shoulderWidthCm",
-        label: "肩幅",
-        start: 7,
-        end: 33,
-        multiplier: 1,
-      },
-      {
-        key: "sleeveLengthCm",
-        label: "袖丈",
-        start: 7,
-        end: 11,
-        multiplier: 1,
-      },
-      { key: "bodyWidthCm", label: "身幅", start: 16, end: 24, multiplier: 1 },
-      { key: "bodyLengthCm", label: "着丈", start: 1, end: 20, multiplier: 1 },
-    ],
+    long_sleeve_top: longSleeveDefinitions,
+    shirt: longSleeveDefinitions,
     trousers: [
       {
         key: "waistCm",
