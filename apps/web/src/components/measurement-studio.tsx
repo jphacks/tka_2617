@@ -81,6 +81,9 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     editId ? "loading" : "done",
   );
   const [editAttempt, setEditAttempt] = useState(0);
+  // 読み込みの途中で写真や別の服を選ぶと、遅れて届いた服で上書きされるので、
+  // 頼まれた服を開けるまでは、読み込み直す以外の操作をさせない
+  const locked = busy || editLoad !== "done";
   const category = editing?.category ?? result?.category;
   const fields =
     category && definitions ? definitions.definitions[category] : [];
@@ -451,7 +454,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
           編集する服を読み込み直す
         </button>
       )}
-      <fieldset disabled={busy} className="min-w-0 space-y-4">
+      <fieldset disabled={locked} className="min-w-0 space-y-4">
         <fieldset disabled={editing !== null} className="min-w-0">
           <legend className="mb-2 text-sm font-semibold">服の種類</legend>
           <div className="grid grid-cols-4 gap-2">
@@ -792,7 +795,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
           <h2 className="text-base font-semibold">クローゼット</h2>
           <button
             className={secondary}
-            disabled={busy}
+            disabled={locked}
             onClick={() => {
               void work(loadGarments);
             }}
@@ -829,7 +832,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
               <div className="mt-3 flex flex-wrap gap-2">
                 <button
                   className={secondary}
-                  disabled={busy}
+                  disabled={locked}
                   onClick={() => {
                     startEditing(garment);
                   }}
@@ -838,7 +841,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                 </button>
                 <button
                   className={secondary}
-                  disabled={busy}
+                  disabled={locked}
                   onClick={() => {
                     if (window.confirm("この服と画像を削除しますか？"))
                       void work(async () => {
