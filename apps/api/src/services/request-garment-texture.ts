@@ -33,8 +33,6 @@ export async function requestGarmentTexture(id: string) {
   const source = sourceSchema.safeParse(data);
   if (!source.success)
     throw new HttpError(503, "テクスチャ用の登録内容を確認できませんでした");
-  if (source.data.category === "shirt")
-    throw new HttpError(400, "シャツはまだテクスチャを作れません");
   const front = source.data.garment_images.find(
     (image) => image.role === "measurement",
   );

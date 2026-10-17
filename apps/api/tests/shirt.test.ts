@@ -108,28 +108,3 @@ void test("シャツの寸法は長そでと同じ定義で計算する", async 
   };
   assert.deepEqual(await measure("shirt"), await measure("long_sleeve_top"));
 });
-
-void test("シャツはテンプレートがないので、テクスチャを依頼しない", async (t) => {
-  const fetch = t.mock.method(globalThis, "fetch", () =>
-    Promise.resolve(
-      Response.json({
-        category: "shirt",
-        created_at: "2026-10-17T00:00:00Z",
-        garment_images: [
-          { role: "measurement", storage_key: "front.jpg" },
-          { role: "back", storage_key: "back.jpg" },
-        ],
-      }),
-    ),
-  );
-  const response = await app.request(
-    "/v1/garments/11111111-1111-4111-8111-111111111111/texture",
-    { method: "POST", headers },
-  );
-  assert.equal(response.status, 400);
-  assert.deepEqual(await response.json(), {
-    error: "シャツはまだテクスチャを作れません",
-  });
-  // DBで種類を確かめるだけで、写真のダウンロードと推論サービスへの依頼はしない
-  assert.equal(fetch.mock.callCount(), 1);
-});
