@@ -42,7 +42,9 @@ SPREAD_CHECKS = [(7, 25), (9, 23), (10, 22), (12, 20), (15, 17)]
 CENTERS = [1, 4, 16]
 FONT = "C:/Windows/Fonts/BIZ-UDGothicB.ttc"
 # カテゴリごとのテンプレートの場所。ズボンはbuild_trousers_template.pyで作る。
-TEMPLATE_ROOTS = {"short_sleeve_top": ROOT, "long_sleeve_top": ROOT / "longsleeve", "trousers": ROOT / "trousers"}
+TEMPLATE_ROOTS = {"short_sleeve_top": ROOT, "long_sleeve_top": ROOT / "longsleeve", "shirt": ROOT / "shirt", "trousers": ROOT / "trousers"}
+# DeepFashion2にシャツはないので、検出・点・切り抜きは長そでとして行い、テンプレートだけをシャツ用にする（ADR 0033）。
+MODEL_CATEGORIES = {"shirt": "long_sleeve_top"}
 
 
 def load_photo(path):
@@ -238,7 +240,8 @@ def photo_points(view, anchors, contour, template, notes, fraction_key):
 
     for side in ("right", "left"):
         name = f"aux_armhole_mid_{side}_{view}"
-        if name not in anchors and {f"shoulder_{side}", f"armpit_{side}"} <= set(anchors):
+        # 袖付けを上下2つの区間に分けたテンプレート（Tシャツ・長そで）だけ。シャツの袖付けは1本の曲線。
+        if name not in anchors and f"armhole_{side}_upper" in by_name and {f"shoulder_{side}", f"armpit_{side}"} <= set(anchors):
             # 袖付けの曲線全体を肩先と脇に合わせて置く。中点は上半分の曲線の終点。
             curve = uv_curve(f"armhole_{side}_upper", f"armhole_{side}_lower")
             middle = len(by_name[f"armhole_{side}_upper"]["uv_polyline"]) - 1
@@ -402,6 +405,7 @@ def template_ready(category="short_sleeve_top"):
 def make_texture(out, views, inference, fraction="3d", category="short_sleeve_top"):
     """views[view]は{"photo", "points", "mask", "bbox"}。photo以外は手で直したときだけ渡す。"""
     root = TEMPLATE_ROOTS[category]
+    model_category = MODEL_CATEGORIES.get(category, category)
     template = json.loads((root / "uv_template.json").read_text(encoding="utf-8"))
     size = template["texture"]["width"]
     part_id = np.array(Image.open(root / template["part_id_image"]["path"]))
@@ -438,7 +442,7 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
                 raise SystemExit(f"{points_path}の画像サイズが写真と一致しません")
             notes.append(f"点は{Path(points_path).name}を使った")
         else:
-            result = inference.run(photo, given.get("bbox"), category)
+            result = inference.run(photo, given.get("bbox"), model_category)
             record = {
                 "imageId": f"photo_{view}.jpg",
                 "view": view,
@@ -461,7 +465,7 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
             if garment.shape != photo.shape[:2]:
                 raise SystemExit(f"{mask_path}の大きさが写真と一致しません")
         else:
-            garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], category)
+            garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], model_category)
         garment = fill_holes(garment)
         # ズボンは股の付近で切り抜きの縁に細い割れ目や出っ張りができ、輪郭の点が行き来して三角形が裏返る。
         # テンプレートが指定するときは、服の領域を丸めてから使う。

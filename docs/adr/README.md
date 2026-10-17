@@ -52,6 +52,7 @@
 - [0035 撮影の画面で最初に服の種類を選び、シャツを種類に足す](0035-choose-garment-type-first.md)
 - [0036 アバターの設定は、ログインを入れるまでブラウザのlocalStorageに保存する](0036-avatar-settings-in-browser.md)
 - [0037 テクスチャのUVは、アプリのglbのUVを正とし、変換しない](0037-app-glb-uv-is-source.md)
+- [0038 シャツのテクスチャは、前後から投影したUVの外周を写真の輪郭に合わせて作る](0038-shirt-texture-from-projected-uv.md)
 
 ## 参考文献
 

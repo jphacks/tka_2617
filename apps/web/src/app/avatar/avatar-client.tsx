@@ -12,7 +12,10 @@ import {
   TOP_IDS,
   TOPS,
   useTryOn,
+  type Worn,
 } from "@/components/try-on/use-try-on";
+import { useOutfit } from "@/components/try-on/use-outfit";
+import { avatarUrl, type OutfitSlot } from "@/lib/outfit";
 import {
   BODY_FRAME_LABELS,
   BODY_FRAMES,
@@ -229,7 +232,75 @@ export function AvatarClient() {
   if (settings === null)
     return <AvatarSetup onDone={avatarSettingsStore.save} />;
   return (
-    <AvatarEditor settings={settings} onChange={avatarSettingsStore.save} />
+    <AvatarWithOutfit settings={settings} onChange={avatarSettingsStore.save} />
+  );
+}
+
+/** URLで指定された服を読んでから、試着の画面を出す。着せられない服は理由を出し、その側は見本の服にする */
+function AvatarWithOutfit({
+  settings,
+  onChange,
+}: {
+  settings: AvatarSettings;
+  onChange: (settings: AvatarSettings) => void;
+}) {
+  const { outfit, top, bottom, takeOff } = useOutfit();
+  if (top === "loading" || bottom === "loading")
+    return (
+      <main className="px-4 py-5">
+        <AvatarFrame loading />
+      </main>
+    );
+  const problems = {
+    top: top && "problem" in top ? top.problem : null,
+    bottom: bottom && "problem" in bottom ? bottom.problem : null,
+  };
+  return (
+    // 服が変わったら、試着の状態をその服の寸法で作り直す
+    <AvatarEditor
+      key={avatarUrl(outfit)}
+      settings={settings}
+      onChange={onChange}
+      worn={{
+        top: top && "worn" in top ? top.worn : null,
+        bottom: bottom && "worn" in bottom ? bottom.worn : null,
+      }}
+      problems={problems}
+      onTakeOff={takeOff}
+    />
+  );
+}
+
+/** URLで指定された服の名前（着せられないときは理由）と、外すボタン。着せられない服も外せないと、開くたびに同じ理由が出る */
+function OutfitGarment({
+  text,
+  isProblem = false,
+  onTakeOff,
+}: {
+  text: string;
+  isProblem?: boolean;
+  onTakeOff: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded border border-line px-3 py-2">
+      {isProblem ? (
+        <span
+          role="status"
+          className="text-xs leading-relaxed wrap-anywhere text-red-600"
+        >
+          {text}
+        </span>
+      ) : (
+        <span className="font-semibold wrap-anywhere">{text}</span>
+      )}
+      <button
+        type="button"
+        onClick={onTakeOff}
+        className="shrink-0 rounded-full border border-line px-3.5 py-1.5 text-[13px] transition hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main"
+      >
+        外す
+      </button>
+    </div>
   );
 }
 
@@ -283,13 +354,19 @@ function AvatarSetup({
   );
 }
 
-/** 試着の画面：身長・体型と、服・髪・靴を選んで着せる。体と髪を変えたら設定に保存する。服の実寸は、今はサンプルの服の値 */
+/** 試着の画面：身長・体型と、服・髪・靴を選んで着せる。体と髪を変えたら設定に保存する。登録した服が無い側は見本の服を着せる */
 function AvatarEditor({
   settings,
   onChange,
+  worn,
+  problems,
+  onTakeOff,
 }: {
   settings: AvatarSettings;
   onChange: (settings: AvatarSettings) => void;
+  worn: Worn;
+  problems: Record<OutfitSlot, string | null>;
+  onTakeOff: (slot: OutfitSlot) => void;
 }) {
   const {
     build,
@@ -321,7 +398,7 @@ function AvatarEditor({
     tight,
     sceneProps,
     selectTop,
-  } = useTryOn(settings);
+  } = useTryOn(settings, worn);
 
   function update(change: Partial<AvatarSettings>) {
     onChange({ ...settings, ...change });
@@ -424,12 +501,32 @@ function AvatarEditor({
 
       <Section title="服">
         <Row label="トップス">
-          <Segmented
-            label="トップス"
-            options={TOP_IDS.map((t) => ({ id: t, label: TOPS[t].label }))}
-            value={top}
-            onChange={selectTop}
-          />
+          {worn.top ? (
+            <OutfitGarment
+              text={worn.top.name}
+              onTakeOff={() => {
+                onTakeOff("top");
+              }}
+            />
+          ) : (
+            <>
+              {problems.top && (
+                <OutfitGarment
+                  text={problems.top}
+                  isProblem
+                  onTakeOff={() => {
+                    onTakeOff("top");
+                  }}
+                />
+              )}
+              <Segmented
+                label="トップス"
+                options={TOP_IDS.map((t) => ({ id: t, label: TOPS[t].label }))}
+                value={top}
+                onChange={selectTop}
+              />
+            </>
+          )}
         </Row>
         {top === "shirt" && (
           <Row label="シャツの前">
@@ -460,24 +557,44 @@ function AvatarEditor({
           </Row>
         )}
         <Row label="ボトムス">
-          <Segmented
-            label="ボトムス"
-            options={[
-              { id: "jeans", label: "ジーンズ" },
-              { id: "none", label: "なし" },
-            ]}
-            value={wearTrousers ? "jeans" : "none"}
-            onChange={(id) => {
-              setWearTrousers(id === "jeans");
-            }}
-          />
+          {worn.bottom ? (
+            <OutfitGarment
+              text={worn.bottom.name}
+              onTakeOff={() => {
+                onTakeOff("bottom");
+              }}
+            />
+          ) : (
+            <>
+              {problems.bottom && (
+                <OutfitGarment
+                  text={problems.bottom}
+                  isProblem
+                  onTakeOff={() => {
+                    onTakeOff("bottom");
+                  }}
+                />
+              )}
+              <Segmented
+                label="ボトムス"
+                options={[
+                  { id: "jeans", label: "ジーンズ" },
+                  { id: "none", label: "なし" },
+                ]}
+                value={wearTrousers ? "jeans" : "none"}
+                onChange={(id) => {
+                  setWearTrousers(id === "jeans");
+                }}
+              />
+            </>
+          )}
         </Row>
         <details className="rounded border border-line px-3 py-2">
           <summary className="cursor-pointer font-semibold">
             服の実寸を変える
           </summary>
           <p className="mt-2 text-xs text-description">
-            登録した服を着せるときは、ここに服の実寸が入ります（今はサンプルの服の値）。
+            登録した服は、その服の実寸が入ります。ここで変えても、服には保存しません。登録した服が無いときは見本の服の値です。
           </p>
           <div className="mt-3 flex flex-col gap-2">
             <span className="text-xs text-description">{TOPS[top].label}</span>
@@ -493,7 +610,9 @@ function AvatarEditor({
             ))}
             {wearTrousers && (
               <>
-                <span className="mt-2 text-xs text-description">ジーンズ</span>
+                <span className="mt-2 text-xs text-description">
+                  {worn.bottom?.name ?? "ジーンズ"}
+                </span>
                 {TROUSER_KEYS.map((k) => (
                   <SizeInput
                     key={k}

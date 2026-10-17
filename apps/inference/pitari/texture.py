@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "textures"
 JST = timezone(timedelta(hours=9))
-CATEGORY_LABELS = {"short_sleeve_top": "Tシャツ", "long_sleeve_top": "長そで", "trousers": "パンツ"}
+CATEGORY_LABELS = {"short_sleeve_top": "Tシャツ", "long_sleeve_top": "長そで", "shirt": "シャツ", "trousers": "パンツ"}
 # 変換の本体は、UVテンプレートと同じ場所にある試行用スクリプトをそのまま使う。
 sys.path.insert(0, str(ROOT.parents[1] / "artifacts/uv/pitari/scripts"))
 import photo_to_texture  # noqa: E402

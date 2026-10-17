@@ -35,6 +35,7 @@ import {
   TrouserTableSchema,
   type TrouserMeasurements,
 } from "@/lib/trousers";
+import type { WornTop, WornTrousers } from "@/lib/worn-garment";
 
 // Blenderが書き出した表。小さいので、取りに行かずにバンドルに入れる
 export const heightTable = HeightTableSchema.parse(tshirtHeightJson);
@@ -192,26 +193,37 @@ function parseInputs<K extends string>(
     : null;
 }
 
+/** 登録した服のうち、着せる服。nullの側は見本の服で始める */
+export type Worn = { top: WornTop | null; bottom: WornTrousers | null };
+
 /**
  * 試着の状態（体・服・髪・靴の選択と服の実寸）と、そこから決まるmorphの値。
- * 本番のアバター画面と確認ページ（/dev/tryon）で使う。体と髪は、initialの値で始める
+ * 本番のアバター画面と確認ページ（/dev/tryon）で使う。体と髪はinitialの値、服はwornの服で始める
  */
-export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
+export function useTryOn(
+  initial: AvatarSettings = defaultAvatarSettings,
+  worn: Worn = { top: null, bottom: null },
+) {
   const [build, setBuild] = useState<Build>(initial.build);
   const [heightInput, setHeightInput] = useState(() =>
     initial.heightCm.toFixed(1),
   );
-  const [top, setTop] = useState<Top>("tshirt");
+  const [top, setTop] = useState<Top>(worn.top?.model ?? "tshirt");
   const [shirtFront, setShirtFront] = useState<ShirtFront>("partly");
   // シャツの中にTシャツを着るか（シャツのときだけ）
   const [wearInner, setWearInner] = useState(false);
+  // 登録した服の寸法は写真から測った小数なので、小数1桁まで出す
   const [input, setInput] = useState<Inputs>(() =>
-    toInputs(topMeasurements(SAMPLE_GARMENT)),
+    worn.top
+      ? toInputs(worn.top.measurements, 1)
+      : toInputs(topMeasurements(SAMPLE_GARMENT)),
   );
   const topTable = TOPS[top].table;
   const [wearTrousers, setWearTrousers] = useState(true);
   const [trouserInput, setTrouserInput] = useState<TrouserInputs>(() =>
-    toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
+    worn.bottom
+      ? toTrouserInputs(worn.bottom.measurements, 1)
+      : toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
   );
   const [hairId, setHairId] = useState(initial.hairId);
   const [hairColor, setHairColor] = useState(initial.hairColor);

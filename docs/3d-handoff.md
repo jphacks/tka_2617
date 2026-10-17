@@ -281,9 +281,10 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 - 片方だけのこともある。指定が無い側は、今までどおりの服（見本の服など）を着せる
 - 最後に着せた服は、ブラウザのlocalStorage（`pitari.outfit`）に覚えておく。別の服の詳細から押すと、同じ側だけが入れ替わり、もう片方は残る
 - 服を選び直すときは、下のナビの「クローゼット」に戻って服の詳細を開き、もう一度「アバターに着せる」を押す。上を選んだあとに下を選ぶときも同じで、覚えていた上はそのまま残る
-- アバターの画面で服を外すときは、外す側を`null`にした服を`saveOutfit`で保存し、`router.replace(avatarUrl(outfit))`でURLからもその側を消す（#70）。URLを消すだけでは、次に服の詳細から押したときに、覚えていた服がURLに戻ってくる
-- アバターの画面では、`readOutfit(useSearchParams())`で服のIDを読み、`GET /api/garments/{服ID}`で寸法を取る（#70）。IDの形でない値は、指定されていないものとして扱う
-- 服が消されていて取得できないときの表示は、#70で決める
+- アバターの画面の「外す」は、外す側を`null`にした服を`saveOutfit`で保存し、`router.replace(avatarUrl(outfit))`でURLからもその側を消す。URLを消すだけでは、次に服の詳細から押したときに、覚えていた服がURLに戻ってくる
+- アバターの画面では、`useOutfit`（`apps/web/src/components/try-on/use-outfit.ts`）が`readOutfit(useSearchParams())`で服のIDを読み、`GET /api/garments/{服ID}`で寸法を取る。IDの形でない値は、指定されていないものとして扱う
+- 読み終わるまでは、アバターの枠だけを出す。読み終わったら、その服の種類の3Dモデルと寸法で着せる。服が変わったら、試着の状態をその服の寸法で作り直す
+- 着せられないときは、服の欄に理由を出し、その側は見本の服を着せる。理由は、服が見つからない（消された）、寸法が1つでも足りない（採寸の点が取れなかった）、上と下の取り違え（URLを手で書き換えた）、読み込みが15秒で終わらない、の4つ。判定は`apps/web/src/lib/worn-garment.ts`。理由の横にも「外す」を出す。外さないと、開くたびに同じ理由が出る
 
 ## 服の種類と3Dモデルの対応
 
@@ -296,7 +297,7 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 | Tシャツ    | `short_sleeve_top` | `tshirt_male.glb`     | 着丈・身幅・肩幅・袖丈         |
 | ズボン     | `trousers`         | `trousers_male.glb`   | ウエスト・ヒップ・わたり幅など |
 
-シャツは長そでと同じ点で採寸する。シャツのテクスチャはまだ作れない（[ADR 0035](adr/0035-choose-garment-type-first.md)）。
+シャツは長そでと同じ点で採寸する。テクスチャは、`shirt_male.glb`のpitari UVに合わせて作る（[ADR 0038](adr/0038-shirt-texture-from-projected-uv.md)）。
 
 ## 長そでの受け渡し
 
