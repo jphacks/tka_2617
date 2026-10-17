@@ -8,7 +8,7 @@
 
 ## 決定
 
-裏面を保存したら、apiが表のmeasurement画像と裏面のJPEGを推論サービスの`POST /textures`へ送る。推論サービスは受け付けたらすぐ202を返し、裏の1本の作業スレッドで試行用スクリプトの`make_texture`を動かす。結果は`apps/inference/textures/{服ID}/{日時}/`に、テクスチャ・確認用の画像・report.json・job.jsonとして書き出す。
+裏面を保存したら、apiが表のmeasurement画像と裏面のJPEGを推論サービスの`POST /textures`へ送る。推論サービスは受け付けたらすぐ202を返し、裏の1本の作業スレッドで試行用スクリプトの`make_texture`を動かす。結果は`apps/inference/textures/`の作業フォルダ（命名は[ADR 0028](0028-texture-filenames-with-dates.md)）に、テクスチャ・確認用の画像・report.json・job.jsonとして書き出す。
 
 テクスチャはDB・Storage・APIの応答に含めず、画面にも出さない。作り直しは裏面を撮り直したときで、前の結果のフォルダは消さずに残す。
 

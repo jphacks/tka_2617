@@ -42,6 +42,7 @@
 - [0025 ズボンのテクスチャを受領したモデルとUVへ切り替える](0025-trousers-template-from-delivered-uv.md)
 - [0026 保存済みの表裏写真からテクスチャを再生成できるようにする](0026-request-texture-from-saved-photos.md)
 - [0027 長そでの登録と受領UVを使ったテクスチャ生成](0027-long-sleeve-top.md)
+- [0028 テクスチャの保存フォルダを生成日時から始める](0028-texture-filenames-with-dates.md)
 
 ## 参考文献
 

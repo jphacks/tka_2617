@@ -9,7 +9,8 @@ import secrets
 import threading
 import time
 import uuid
-from typing import Literal
+from datetime import datetime
+from typing import Annotated, Literal
 
 import cv2
 import numpy as np
@@ -157,11 +158,14 @@ def textures(
     category: Literal["short_sleeve_top", "long_sleeve_top", "trousers"] = Form(...),
     front: UploadFile = File(...),
     back: UploadFile | None = File(None),
+    garmentCreatedAt: Annotated[datetime | None, Form()] = None,
 ):
     try:
         garment_id = str(uuid.UUID(garmentId))
     except ValueError:
         raise HTTPException(400, "服のIDを確認してください") from None
+    if garmentCreatedAt is not None and garmentCreatedAt.utcoffset() is None:
+        raise HTTPException(400, "登録日時にはタイムゾーンが必要です")
     if not texture.template_ready(category):
         raise HTTPException(503, "この服の種類のUVテンプレートがありません。artifacts/uv/pitari/のREADMEの手順で作成してください")
     try:
@@ -172,7 +176,7 @@ def textures(
         if back:
             back.file.close()
     try:
-        texture.submit(garment_id, category, front_raw, back_raw, models, processing)
+        texture.submit(garment_id, category, front_raw, back_raw, models, processing, garment_created_at=garmentCreatedAt)
     except texture.QueueFull:
         raise HTTPException(429, "テクスチャの作成待ちが多すぎます。少し待って再試行してください") from None
     return {"accepted": True}

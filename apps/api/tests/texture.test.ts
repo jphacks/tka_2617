@@ -15,6 +15,7 @@ const { app } = await import("#src/app");
 const id = "11111111-1111-4111-8111-111111111111";
 const path = `/v1/garments/${id}`;
 const headers = { Authorization: `Bearer ${process.env.INTERNAL_API_TOKEN}` };
+const registeredAt = "2026-10-17T02:12:59.163258+00:00";
 const photos = [
   { role: "measurement", storage_key: "front.jpg" },
   { role: "back", storage_key: "back.jpg" },
@@ -36,6 +37,7 @@ void test("Tシャツ・長そで・ズボンは保存済みのカテゴリ・�
             assert.equal(url.searchParams.get("profile_id"), `eq.${profileId}`);
             return Response.json({
               category,
+              created_at: registeredAt,
               garment_images: photos,
             });
           }
@@ -54,6 +56,7 @@ void test("Tシャツ・長そで・ズボンは保存済みのカテゴリ・�
           const form = init?.body as FormData;
           assert.equal(form.get("garmentId"), id);
           assert.equal(form.get("category"), category);
+          assert.equal(form.get("garmentCreatedAt"), registeredAt);
           assert.equal(await (form.get("front") as File).text(), "front bytes");
           assert.equal(await (form.get("back") as File).text(), "back bytes");
           submitted = true;
@@ -76,6 +79,7 @@ void test("認証・ID・写真不足を確認し、勝手に推論を開始し�
   let reads = 0;
   let data: unknown = {
     category: "trousers",
+    created_at: registeredAt,
     garment_images: photos.slice(0, 1),
   };
   t.mock.method(globalThis, "fetch", (input: string | URL | Request) => {
@@ -114,6 +118,7 @@ void test("生成受付の失敗を成功扱いせず、画面へ安全なエラ
           return Promise.resolve(
             Response.json({
               category: "trousers",
+              created_at: registeredAt,
               garment_images: photos,
             }),
           );
@@ -153,6 +158,7 @@ void test("裏面を保存できた場合は、生成依頼だけ失敗しても
         return Promise.resolve(
           Response.json({
             category: "trousers",
+            created_at: registeredAt,
             garment_images: imageSaved ? photos : [],
           }),
         );

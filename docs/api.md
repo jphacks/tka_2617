@@ -110,7 +110,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 ### PUT /v1/garments/:id/back
 
-裏面の写真を登録する。既にあれば差し替える。multipartの`image`（裏面のJPEG、必須）と`cutoutImage`（表示用の透過PNG、任意）を受け取り、roleは`back`と`back_cutout`。画像の条件は表の登録と同じ。cutoutImageを送らない場合、古いback_cutoutは消す。成功は`200 { id, texture }`（下を参照）。
+裏面の写真を登録する。既にあれば差し替える。multipartの`image`（裏面のJPEG、必須）と`cutoutImage`（表示用の透過PNG、任意）を受け取り、roleは`back`と`back_cutout`。画像の条件は表の登録と同じ。cutoutImageを送らない場合、古いback_cutoutは消す。成功は`200 { id }`。
 
 裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲とランドマーク（landmarks工程）→切り抜きの順に`POST /v1/detections`を呼び、ランドマークを切り抜きの手がかりに渡す。範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
@@ -120,9 +120,9 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 `POST /v1/garments/:id/texture`（webは`POST /api/garments/:id/texture`）。リクエスト本文は不要。現在のプロフィールの服を照合し、保存済みの表のmeasurement画像と裏面のback画像を使う。カテゴリ・保存キー・画像URLはクライアントから受け取らない。
 
-受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗はPC内の`job.json`で確認する。
+受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗はPC内の`job.json`で確認する。apiはDBの服の登録日時`created_at`を内部の`POST /textures`の`garmentCreatedAt`として送る。作業フォルダと完成画像の確認用ファイル名は生成開始日時（JST）・カテゴリ・服IDの先頭8文字の順に並べる。`job.json`の`textureFile`に確認用ファイル名、`garmentCreatedAt`・`createdAt`・`completedAt`に各日時を記録する。
 
-Tシャツ・長そで・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0025](adr/0025-trousers-template-from-delivered-uv.md)）。生成物はPC内の`apps/inference/textures/{服ID}/{日時}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0022](adr/0022-garment-texture-on-pc.md)、[ADR 0026](adr/0026-request-texture-from-saved-photos.md)を参照。
+Tシャツ・長そで・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0025](adr/0025-trousers-template-from-delivered-uv.md)）。生成物はPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/`だけに書き出し、APIの応答・DB・Storageには含めない。[ADR 0022](adr/0022-garment-texture-on-pc.md)、[ADR 0026](adr/0026-request-texture-from-saved-photos.md)を参照。
 
 ## 共通の型
 
