@@ -45,9 +45,20 @@ jobs:
       # server-only の違反（クライアントからサーバー専用のコードを読み込む）は build でしか分からないため
       - run: pnpm build
 
+  # workflowの書き間違い（式の誤り、無い入力など）を見つける。deployのようにmainでしか動かないjobは、
+  # ここで見つけないとマージした後まで気づけない
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # 作者が出しているイメージ。中身が勝手に変わらないよう、版をタグで固定する
+      - uses: docker://rhysd/actionlint:1.7.12
+        with:
+          args: -color
+
   # mainに入ったコードを、ほかのjobがすべて通ってから本番に出す（docs/adr/0004-deploy-web-with-vercel-cli.md）
   deploy:
-    needs: [static, python, test, build]
+    needs: [static, python, test, build, actionlint]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # 続けてマージしたとき、古いほうが後から本番を上書きしないよう、1つずつ順に出す
