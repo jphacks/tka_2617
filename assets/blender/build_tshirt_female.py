@@ -50,7 +50,7 @@ def main():
 
     lm = pt.find_landmarks(shirt)
     polys = pt.polys_of(shirt)
-    pt.write_json(os.path.join(bt.OUT, "tshirt_female_landmarks.json"), lm)
+    pt.write_json(os.path.join(bt.OUT, pf.landmarks_file("tshirt", GENDER)), lm)
 
     for b, (_, shirt_co) in shapes.items():
         pt.set_key_from_world(shirt, pt.build_key(b), shirt_co)
@@ -85,15 +85,8 @@ def main():
     pt.set_key_from_world(body, "thumb_in", thumb_in[keep])
     fit = pf.add_fit_body(body, keep, topo, std_body, shapes, height_shapes, thumb_in)
 
-    body_polys = pt.polys_of(body)
-    nipples = pf.bust_verts(topo, keep)
-
-    def body_width(values, z):
-        P = pt.mixed_coords(body, values)
-        return pf.body_width(P, pt.mixed_coords(fit, values), body_polys, z, float(P[nipples, 2].mean()))
-
     pt.write_json(os.path.join(bt.MODELS, "tshirt_female_height.json"),
-                  bt.height_table(shirt, body, lm, polys, standard_cm, body_width, GENDER))
+                  bt.height_table(shirt, body, lm, polys, standard_cm, pf.body_width_of(body, fit), GENDER))
     moved = np.linalg.norm(pt.world_coords(body) - std_body[keep], axis=1).max()
     pt.log(f"avatar: 焼き込み後の Basis と標準体型の差 {moved * 1000:.3f}mm")
 
