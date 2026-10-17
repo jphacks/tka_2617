@@ -66,6 +66,7 @@ def main():
     shirt.parent = None
     shirt.matrix_world = mw
     pt.simple_material(shirt, NAME, (0.92, 0.92, 0.95, 1.0))
+    ps.make_pitari_uv(shirt)                      # 写真から貼る用の UV（前と後ろから投影）
     # ブラウザ（sleeve-drape.ts）が袖の中の腕・手を選ぶのに使う、腕に沿った位置（縫い目 0 → 袖口 1）
     pt.set_point_attribute(shirt, "_sleeve", ls.sleeve_params(std_shirt, lm))
 

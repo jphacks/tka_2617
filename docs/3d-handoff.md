@@ -271,4 +271,4 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 
 ## 長そでの受け渡し
 
-`long_sleeve_top`の登録・採寸・写真からのテクスチャ生成に対応した。寸法キーはTシャツと同じ4項目。素材は`artifacts/uv/pitari/inputs/longsleeve/`へ整理し、生成テンプレートは`artifacts/uv/pitari/longsleeve/`へ保存する。受領GLBとBlenderの頂点・UVの一致を検証済み。[再生成と制約](../artifacts/uv/pitari/inputs/longsleeve/README.md)を参照。既存のアバター画面への長そで着せ替え表示はこの登録フローとは別で、今回追加していない。
+`long_sleeve_top`の登録・採寸・写真からのテクスチャ生成に対応した。寸法キーはTシャツと同じ4項目。素材は`artifacts/uv/pitari/inputs/longsleeve/`へ整理し、生成テンプレートは`artifacts/uv/pitari/longsleeve/`へ保存する。受領GLBとBlenderの頂点・UVの一致を検証済み。[再生成と制約](../artifacts/uv/pitari/inputs/longsleeve/README.md)を参照。アバター画面（`/avatar`）には長そでの形があるが、登録した服の実寸とテクスチャはまだ渡していない。

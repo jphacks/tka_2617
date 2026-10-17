@@ -8,9 +8,9 @@
 
 ## 決定
 
-素材を`artifacts/uv/pitari/inputs/trousers/`へまとめ、`jeans`の`UVMap`からテンプレートを再生成する。`pitari_trousers`の`template_version`を2に上げ、生成元の面配列とUV配列のSHA-256を記録する。配列のハッシュ化方法は`export_trousers_mesh.py`に定義し、提供元の`mesh_info.json`のハッシュとは区別する。
+素材を`artifacts/uv/pitari/inputs/trousers/`へまとめ、`jeans`の`UVMap`からテンプレートを再生成する。`pitari_trousers`の`template_version`を2に上げ、生成元の面配列とUV配列のSHA-256を記録する。配列のハッシュ化方法は`export_trousers_mesh.py`に定義し、提供元の`mesh_info.json`のハッシュとは区別する。`build_trousers_template.py`は受領したモデルのハッシュを持ち、異なる書き出しからはテンプレートを作らない。
 
-SVGの全1432面とBlenderのUVが一致すること、およびGLBの頂点座標とUVの組が一致することを`verify_trousers_assets.py`で確認する。表裏の写真の貼り方は従来の4部位の方式を継続する。
+SVGの全1432面とBlenderのUVが一致すること（誤差0.001px未満）、およびGLBの頂点座標とUVの組が一致することを、受領時に確かめた。素材を差し替えたときは`verify_trousers_assets.py`で確かめ直す。表裏の写真の貼り方は従来の4部位の方式を継続する。
 
 付属ランドマークは採寸用として保持し、UVの貼り合わせには実際の切れ目を使う。股の切れ目は1412番、裾の内側の切れ目は左1414番・右1415番。採寸用の股1050番とは約2.74cm、裾の内側とは左約3.98cm・右約1.86cm離れている。
 

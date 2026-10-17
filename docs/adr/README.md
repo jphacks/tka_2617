@@ -43,7 +43,8 @@
 - [0026 ズボンのテクスチャを受領したモデルとUVへ切り替える](0026-trousers-template-from-delivered-uv.md)
 - [0027 保存済みの表裏写真からテクスチャを再生成できるようにする](0027-request-texture-from-saved-photos.md)
 - [0028 長そでの登録と受領UVを使ったテクスチャ生成](0028-long-sleeve-top.md)
-- [0029 テクスチャの保存フォルダを生成日時から始める](0029-texture-filenames-with-dates.md)
+- [0029 DBの型をmigrationから作ってcommitし、apiのSupabaseのクライアントに付ける](0029-commit-db-types.md)
+- [0030 テクスチャの保存フォルダを生成日時から始める](0030-texture-filenames-with-dates.md)
 
 ## 参考文献
 
