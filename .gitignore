@@ -20,5 +20,28 @@ CLAUDE.local.md
 
 *.pem
 
-# Blenderのスクリプトがimportするときに作られる
+# 推論の仮想環境・取得済みモデル・検証画像とBlenderのPythonキャッシュは共有しない
+.venv/
 __pycache__/
+*.pyc
+apps/inference/models/*
+!apps/inference/models/.gitkeep
+apps/inference/.cache/
+.tools/
+
+# 作業用画像は共有しない。既存の追跡済みアイコン・デザイン資料は維持する
+*.[pP][nN][gG]
+*.[jJ][pP][gG]
+*.[jJ][pP][eE][gG]
+
+# Blenderの元モデル・作業ファイル・世代別バックアップはローカルに残す
+*.[bB][lL][eE][nN][dD]
+*.[bB][lL][eE][nN][dD][0-9]*
+
+# UVテンプレートの生成物・検証結果。scriptsとREADMEだけ共有する
+artifacts/uv/pitari/uv_template.json
+artifacts/uv/pitari/data/
+artifacts/uv/pitari/masks/
+artifacts/uv/pitari/check/
+artifacts/uv/pitari/renders/
+artifacts/uv/pitari/trials/

@@ -7,6 +7,8 @@ const envSchema = z.object({
   SUPABASE_SECRET_KEY: z.string().min(1),
   INTERNAL_API_TOKEN: z.string().min(32),
   DEMO_PROFILE_ID: z.uuid(),
+  INFERENCE_URL: z.url().default("http://127.0.0.1:8001"),
+  INFERENCE_TOKEN: z.string().min(32).optional(),
 });
 
 export const env = envSchema.parse(process.env);
