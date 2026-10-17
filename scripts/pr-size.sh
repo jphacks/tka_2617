@@ -7,9 +7,14 @@ set -euo pipefail
 base="${1:-origin/main}"
 limit="${PR_SIZE_LIMIT:-400}"
 
+# 先に変数へ入れる。ループの中で直接読むと、比べる先を間違えてgit diffが失敗しても、0行として通ってしまう
+diff=$(git diff --numstat --no-renames "${base}...HEAD")
+
 total=0
 counted=""
 while IFS=$'\t' read -r added deleted path; do
+  # 差分が無いと空の行が1つ来る
+  [[ -z "$path" ]] && continue
   # バイナリは行数が「-」になる
   [[ "$added" == "-" ]] && continue
   generated=$(git check-attr linguist-generated -- "$path" | awk '{print $NF}')
@@ -17,7 +22,7 @@ while IFS=$'\t' read -r added deleted path; do
   lines=$((added + deleted))
   total=$((total + lines))
   counted+="${lines}"$'\t'"${path}"$'\n'
-done < <(git diff --numstat --no-renames "${base}...HEAD")
+done <<< "$diff"
 
 largest=$(printf '%s' "$counted" | sort -rn | head -5)
 echo "変更行数：${total}行（上限の目安は${limit}行。生成物とバイナリは数えない）"
