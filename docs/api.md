@@ -123,7 +123,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 `POST /v1/garments/:id/texture`（webは`POST /api/garments/:id/texture`）。リクエスト本文は不要。現在のプロフィールの服を照合し、保存済みの表のmeasurement画像と裏面のback画像を使う。カテゴリ・保存キー・画像URLはクライアントから受け取らない。
 
-受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗は下の`GET /v1/garments/:id/texture`で確認する。apiはDBの服の登録日時`created_at`を内部の`POST /textures`の`garmentCreatedAt`として送る。作業フォルダと完成画像の確認用ファイル名は生成開始日時（JST）・カテゴリ・服IDの先頭8文字の順に並べる。`job.json`の`textureFile`に確認用ファイル名、`garmentCreatedAt`・`createdAt`・`completedAt`に各日時を記録する。
+受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗は下の`GET /v1/garments/:id/texture`で確認する。apiはDBの服の登録日時`created_at`を内部の`POST /textures`の`garmentCreatedAt`として、裏面の画像のIDを`backImageId`として送る。`backImageId`は、状態を聞くときに、撮り直す前の写真から作った作業を見分けるために使う。作業フォルダと完成画像の確認用ファイル名は生成開始日時（JST）・カテゴリ・服IDの先頭8文字の順に並べる。`job.json`の`textureFile`に確認用ファイル名、`garmentCreatedAt`・`createdAt`・`completedAt`に各日時を記録する。
 
 Tシャツ・長そで・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0026](adr/0026-trousers-template-from-delivered-uv.md)）。推論サービスは、生成物をPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/`に書き出す。[ADR 0023](adr/0023-garment-texture-on-pc.md)、[ADR 0027](adr/0027-request-texture-from-saved-photos.md)を参照。
 
@@ -131,20 +131,21 @@ Tシャツ・長そで・ズボンでテンプレートが違い、長そでは�
 
 `GET /v1/garments/:id/texture`（webは`GET /api/garments/:id/texture`）。apiが推論サービスに状態を問い合わせ、完成していれば画像をStorageへ移して返す。
 
-| 状態                                        | 応答                            |
-| ------------------------------------------- | ------------------------------- |
-| まだ作っていない（裏面が無い、作業が無い）  | `{ status: "none" }`            |
-| 作成中（推論サービスで`queued`か`running`） | `{ status: "processing" }`      |
-| 完成                                        | `{ status: "done", imageId }`   |
-| 失敗                                        | `{ status: "failed", message }` |
+| 状態                                        | 応答                                      |
+| ------------------------------------------- | ----------------------------------------- |
+| まだ作っていない（裏面が無い、作業が無い）  | `{ status: "none" }`                      |
+| 作成中（推論サービスで`queued`か`running`） | `{ status: "processing", imageId? }`      |
+| 完成                                        | `{ status: "done", imageId }`             |
+| 失敗                                        | `{ status: "failed", message, imageId? }` |
 
-画像は`GET /v1/garments/:id/images/:imageId`で取る（2048pxのPNG）。服の一覧と詳細の`images`には入れない。裏面を撮り直した後も、新しいテクスチャができるまで古い写真から作ったものが残るので、必ずこのAPIの`imageId`を使う。作成中の間は、画面が数秒おきに聞き直す。服が無ければ404。推論サービスにつながらないときは、保存済みのテクスチャがあれば`done`、無ければ503。`message`は決まった文で、推論サービスの理由はapiのログにだけ残す。
+画像は`GET /v1/garments/:id/images/:imageId`で取る（2048pxのPNG）。服の一覧と詳細の`images`には入れない。裏面を撮り直した後も、新しいテクスチャができるまで古い写真から作ったものが残るので、必ずこのAPIの`imageId`を使う。`processing`と`failed`の`imageId`は、作り直す前に今の写真から作ったテクスチャで、無ければ省く。画面は`imageId`があれば貼り、`processing`の間は数秒おきに聞き直す。服が無ければ404。推論サービスにつながらないときは、保存済みのテクスチャがあれば`done`、無ければ503。`message`は決まった文で、推論サービスの理由はapiのログにだけ残す。
 
-完成した作業は、`{プロフィールID}/{服ID}/texture-{UUID}.png`としてStorageに置き、`garment_images`の`texture_job`に作業フォルダ名を記録する。同じ作業は2回保存しない。新しい作業が完成したら、DBの関数`save_garment_texture`で行を1つのトランザクションで差し替え、古い画像を消す。裏面を撮り直す前に保存したテクスチャは使わない。[ADR 0033](adr/0033-serve-texture-through-api.md)を参照。
+完成した作業は、`{プロフィールID}/{服ID}/texture-{UUID}.png`としてStorageに置き、`garment_images`の`texture_job`に作業フォルダ名を記録する。同じ作業は2回保存しない。新しい作業が完成したら、DBの関数`save_garment_texture`で行を1つのトランザクションで差し替え、古い画像を消す。裏面を撮り直す前に保存したテクスチャは使わない。推論サービスが返す`backImageId`が今の裏面と違う作業も、無い扱いにする。[ADR 0033](adr/0033-serve-texture-through-api.md)を参照。
 
 apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBearerトークン）：
 
-- `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null }`。作業が無ければ404
+- `POST /textures`：フォームの`backImageId`を作業に記録する
+- `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null, backImageId: string | null }`。作業が無ければ404。`backImageId`を返さない推論サービスでは、最新の作業を今の写真のものとみなす
 - `GET /textures/{garmentId}/{job}/texture.png`：`done`の作業のテクスチャ
 
 ## 共通の型

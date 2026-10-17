@@ -17,11 +17,12 @@ const imagesSchema = z.object({
     }),
   ),
 });
-// 推論サービスのGET /textures/{garmentId}の応答（#71）
+// 推論サービスのGET /textures/{garmentId}の応答（#71）。backImageIdを返さない推論サービスもある
 const jobSchema = z.object({
   status: z.enum(["queued", "running", "done", "failed"]),
   job: z.string().min(1).nullable(),
   error: z.string().nullable(),
+  backImageId: z.string().nullable().optional(),
 });
 const savedSchema = z
   .array(z.object({ image_id: z.uuid(), removed_key: z.string().nullable() }))
@@ -65,8 +66,14 @@ export async function getGarmentTexture(id: string): Promise<TextureStatus> {
       "推論サービスにつながらないため、テクスチャを確認できません",
     );
   }
+  // 撮り直す前の裏面から作る作業は、今の写真のものではないので無い扱いにする
+  if (job.data.backImageId && job.data.backImageId !== back.id)
+    return current
+      ? { status: "done", imageId: current.id }
+      : { status: "none" };
+  const previous = current ? { imageId: current.id } : {};
   if (job.data.status === "queued" || job.data.status === "running")
-    return { status: "processing" };
+    return { status: "processing", ...previous };
   if (job.data.status === "failed") {
     // 推論サービスの理由にはPC内のパスなどが入りうるので、画面には出さずログに残す
     console.error("テクスチャの作成に失敗しました", job.data.error);
@@ -74,6 +81,7 @@ export async function getGarmentTexture(id: string): Promise<TextureStatus> {
       status: "failed",
       message:
         "テクスチャを作れませんでした。裏面を撮り直すか、もう一度作ってください",
+      ...previous,
     };
   }
   if (!job.data.job)

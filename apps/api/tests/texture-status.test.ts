@@ -300,6 +300,78 @@ void test("認証・IDを確かめ、服が無ければ404を返す", async (t) 
   assert.deepEqual(calls.inference, []);
 });
 
+void test("作り直しの間と、作り直しに失敗したときも、今の写真から前に作ったテクスチャを返す", async (t) => {
+  t.mock.method(console, "error", () => {});
+  for (const [state, expected] of [
+    ["running", { status: "processing", imageId: textureId }],
+    [
+      "failed",
+      {
+        status: "failed",
+        message:
+          "テクスチャを作れませんでした。裏面を撮り直すか、もう一度作ってください",
+        imageId: textureId,
+      },
+    ],
+  ] as const) {
+    await t.test(state, async (t) => {
+      fake(t, {
+        images: [back, savedTexture],
+        inference: {
+          status: 200,
+          body: {
+            status: state,
+            job: "次の作業",
+            error: "理由",
+            backImageId: back.id,
+          },
+        },
+      });
+      assert.deepEqual(await status(await request()), expected);
+    });
+  }
+});
+
+void test("撮り直す前の裏面から作った作業は、無い扱いにして保存しない", async (t) => {
+  const older = {
+    status: 200,
+    body: {
+      status: "done",
+      job,
+      error: null,
+      backImageId: "55555555-5555-4555-8555-555555555555",
+    },
+  };
+  await t.test("今の写真のテクスチャが無い", async (t) => {
+    const calls = fake(t, { images: [back], inference: older });
+    assert.deepEqual(await status(await request()), { status: "none" });
+    assert.deepEqual(calls.uploaded, []);
+  });
+  await t.test("今の写真から作ったテクスチャがある", async (t) => {
+    const calls = fake(t, {
+      images: [back, { ...savedTexture, texture_job: "前の作業" }],
+      inference: { ...older, body: { ...older.body, status: "running" } },
+    });
+    assert.deepEqual(await status(await request()), {
+      status: "done",
+      imageId: textureId,
+    });
+    assert.deepEqual(calls.uploaded, []);
+  });
+  await t.test("今の裏面の作業なら保存する", async (t) => {
+    const calls = fake(t, {
+      images: [back],
+      inference: { ...older, body: { ...older.body, backImageId: back.id } },
+      saved: () => ({ image_id: newTextureId, removed_key: null }),
+    });
+    assert.deepEqual(await status(await request()), {
+      status: "done",
+      imageId: newTextureId,
+    });
+    assert.equal(calls.uploaded.length, 1);
+  });
+});
+
 void test("服の詳細のimagesにはテクスチャを入れない（古いことがあるため）", async (t) => {
   const image = (imageId: string, role: string) => ({
     id: imageId,
