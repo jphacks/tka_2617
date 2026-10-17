@@ -21,6 +21,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm lint
+      # 使っていないファイル・export・依存（knip.jsonc）
+      - run: pnpm knip
       - run: pnpm typecheck
       # server-only の違反（クライアントからサーバー専用のコードを読み込む）は build でしか分からないため
       - run: pnpm build
