@@ -54,3 +54,5 @@ artifacts/uv/pitari/trials/
 artifacts/uv/pitari/trousers/
 # 長そでのテンプレートも受領モデルから再生成する
 artifacts/uv/pitari/longsleeve/
+# シャツのテンプレートも受領モデルから再生成する
+artifacts/uv/pitari/shirt/

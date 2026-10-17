@@ -8,34 +8,83 @@ import { CameraIcon, HangerIcon } from "@/components/icons";
 import { requestJson } from "@/lib/request";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
 import { GarmentMeasurements } from "@/components/garment-measurements";
+import {
+  closetFilterLabel,
+  closetFilters,
+  garmentsPath,
+  type ClosetFilter,
+} from "@/lib/closet-filter";
+
+// どの種類の何回目の読み込みの結果かを持ち、選び直す前の応答を出さない
+type Loaded = { filter: ClosetFilter; attempt: number } & (
+  { garments: GarmentView[] } | { error: string }
+);
 
 export function ClosetContents() {
-  const [garments, setGarments] = useState<GarmentView[] | null>(null);
-  const [error, setError] = useState("");
+  const [filter, setFilter] = useState<ClosetFilter>("all");
   const [attempt, setAttempt] = useState(0);
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
     let active = true;
-    requestJson<{ garments: GarmentView[] }>("/api/garments")
+    const controller = new AbortController();
+    requestJson<{ garments: GarmentView[] }>(garmentsPath(filter), {
+      signal: controller.signal,
+    })
       .then((data) => {
-        if (active) setGarments(data.garments);
+        if (active) setLoaded({ filter, attempt, garments: data.garments });
       })
       .catch(() => {
         if (active)
-          setError(
-            "クローゼットを読み込めませんでした。APIとDBの起動を確認してください。",
-          );
+          setLoaded({
+            filter,
+            attempt,
+            error:
+              "クローゼットを読み込めませんでした。APIとDBの起動を確認してください。",
+          });
       });
     return () => {
       active = false;
+      controller.abort();
     };
-  }, [attempt]);
+  }, [filter, attempt]);
+
+  const current =
+    loaded?.filter === filter && loaded.attempt === attempt ? loaded : null;
+  const garments = current && "garments" in current ? current.garments : null;
+  const error = current && "error" in current ? current.error : "";
 
   return (
-    <main className="motion-safe:animate-fade-in">
-      <div className="flex items-baseline justify-between px-4 pt-3 text-xs">
-        <span className="text-sub">すべて</span>
-        <span className="font-semibold">
+    <main
+      className="motion-safe:animate-fade-in"
+      aria-busy={garments === null && !error}
+    >
+      <div className="flex items-start justify-between gap-3 px-4 pt-3">
+        {/* 本物のラジオボタンを見えないように置き、矢印キーでの移動と選択はブラウザに任せる */}
+        <div
+          role="radiogroup"
+          aria-label="服の種類で絞り込む"
+          className="flex flex-wrap gap-1.5"
+        >
+          {closetFilters.map((option) => (
+            <label key={option} className="cursor-pointer">
+              <input
+                type="radio"
+                name="closet-filter"
+                value={option}
+                checked={filter === option}
+                onChange={() => {
+                  setFilter(option);
+                }}
+                className="peer sr-only"
+              />
+              <span className="flex min-h-11 items-center rounded-full border border-line px-3.5 py-1.5 text-[13px] transition peer-checked:border-main peer-checked:bg-main peer-checked:font-semibold peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-main">
+                {closetFilterLabel(option)}
+              </span>
+            </label>
+          ))}
+        </div>
+        <span className="shrink-0 pt-1.5 text-xs font-semibold">
           {garments === null ? "—" : `${String(garments.length)}件`}
         </span>
       </div>
@@ -45,7 +94,6 @@ export function ClosetContents() {
           <button
             className="mt-3 min-h-11 rounded border border-main px-4"
             onClick={() => {
-              setError("");
               setAttempt((previous) => previous + 1);
             }}
           >
@@ -56,6 +104,21 @@ export function ClosetContents() {
         <p role="status" className="px-4 py-6 text-sm text-description">
           読み込み中…
         </p>
+      ) : garments.length === 0 && filter !== "all" ? (
+        <section className="flex flex-col items-center gap-3 px-6 pt-10 pb-9 text-center">
+          <h2 className="text-[15px] font-semibold text-pretty">
+            {closetFilterLabel(filter)}はまだ登録されていません
+          </h2>
+          <button
+            type="button"
+            className="min-h-11 rounded border border-main px-4 text-sm"
+            onClick={() => {
+              setFilter("all");
+            }}
+          >
+            すべての服を見る
+          </button>
+        </section>
       ) : garments.length === 0 ? (
         <section className="flex flex-col items-center gap-3.5 px-6 pt-10 pb-9 text-center">
           <span className="flex size-16 items-center justify-center rounded-full bg-surface">

@@ -31,6 +31,8 @@ class TextureTests(unittest.TestCase):
             registered_at = datetime(2026, 10, 17, 2, 12, 59, tzinfo=timezone.utc)
             textures(GARMENT, "long_sleeve_top", self.upload(), self.upload(), registered_at)
             self.assertEqual(submit.call_args.kwargs["garment_created_at"], registered_at)
+            textures(GARMENT, "shirt", self.upload(), self.upload())
+            self.assertEqual(submit.call_args.args[1], "shirt")
             for garment_id, front in (("not-a-uuid", self.upload()), (GARMENT, self.upload(b"not a jpeg"))):
                 with self.assertRaises(HTTPException) as caught:
                     textures(garment_id, "short_sleeve_top", front, None)
@@ -87,3 +89,4 @@ class TextureTests(unittest.TestCase):
     def test_run_name_is_in_japan_time(self):
         name = texture.run_name(GARMENT, "trousers", datetime(2026, 10, 17, tzinfo=timezone.utc))
         self.assertEqual(name, "2026-10-17_09-00-00_パンツ_11111111")
+        self.assertEqual(texture.run_name(GARMENT, "shirt", datetime(2026, 10, 17, tzinfo=timezone.utc)), "2026-10-17_09-00-00_シャツ_11111111")
