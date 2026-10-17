@@ -61,3 +61,30 @@ export function ChevronLeftIcon(props: IconProps) {
     </LineIcon>
   );
 }
+
+// 今日・記録・＋のパスは、初回体験のモック（#108）から写した
+export function SunIcon(props: IconProps) {
+  return (
+    <LineIcon {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />
+    </LineIcon>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <LineIcon {...props}>
+      <rect x="4" y="5.5" width="16" height="14.5" rx="1.5" />
+      <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+    </LineIcon>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <LineIcon {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </LineIcon>
+  );
+}
