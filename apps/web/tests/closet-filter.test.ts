@@ -18,9 +18,19 @@ void test("先頭に「すべて」があり、そのあとに服の種類がす
 
 void test("「すべて」ではcategoryを付けず、種類を選ぶとcategoryで絞り込む", () => {
   assert.equal(garmentsPath("all"), "/api/garments");
-  assert.equal(
-    garmentsPath("long_sleeve_top"),
-    "/api/garments?category=long_sleeve_top",
-  );
-  assert.equal(garmentsPath("trousers"), "/api/garments?category=trousers");
+  for (const category of [
+    "short_sleeve_top",
+    "long_sleeve_top",
+    "shirt",
+    "trousers",
+  ] as const) {
+    const url = new URL(garmentsPath(category), "http://localhost");
+    assert.equal(url.pathname, "/api/garments");
+    assert.deepEqual([...url.searchParams], [["category", category]]);
+  }
+});
+
+void test("追加されたシャツも、表示名とAPIのカテゴリを対応させる", () => {
+  assert.ok(closetFilters.includes("shirt"));
+  assert.equal(closetFilterLabel("shirt"), "シャツ");
 });

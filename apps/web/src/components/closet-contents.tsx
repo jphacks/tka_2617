@@ -27,7 +27,10 @@ export function ClosetContents() {
 
   useEffect(() => {
     let active = true;
-    requestJson<{ garments: GarmentView[] }>(garmentsPath(filter))
+    const controller = new AbortController();
+    requestJson<{ garments: GarmentView[] }>(garmentsPath(filter), {
+      signal: controller.signal,
+    })
       .then((data) => {
         if (active) setLoaded({ filter, attempt, garments: data.garments });
       })
@@ -42,6 +45,7 @@ export function ClosetContents() {
       });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [filter, attempt]);
 
@@ -51,7 +55,10 @@ export function ClosetContents() {
   const error = current && "error" in current ? current.error : "";
 
   return (
-    <main className="motion-safe:animate-fade-in">
+    <main
+      className="motion-safe:animate-fade-in"
+      aria-busy={garments === null && !error}
+    >
       <div className="flex items-start justify-between gap-3 px-4 pt-3">
         {/* 本物のラジオボタンを見えないように置き、矢印キーでの移動と選択はブラウザに任せる */}
         <div
@@ -71,7 +78,7 @@ export function ClosetContents() {
                 }}
                 className="peer sr-only"
               />
-              <span className="block rounded-full border border-line px-3.5 py-1.5 text-[13px] transition peer-checked:border-main peer-checked:bg-main peer-checked:font-semibold peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-main">
+              <span className="flex min-h-11 items-center rounded-full border border-line px-3.5 py-1.5 text-[13px] transition peer-checked:border-main peer-checked:bg-main peer-checked:font-semibold peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-main">
                 {closetFilterLabel(option)}
               </span>
             </label>
