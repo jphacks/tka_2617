@@ -1,6 +1,6 @@
 # ER図
 
-初期テーブルは`supabase/migrations/20261010000100_garment_measurements.sql`、透過画像の追加は`20261010000200_garment_cutouts.sql`。アバターとコーデのテーブルはまだ作っていない。
+初期テーブルは`supabase/migrations/20261010000100_garment_measurements.sql`、透過画像の追加は`20261010000200_garment_cutouts.sql`、裏面の写真と購入時期・季節の追加は`20261013000100_garment_back_and_details.sql`。アバターとコーデのテーブルはまだ作っていない。
 
 ```mermaid
 erDiagram
@@ -18,6 +18,8 @@ erDiagram
     text name
     jsonb measurements "確定したcm値、未測定はnull"
     text measurement_version
+    text purchased_month "YYYY-MM、未設定はnull"
+    text[] seasons "spring・summer・autumn・winter"
     timestamptz created_at
     timestamptz updated_at
   }
@@ -25,7 +27,7 @@ erDiagram
     uuid id PK
     uuid garment_id FK
     text storage_key UK
-    text role "original・measurement・cutout"
+    text role "original・measurement・cutout・back・back_cutout"
     int width_px
     int height_px
     jsonb points "この画像上のランドマーク"
@@ -39,6 +41,8 @@ erDiagram
 - profilesのデモ用1行を`supabase/seed.sql`で用意する。apiはDEMO_PROFILE_IDだけを使用する。
 - categoryはshort_sleeve_top・trousers。measurementsは[API一覧](api.md)の共通型。
 - 画像は服1着につき各roleを1枚ずつ保存できる。現在のv2ではランドマーク・A4四隅ともmeasurement画像に保存する。cutoutは表示用PNGでpoints・paper_cornersは空配列、pixels_per_cmはnull。旧v1ではA4四隅はoriginal画像にある。
+- backは裏面のJPEG、back_cutoutは裏面の表示用PNG。どちらも採寸しないため、points・paper_cornersは空配列、pixels_per_cm・model_versionはnull。差し替えのたびに新しいキーで保存する。
+- purchased_monthは購入した年月（YYYY-MM）、seasonsは着る季節の複数選択。
 - 元画像とはブラウザで向き・縮小・EXIF除去を確定した画像であり、カメラの元ファイルとは異なる。
 - 全テーブルでRLSを有効にし、公開ポリシーは設けない。apiのsecret keyだけがDBを操作する。
 - Storageは非公開のgarmentsバケット。JPEG・PNGを許可し、1枚8MiBまで。apiが期限付きURLを発行する。
