@@ -4,7 +4,7 @@
 
 ## 背景
 
-`pitari_trousers.blend`・`trousers_male.glb`・UV展開図・ランドマークを受領した。ズボンは1462頂点・1432面で、[従来のテンプレート](0024-trousers-uv-template.md)が対象とした886頂点・856面のモデルと異なる。
+`pitari_trousers.blend`・`trousers_male.glb`・UV展開図・ランドマークを受領した。ズボンは1462頂点・1432面で、[従来のテンプレート](0025-trousers-uv-template.md)が対象とした886頂点・856面のモデルと異なる。
 
 ## 決定
 
