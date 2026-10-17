@@ -1,7 +1,7 @@
 "use client";
 
 import { categoryChoices, categoryLabels } from "@/lib/garment-category";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type {
   Category,
@@ -50,7 +50,7 @@ const button = `min-h-12 rounded bg-main px-4 py-2.5 text-sm font-semibold text-
 const secondary = `min-h-11 rounded border border-main bg-white px-3 py-2 text-sm font-semibold transition hover:bg-surface active:scale-[0.98] disabled:opacity-40 ${focusRing}`;
 const field = `rounded-md bg-surface px-3 py-2 text-sm text-main ${focusRing}`;
 
-export function MeasurementStudio() {
+export function MeasurementStudio({ editId }: { editId: string | null }) {
   const [definitions, setDefinitions] = useState<DefinitionResponse | null>(
     null,
   );
@@ -76,9 +76,54 @@ export function MeasurementStudio() {
     GarmentView,
     "id" | "category" | "measurements"
   > | null>(null);
+  // 服の詳細から来たときは、その服を読み込んでから編集欄を開く
+  const [editLoad, setEditLoad] = useState<"loading" | "failed" | "done">(
+    editId ? "loading" : "done",
+  );
+  const [editAttempt, setEditAttempt] = useState(0);
   const category = editing?.category ?? result?.category;
   const fields =
     category && definitions ? definitions.definitions[category] : [];
+
+  useEffect(() => {
+    if (!editId) return;
+    let active = true;
+    Promise.all([
+      requestJson<DefinitionResponse>("/api/measurements"),
+      requestJson<GarmentView>(`/api/garments/${encodeURIComponent(editId)}`),
+    ])
+      .then(([loadedDefinitions, garment]) => {
+        if (!active) return;
+        setDefinitions(loadedDefinitions);
+        startEditing(garment);
+        setEditLoad("done");
+      })
+      .catch((failure: unknown) => {
+        if (!active) return;
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : "服を読み込めませんでした",
+        );
+        setEditLoad("failed");
+      });
+    return () => {
+      active = false;
+    };
+  }, [editId, editAttempt]);
+
+  function startEditing(garment: GarmentView) {
+    setEditing(garment);
+    setChosenCategory(garment.category);
+    setResult(null);
+    setPhoto(null);
+    setBack(null);
+    setName(garment.name);
+    setValues(garment.measurements);
+    setOverrides({});
+    setError("");
+    setMessage("");
+  }
 
   function showProgress(
     percent: number,
@@ -388,6 +433,23 @@ export function MeasurementStudio() {
         <p role="status" className="mb-4 text-sm">
           {message}
         </p>
+      )}
+      {editLoad === "loading" && (
+        <p role="status" className="mb-4 text-sm text-description">
+          編集する服を読み込んでいます…
+        </p>
+      )}
+      {editLoad === "failed" && (
+        <button
+          className={`${secondary} mb-4 w-full`}
+          onClick={() => {
+            setError("");
+            setEditLoad("loading");
+            setEditAttempt((previous) => previous + 1);
+          }}
+        >
+          編集する服を読み込み直す
+        </button>
       )}
       <fieldset disabled={busy} className="min-w-0 space-y-4">
         <fieldset disabled={editing !== null} className="min-w-0">
@@ -707,12 +769,20 @@ export function MeasurementStudio() {
               {editing ? "名前・寸法を更新" : "クローゼットに登録"}
             </button>
             {editing && (
-              <Link
-                href={`/garments/${encodeURIComponent(editing.id)}`}
-                className="flex min-h-11 items-center justify-center text-xs text-description underline"
-              >
-                服の詳細で裏面・購入時期・時期を設定する
-              </Link>
+              <div className="flex flex-wrap justify-center gap-x-4">
+                <Link
+                  href={`/garments/${encodeURIComponent(editing.id)}`}
+                  className="flex min-h-11 items-center text-xs text-description underline"
+                >
+                  服の詳細で裏面・購入時期・時期を設定する
+                </Link>
+                <Link
+                  href="/"
+                  className="flex min-h-11 items-center text-xs text-description underline"
+                >
+                  クローゼットに戻る
+                </Link>
+              </div>
             )}
           </section>
         )}
@@ -761,16 +831,7 @@ export function MeasurementStudio() {
                   className={secondary}
                   disabled={busy}
                   onClick={() => {
-                    setEditing(garment);
-                    setChosenCategory(garment.category);
-                    setResult(null);
-                    setPhoto(null);
-                    setBack(null);
-                    setName(garment.name);
-                    setValues(garment.measurements);
-                    setOverrides({});
-                    setError("");
-                    setMessage("");
+                    startEditing(garment);
                   }}
                 >
                   寸法を編集
