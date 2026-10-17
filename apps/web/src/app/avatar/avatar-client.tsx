@@ -251,9 +251,10 @@ function AvatarWithOutfit({
         <AvatarFrame loading />
       </main>
     );
-  const problems = [top, bottom].flatMap((slot) =>
-    slot && "problem" in slot ? [slot.problem] : [],
-  );
+  const problems = {
+    top: top && "problem" in top ? top.problem : null,
+    bottom: bottom && "problem" in bottom ? bottom.problem : null,
+  };
   return (
     // 服が変わったら、試着の状態をその服の寸法で作り直す
     <AvatarEditor
@@ -270,17 +271,28 @@ function AvatarWithOutfit({
   );
 }
 
-/** 登録した服の名前と、外すボタン */
-function WornGarment({
-  name,
+/** URLで指定された服の名前（着せられないときは理由）と、外すボタン。着せられない服も外せないと、開くたびに同じ理由が出る */
+function OutfitGarment({
+  text,
+  isProblem = false,
   onTakeOff,
 }: {
-  name: string;
+  text: string;
+  isProblem?: boolean;
   onTakeOff: () => void;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded border border-line px-3 py-2">
-      <span className="font-semibold wrap-anywhere">{name}</span>
+      {isProblem ? (
+        <span
+          role="status"
+          className="text-xs leading-relaxed wrap-anywhere text-red-600"
+        >
+          {text}
+        </span>
+      ) : (
+        <span className="font-semibold wrap-anywhere">{text}</span>
+      )}
       <button
         type="button"
         onClick={onTakeOff}
@@ -353,7 +365,7 @@ function AvatarEditor({
   settings: AvatarSettings;
   onChange: (settings: AvatarSettings) => void;
   worn: Worn;
-  problems: string[];
+  problems: Record<OutfitSlot, string | null>;
   onTakeOff: (slot: OutfitSlot) => void;
 }) {
   const {
@@ -488,30 +500,32 @@ function AvatarEditor({
       </Section>
 
       <Section title="服">
-        {problems.map((problem) => (
-          <p
-            key={problem}
-            role="status"
-            className="text-xs leading-relaxed text-red-600"
-          >
-            {problem}
-          </p>
-        ))}
         <Row label="トップス">
           {worn.top ? (
-            <WornGarment
-              name={worn.top.name}
+            <OutfitGarment
+              text={worn.top.name}
               onTakeOff={() => {
                 onTakeOff("top");
               }}
             />
           ) : (
-            <Segmented
-              label="トップス"
-              options={TOP_IDS.map((t) => ({ id: t, label: TOPS[t].label }))}
-              value={top}
-              onChange={selectTop}
-            />
+            <>
+              {problems.top && (
+                <OutfitGarment
+                  text={problems.top}
+                  isProblem
+                  onTakeOff={() => {
+                    onTakeOff("top");
+                  }}
+                />
+              )}
+              <Segmented
+                label="トップス"
+                options={TOP_IDS.map((t) => ({ id: t, label: TOPS[t].label }))}
+                value={top}
+                onChange={selectTop}
+              />
+            </>
           )}
         </Row>
         {top === "shirt" && (
@@ -544,24 +558,35 @@ function AvatarEditor({
         )}
         <Row label="ボトムス">
           {worn.bottom ? (
-            <WornGarment
-              name={worn.bottom.name}
+            <OutfitGarment
+              text={worn.bottom.name}
               onTakeOff={() => {
                 onTakeOff("bottom");
               }}
             />
           ) : (
-            <Segmented
-              label="ボトムス"
-              options={[
-                { id: "jeans", label: "ジーンズ" },
-                { id: "none", label: "なし" },
-              ]}
-              value={wearTrousers ? "jeans" : "none"}
-              onChange={(id) => {
-                setWearTrousers(id === "jeans");
-              }}
-            />
+            <>
+              {problems.bottom && (
+                <OutfitGarment
+                  text={problems.bottom}
+                  isProblem
+                  onTakeOff={() => {
+                    onTakeOff("bottom");
+                  }}
+                />
+              )}
+              <Segmented
+                label="ボトムス"
+                options={[
+                  { id: "jeans", label: "ジーンズ" },
+                  { id: "none", label: "なし" },
+                ]}
+                value={wearTrousers ? "jeans" : "none"}
+                onChange={(id) => {
+                  setWearTrousers(id === "jeans");
+                }}
+              />
+            </>
           )}
         </Row>
         <details className="rounded border border-line px-3 py-2">
