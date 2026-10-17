@@ -178,6 +178,15 @@ export const garments = new Hono()
       return c.json({ ...saved, texture });
     },
   )
+  .post(
+    "/:id/texture",
+    zValidator("param", idSchema, (result, c) => {
+      if (!result.success)
+        return c.json({ error: "服のIDを確認してください" }, 400);
+    }),
+    async (c) =>
+      c.json(await requestGarmentTexture(c.req.valid("param").id), 202),
+  )
   .delete(
     "/:id",
     zValidator("param", idSchema, (result, c) => {
