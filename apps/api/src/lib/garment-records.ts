@@ -14,6 +14,8 @@ export const imageRoleSchema = z.enum([
   "back",
   "back_cutout",
 ]);
+export const seasonSchema = z.enum(["spring", "summer", "autumn", "winter"]);
+export const purchasedMonthSchema = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 export const imageRecordSchema = z.object({
   id: z.uuid(),
   storage_key: z.string(),
@@ -31,16 +33,21 @@ export const garmentRecordSchema = z.object({
   category: categorySchema,
   measurements: measurementsSchema,
   measurement_version: z.string(),
+  purchased_month: purchasedMonthSchema.nullable(),
+  seasons: z.array(seasonSchema),
   created_at: z.string(),
   garment_images: z.array(imageRecordSchema),
 });
 export type GarmentRecord = z.infer<typeof garmentRecordSchema>;
+export type Season = z.infer<typeof seasonSchema>;
 export type GarmentView = {
   id: string;
   name: string;
   category: GarmentRecord["category"];
   measurements: GarmentRecord["measurements"];
   measurementVersion: string;
+  purchasedMonth: string | null;
+  seasons: Season[];
   createdAt: string;
   images: {
     id: string;

@@ -29,6 +29,8 @@ export async function garmentView(row: GarmentRecord): Promise<GarmentView> {
     category: row.category,
     measurements: row.measurements,
     measurementVersion: row.measurement_version,
+    purchasedMonth: row.purchased_month,
+    seasons: row.seasons,
     createdAt: row.created_at,
     images,
   };
