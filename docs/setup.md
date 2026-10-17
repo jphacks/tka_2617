@@ -6,6 +6,7 @@
 - pnpm（バージョンは [package.json](../package.json) の `packageManager`）
 - Docker（ローカルの Supabase を動かすため）
 - [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)（Pythonを書く人だけ。commit前にruffを動かすため）：Macは`brew install uv`、Windowsは`winget install --id=astral-sh.uv -e`
 
 ## 手順
 
@@ -70,6 +71,8 @@ PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを確認する。スマ�
 ## commit前の確認
 
 lefthook が、staged のファイルを Prettier で整形し、ESLint で検査する。整形の結果は自動で staged に戻る。lint エラーがあると commit できない。
+
+Pythonのファイルは、uvがあればruffで検査して整形する（[ADR 0022](adr/0022-python-lint-with-ruff.md)）。uvが無いときは飛ばすが、PRのCIで同じ検査が走る。まだruffをかけていないディレクトリは、`ruff.toml`の`extend-exclude`にある。
 
 ## DB を変えるとき
 
