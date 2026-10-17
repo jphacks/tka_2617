@@ -1,4 +1,9 @@
-import type { Category, DetectionOptions, DetectionResult } from "@pitari/api";
+import type {
+  BackPhotoResponse,
+  Category,
+  DetectionOptions,
+  DetectionResult,
+} from "@pitari/api";
 import { preparePhoto, pngFile } from "@/lib/photo";
 import { requestJson } from "@/lib/request";
 
@@ -27,7 +32,7 @@ async function detect(image: File, options: DetectionOptions) {
   });
 }
 
-// 裏面は表示に使い、寸法は測らない
+// 裏面は表示とテクスチャに使い、寸法は測らない
 export async function prepareBackPhoto(
   file: File,
   category: Category,
@@ -83,7 +88,7 @@ export async function uploadBackPhoto(garmentId: string, back: BackPhoto) {
   const form = new FormData();
   form.set("image", back.image);
   if (back.cutoutImage) form.set("cutoutImage", back.cutoutImage);
-  return requestJson<{ id: string }>(
+  return requestJson<BackPhotoResponse>(
     `/api/garments/${encodeURIComponent(garmentId)}/back`,
     {
       method: "PUT",

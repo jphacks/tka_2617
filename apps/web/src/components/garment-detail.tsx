@@ -11,6 +11,7 @@ import { garmentPhotoUrl } from "@/lib/garment-photo";
 import { prepareBackPhoto, uploadBackPhoto } from "@/lib/back-photo";
 import type { MeasurementProgressState } from "@/lib/measurement-progress";
 import { requestJson } from "@/lib/request";
+import { textureRequestMessage } from "@/lib/garment-texture";
 
 const seasons: { value: Season; label: string }[] = [
   { value: "spring", label: "春" },
@@ -28,6 +29,7 @@ export function GarmentDetail({ id }: { id: string }) {
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [status, setStatus] = useState("");
+  const [textureStatus, setTextureStatus] = useState("");
   // 入力途中の値を消さないよう購入時期の欄は非制御にし、表示を戻すときだけ作り直す
   const [monthInputKey, setMonthInputKey] = useState(0);
   const [progress, setProgress] = useState<MeasurementProgressState | null>(
@@ -77,6 +79,7 @@ export function GarmentDetail({ id }: { id: string }) {
   async function captureBack(file: File) {
     if (!garment) return;
     setStatus("");
+    setTextureStatus("");
     try {
       const back = await prepareBackPhoto(
         file,
@@ -91,7 +94,8 @@ export function GarmentDetail({ id }: { id: string }) {
           });
         },
       );
-      await uploadBackPhoto(id, back);
+      const saved = await uploadBackPhoto(id, back);
+      setTextureStatus(textureRequestMessage(saved.texture));
       setGarment(
         await requestJson<GarmentView>(
           `/api/garments/${encodeURIComponent(id)}`,
@@ -179,6 +183,18 @@ export function GarmentDetail({ id }: { id: string }) {
           </label>
         </div>
       )}
+
+      <section aria-label="テクスチャ" className="mt-5 rounded bg-surface p-4">
+        <p className="text-sm font-semibold">写真からテクスチャを作る</p>
+        <p className="mt-2 text-xs leading-relaxed text-description">
+          表と裏の写真がそろうと自動で生成を依頼します。完成した画像はPC内に保存されます。
+        </p>
+        {textureStatus && (
+          <p role="status" className="mt-3 text-xs leading-relaxed">
+            {textureStatus}
+          </p>
+        )}
+      </section>
 
       <div className="mt-6">
         <p className="text-[11px] tracking-[0.12em] text-sub">
