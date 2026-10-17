@@ -148,6 +148,14 @@ apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBear
 - `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null, backImageId: string | null }`。作業が無ければ404。`backImageId`を返さない推論サービスでは、最新の作業を今の写真のものとみなす
 - `GET /textures/{garmentId}/{job}/texture.png`：`done`の作業のテクスチャ
 
+## 今日の天気（webだけ）
+
+`GET /api/weather`はapiを通さず、webのサーバーがOpen-Meteoから今日の気温を取って返す。DBに触れない（[ADR 0040](adr/0040-today-weather-and-season.md)）。
+
+- 入力：任意の`lat`・`lon`。0.1度に丸めて使い、保存しない。無いか範囲の外なら東京駅にする。
+- 出力：`{ season, temperatures, place }`。`season`は服の`seasons`と同じ`spring`・`summer`・`autumn`・`winter`。`temperatures`は`{ morning, noon, night }`（7時・13時・19時の℃の整数、欠けたらnull）。`place`は`current`か`fallback`。
+- Open-Meteoにつながらないときも200で返し、`temperatures`はnull、季節は月だけで決める。
+
 ## 共通の型
 
 - カテゴリはshort_sleeve_top・long_sleeve_top・shirt・trousersの4つ。長そでは33点を受け取り、Tシャツと同じ肩幅・袖丈・身幅・着丈を保存する。
