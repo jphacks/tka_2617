@@ -8,9 +8,9 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - `verify_sizes.py`：サイズ合わせの検証と、確認用の画像（`out/renders/`）
 - `pitari_tshirt.py`：共通処理（生成・基準点・計測・シェイプキー・書き出し）
 - `build_presets.py`：入口。髪4種と靴を作り、`apps/web/public/presets/`に書き出す
-- `build_longsleeve.py`：入口。Tシャツの袖を手首まで伸ばした長袖を作り、`apps/web/public/models/`に書き出す（[ADR 0011](../../docs/adr/0011-longsleeve-from-tshirt.md)）
+- `build_longsleeve.py`：入口。Tシャツの袖を手首まで伸ばした長袖を作り、`apps/web/public/models/`に書き出す（[ADR 0018](../../docs/adr/0018-longsleeve-from-tshirt.md)）
 - `pitari_longsleeve.py`：長袖の共通処理（袖口の先に腕に沿って輪を足す）
-- `build_shirt.py`：入口。長袖のシャツ（`male_casualsuit03`のシャツ）を作り、`apps/web/public/models/`に書き出す（[ADR 0012](../../docs/adr/0012-shirt-from-casualsuit03.md)）
+- `build_shirt.py`：入口。長袖のシャツ（`male_casualsuit03`のシャツ）を作り、`apps/web/public/models/`に書き出す（[ADR 0019](../../docs/adr/0019-shirt-from-casualsuit03.md)）
 - `pitari_shirt.py`：シャツの共通処理（シャツの取り出し・基準点・前の開け閉め）
 - `render_presets.py`：プリセットの確認。書き出したglbを重ねて、サムネイル（`apps/web/public/presets/thumbs/`）と体型ごとの確認画像（`out/presets/builds_check.png`）を描き、めり込みを数える
 - `pitari_presets.py`：プリセットの共通処理（素材の選択・灰色のテクスチャ・材質）。`build_tshirt.py`も体の肌と`_shoe`に使う
@@ -133,7 +133,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 ## プリセット（髪・靴、`apps/web/public/presets/`）
 
 - 素材はMakeHuman system assetsのCC0のものだけ。使った素材は`apps/web/public/presets/LICENSES.md`に記録する。選んだ素材は`pitari_presets.HAIR`／`SHOES`
-- 髪・靴は体と同じ原点・スケールで、体と同じ体型キー3個＋身長キー2個を持つ（骨格は使わない。[ADR 0010](../../docs/adr/0010-presets-follow-body-with-shape-keys.md)）。ブラウザで体と同じ値を入れれば重なる
+- 髪・靴は体と同じ原点・スケールで、体と同じ体型キー3個＋身長キー2個を持つ（骨格は使わない。[ADR 0017](../../docs/adr/0017-presets-follow-body-with-shape-keys.md)）。ブラウザで体と同じ値を入れれば重なる
 - 色はブラウザで掛ける。髪のテクスチャは明暗だけの灰色（不透明な所の明るさの中央値を0.8に揃える）。肌は灰色にせず、色ごとに中央値で割って0.9倍にする（唇・ほおの赤みを残す。灰色にすると顔色が悪く見えた）。靴は`pitari_presets.SHOE_STYLE`で靴ごとに決める（白のスニーカーは白一色にして元の明るさを陰影として少し残す、黒の革靴は元の色のまま）。靴下は靴ごとにテクスチャの靴下の四角に当たる面を別の材質`socks`にし、灰色にして明るさの中央値を0.85に揃える（ブラウザで靴下の色を掛ける）。色の候補は`presets.json`の`hairColors`／`skinColors`／`sockColors`
 - 顔のパーツ（目・眉毛・まつ毛、`pitari_presets.FACE`）は`presets/face/face.glb`に1つにまとめ、いつも着ける。体型キー・身長キーは髪と同じ
   - 目はMakeHumanの茶色の目の色みを0.45に抜いた（そのままだと赤い目に見える）
