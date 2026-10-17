@@ -9,6 +9,9 @@
   apps/web/public/models/trousers_male_height.json    標準の身長と、体型・身長ごとの基準寸法・キーの効き方 M・体の寸法
   assets/blender/out/trousers_landmarks.json          計測に使う頂点インデックス
   assets/blender/out/build_trousers.blend             確認用
+女性は -- female を付ける（体を女性にする。ファイル名の male が female になり、基準点は out/trousers_female_landmarks.json、
+確認用は out/build_trousers_female.blend。verify_trousers.py -- female で検証する）。
+ズボンは腰より下なので、着せるための体（胸の前だけが違う）ではなく、本物の体に着せる。
 """
 import os
 import sys
@@ -18,12 +21,14 @@ sys.path.insert(0, HERE)
 
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
+import pitari_female as pf  # noqa: E402
 import pitari_tshirt as pt  # noqa: E402
 import pitari_trousers as tr  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 MODELS = os.path.join(ROOT, "apps", "web", "public", "models")
 OUT = os.path.join(HERE, "out")
+GENDER = pf.gender_from_args()
 D = 10.0                    # +10cm の形を作ってから 0.1 倍で 1cm キーにする
 
 
@@ -82,17 +87,17 @@ def height_table(jeans, body, lm, polys, standard_cm):
 
 def main():
     pt.clear_scene()
-    shapes = pt.capture_builds(tr.add_jeans)
-    standard_cm, height_shapes = pt.capture_heights(tr.add_jeans)
+    shapes = pt.capture_builds(tr.add_jeans, GENDER)
+    standard_cm, height_shapes = pt.capture_heights(tr.add_jeans, GENDER)
 
-    body = pt.create_body(pt.macros_for("standard"))
+    body = pt.create_body(pt.macros_for("standard", GENDER))
     jeans = tr.add_jeans(body)
     jeans.shape_key_add(name="Basis", from_mix=False)
     std_body = pt.body_mix_coords(body)
 
     lm = tr.find_trouser_landmarks(jeans)
     polys = pt.polys_of(jeans)
-    pt.write_json(os.path.join(OUT, "trousers_landmarks.json"), lm)
+    pt.write_json(os.path.join(OUT, pf.landmarks_file("trousers", GENDER)), lm)
 
     # ジーンズ：体型キー → 身長キー（mhclo で着せ直した形）→ サイズキー（標準体型の上で、形を伸ばす・広げるだけ）
     for b, (_, co) in shapes.items():
@@ -116,12 +121,13 @@ def main():
     for d, (body_co, _) in height_shapes.items():
         pt.set_key_from_world(body, pt.height_key(d), pt.height_key_world(std_body[keep], body_co[keep]))
 
-    pt.write_json(os.path.join(MODELS, "trousers_male_height.json"),
+    pt.write_json(os.path.join(MODELS, f"trousers_{GENDER}_height.json"),
                   height_table(jeans, body, lm, polys, standard_cm))
 
     os.makedirs(OUT, exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, "build_trousers.blend"), copy=True)
-    pt.export_glb(jeans, os.path.join(MODELS, "trousers_male.glb"))
+    blend = "build_trousers_female.blend" if GENDER == "female" else "build_trousers.blend"
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT, blend), copy=True)
+    pt.export_glb(jeans, os.path.join(MODELS, f"trousers_{GENDER}.glb"))
     pt.log("完了")
 
 

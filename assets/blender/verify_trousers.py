@@ -13,6 +13,7 @@
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background assets/blender/out/build_trousers.blend --python assets/blender/verify_trousers.py
 
 合格条件：標準体型は全項目 ±0.5cm 以内、ほかの体型は ±1cm 以内。不合格なら終了コード 1
+女性（build_trousers.py -- female の後に）は、out/build_trousers_female.blend を開いて -- female を付ける。
 """
 import json
 import os
@@ -23,11 +24,13 @@ sys.path.insert(0, HERE)
 
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
+import pitari_female as pf  # noqa: E402
 import pitari_tshirt as pt  # noqa: E402
 import pitari_trousers as tr  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 MODELS = os.path.join(ROOT, "apps", "web", "public", "models")
+GENDER = pf.gender_from_args()
 TOL = {"standard": 0.5}
 TOL_OTHER = 1.0
 RIDGE = 0.01                # キーの値を抑える強さ。web の RIDGE と同じ値にする
@@ -68,9 +71,9 @@ def key_values(target, base_b, M, parts, ridge=RIDGE):
 
 def main():
     jeans = bpy.data.objects["jeans"]
-    with open(os.path.join(HERE, "out", "trousers_landmarks.json"), encoding="utf-8") as fp:
+    with open(os.path.join(HERE, "out", pf.landmarks_file("trousers", GENDER)), encoding="utf-8") as fp:
         lm = json.load(fp)
-    with open(os.path.join(MODELS, "trousers_male_height.json"), encoding="utf-8") as fp:
+    with open(os.path.join(MODELS, f"trousers_{GENDER}_height.json"), encoding="utf-8") as fp:
         table = json.load(fp)
     parts = table["parts"]
     polys = pt.polys_of(jeans)
