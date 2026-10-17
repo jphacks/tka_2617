@@ -3,6 +3,9 @@ import { test } from "node:test";
 import longsleeveHeightJson from "@/../public/models/longsleeve_male_height.json";
 import shirtHeightJson from "@/../public/models/shirt_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
+import longsleeveFemaleHeightJson from "@/../public/models/longsleeve_female_height.json";
+import shirtFemaleHeightJson from "@/../public/models/shirt_female_height.json";
+import tshirtFemaleHeightJson from "@/../public/models/tshirt_female_height.json";
 import { BUILDS } from "@/lib/avatar-settings";
 import {
   type Fit,
@@ -26,6 +29,9 @@ const tables: Record<string, HeightTable> = {
   tshirt: HeightTableSchema.parse(tshirtHeightJson),
   longsleeve: HeightTableSchema.parse(longsleeveHeightJson),
   shirt: HeightTableSchema.parse(shirtHeightJson),
+  tshirt_female: HeightTableSchema.parse(tshirtFemaleHeightJson),
+  longsleeve_female: HeightTableSchema.parse(longsleeveFemaleHeightJson),
+  shirt_female: HeightTableSchema.parse(shirtFemaleHeightJson),
 };
 
 function assertClose(actual: number, expected: number, tolerance = 1e-6) {

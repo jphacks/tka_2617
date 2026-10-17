@@ -25,10 +25,12 @@ import {
   type Object3D,
   type Texture,
 } from "three";
+import { modelUrls } from "@/lib/avatar-models";
 import { setMorph } from "@/lib/morph";
 import { stackHems, type FloorAt } from "@/lib/hem-stack";
 import { bodyInSleeves } from "@/lib/sleeve-drape";
 import {
+  bodyMeshes,
   buildBodyBVH,
   buildGarmentCollider,
   shirtTopology,
@@ -37,8 +39,10 @@ import {
   type PushStats,
 } from "@/lib/push-out";
 
-const AVATAR_URL = "/models/avatar_male.glb";
-const TROUSERS_URL = "/models/trousers_male.glb";
+// 性別を切り替えるまでは男性（modelUrlsの説明）
+const MODELS = modelUrls("male");
+const AVATAR_URL = MODELS.avatar;
+const TROUSERS_URL = MODELS.trousers;
 
 // 読み込もうとしたglb。読み込みに失敗したとき、もう一度読み込めるようにキャッシュを消す
 const requestedUrls = new Set<string>([AVATAR_URL, TROUSERS_URL]);
@@ -296,7 +300,11 @@ function Models({
   requestedUrls.add(shirtUrl);
   const shirt = useGLTF(shirtUrl);
   const trousers = useGLTF(TROUSERS_URL);
-  const bodyMesh = useMemo(() => firstMesh(avatar.scene), [avatar.scene]);
+  // 服は、体のglbに着せるための体があればそれに対して押し出す（描かない）
+  const { body: bodyMesh, collider: colliderMesh } = useMemo(
+    () => bodyMeshes(avatar.scene),
+    [avatar.scene],
+  );
   const shirtMesh = useMemo(() => firstMesh(shirt.scene), [shirt.scene]);
   const trouserMesh = useMemo(
     () => firstMesh(trousers.scene),
@@ -374,7 +382,7 @@ function Models({
     const timer = setTimeout(() => {
       if (!bodyBVH.current || bvhMorphs.current !== avatarMorphs) {
         bodyBVH.current?.geometry.dispose();
-        bodyBVH.current = buildBodyBVH(bodyMesh);
+        bodyBVH.current = buildBodyBVH(colliderMesh);
         bvhMorphs.current = avatarMorphs;
       }
       if (showTrousers) {
@@ -429,6 +437,7 @@ function Models({
     };
   }, [
     bodyMesh,
+    colliderMesh,
     shirtMesh,
     trouserMesh,
     topo,
@@ -451,7 +460,7 @@ function Models({
     const pushMs: number[] = [];
     for (let i = 0; i < BENCHMARK_RUNS; i++) {
       const t0 = performance.now();
-      buildBodyBVH(bodyMesh).geometry.dispose();
+      buildBodyBVH(colliderMesh).geometry.dispose();
       bvhMs.push(performance.now() - t0);
       pushMs.push(updatePush(shirtMesh, bodyBVH.current, topo).ms);
     }

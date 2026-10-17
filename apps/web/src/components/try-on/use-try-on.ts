@@ -4,6 +4,7 @@ import longsleeveHeightJson from "@/../public/models/longsleeve_male_height.json
 import shirtHeightJson from "@/../public/models/shirt_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import presetsJson from "@/../public/presets/presets.json";
+import { modelUrls } from "@/lib/avatar-models";
 import {
   defaultAvatarSettings,
   heightFromInput,
@@ -111,25 +112,28 @@ const SAMPLE_SHIRT = {
 /** シャツの中に着るTシャツの実寸。今はサンプルの服で固定する */
 const INNER_TARGET = topMeasurements(SAMPLE_GARMENT);
 
+// 性別を切り替えるまでは男性（modelUrlsの説明）
+const MALE_TOPS = modelUrls("male").tops;
+
 /** 上の服。寸法の4項目とキーはどれも同じで、Blenderが書き出したglbと表だけが違う */
 export const TOPS = {
   tshirt: {
     label: "Tシャツ",
-    url: "/models/tshirt_male.glb",
+    url: MALE_TOPS.tshirt,
     table: heightTable,
     sample: SAMPLE_GARMENT,
     stretchRatio: STRETCH_RATIO,
   },
   longsleeve: {
     label: "長袖",
-    url: "/models/longsleeve_male.glb",
+    url: MALE_TOPS.longsleeve,
     table: HeightTableSchema.parse(longsleeveHeightJson),
     sample: SAMPLE_LONGSLEEVE,
     stretchRatio: STRETCH_RATIO,
   },
   shirt: {
     label: "シャツ",
-    url: "/models/shirt_male.glb",
+    url: MALE_TOPS.shirt,
     table: HeightTableSchema.parse(shirtHeightJson),
     sample: SAMPLE_SHIRT,
     stretchRatio: WOVEN_STRETCH_RATIO,
