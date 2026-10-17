@@ -39,6 +39,9 @@ apps/inference/textures/
 # Blenderの元モデル・作業ファイル・世代別バックアップはローカルに残す
 *.[bB][lL][eE][nN][dD]
 *.[bB][lL][eE][nN][dD][0-9]*
+# 受領したモデルとUV展開図も元素材としてローカルに残す
+artifacts/uv/pitari/inputs/**/*.glb
+artifacts/uv/pitari/inputs/**/*.svg
 
 # UVテンプレートの生成物・検証結果。scriptsとREADMEだけ共有する
 artifacts/uv/pitari/uv_template.json
@@ -47,3 +50,5 @@ artifacts/uv/pitari/masks/
 artifacts/uv/pitari/check/
 artifacts/uv/pitari/renders/
 artifacts/uv/pitari/trials/
+# ズボンのテンプレートも生成物。build_trousers_template.pyで作り直す
+artifacts/uv/pitari/trousers/
