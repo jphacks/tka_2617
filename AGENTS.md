@@ -15,6 +15,7 @@
 ## 開発ルール
 
 - 読みやすい名前と素直なコードを選ぶ。共通化は本当に同じ処理だけ。コメントは必要な「なぜ」だけを書く。仕様番号は振らない。
+- 処理（apiの`src/services`・`src/lib`、webの`src/lib`）を足す・変えるときは、同じPRでそのアプリの`tests/`にテストも足す。書かないなら、PR本文に理由を書く。CIの`pr-tests`が警告する。
 - 書き直したら、使わなくなったファイル・export・依存を消す。`pnpm knip`で見つかり、CIでも止まる。「あとで使う」exportは、使うときに足す。
 - importはwebで`@/`、apiで`#src/`を使う。
 - deprecatedな書き方を避ける。Next.jsの実装前に`apps/web/node_modules/next/dist/docs`の該当ガイドを確認する。
