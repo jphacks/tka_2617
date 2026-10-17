@@ -13,7 +13,7 @@
 ## 決定
 
 - web（`apps/web`）はVercelのHobbyプランに置く
-- GitHubとはつながず、VercelのCLIで出す。mainにマージすると、CIの`check`が通った後に、GitHub Actions（`.github/workflows/ci.yml`の`deploy`）が`vercel deploy --prod`で本番に出す。急ぐときは手元のMacからも出せる。手順は[setup.md](../setup.md#webをvercelにデプロイする)
+- GitHubとはつながず、VercelのCLIで出す。mainにマージすると、CIのほかのjobがすべて通った後に、GitHub Actions（`.github/workflows/ci.yml`の`deploy`）が`vercel deploy --prod`で本番に出す。急ぐときは手元のMacからも出せる。手順は[setup.md](../setup.md#webをvercelにデプロイする)
 - Actionsで使うVercelの鍵（`VERCEL_TOKEN`）と、プロジェクトのID（`VERCEL_ORG_ID`、`VERCEL_PROJECT_ID`）は、リポジトリのsecretに置く。鍵はpitariのプロジェクトだけに絞り、有効期限を付ける
 - リポジトリのルートに`.vercelignore`を置き、`.env`などの秘密のファイルを送らない
 - Vercelでは、インストールのときにスクリプトを動かさない（`apps/web/vercel.json`の`installCommand`に`--ignore-scripts`）。CLIで送ったファイルには`.git`が無く、ルートの`prepare`（`lefthook install`）が失敗するため。依存のインストールスクリプトは、手元とCIでも`pnpm-workspace.yaml`で止めているので、動きは変わらない。インストールスクリプトが要る依存を足したら、この設定を見直す
@@ -36,7 +36,7 @@
 ## 影響
 
 - mainにマージすると、CIが通った数分後に本番が更新される
-- buildは、CIの`check`とVercelの2回走る
+- buildは、CIの`build`とVercelの2回走る
 - Vercelの鍵をsecretに置くので、リポジトリに書き込める人（チームの3人と運営）は、workflowを書き換えればその鍵を使える。鍵はプロジェクトに絞り、有効期限を付ける。ハッカソンが終わったら消す
 - 手元から出すときは、CLIが手元のファイルをそのまま送る。commitしていない変更も本番に載るので、mainの最新に切り替えてから出す
 - お試しのURL（`--prod`なしで出したもの）は、Vercelにログインしないと見られない（Standard Protection）。スマホで試すときは本番のURLを使う

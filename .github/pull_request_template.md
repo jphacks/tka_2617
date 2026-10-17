@@ -4,7 +4,7 @@
 
 ## どう確かめたか
 
-- [ ] `pnpm lint`と`pnpm typecheck`が通る
+- [ ] `pnpm lint`、`pnpm typecheck`、`pnpm test`が通る
 - [ ] 画面やAPIを手で触って確かめた
 
 ## docs を更新したか

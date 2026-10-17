@@ -38,7 +38,6 @@
 - [0021 購入時期は年月、着る時期は春夏秋冬の複数選択で服に持つ](0021-purchase-month-and-seasons.md)
 - [0022 Pythonのlintと整形にruffを使い、ディレクトリごとに入れていく](0022-python-lint-with-ruff.md)
 - [0023 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0023-garment-texture-on-pc.md)
-- [0023 服ごとのテクスチャは推論サービスがPC内のフォルダに作り、画面とAPIには出さない](0023-garment-texture-on-pc.md)
 - [0024 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0024-trousers-cutout-with-landmarks.md)
 - [0024 ズボンの切り抜きでは、ランドマークで囲んだ輪郭の外を背景として教える](0024-trousers-cutout-with-landmarks.md)
 - [0025 ズボンのテクスチャは、脚ごとのUVの島を前後に分けて表と裏の写真を貼る](0025-trousers-uv-template.md)
