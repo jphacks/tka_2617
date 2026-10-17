@@ -52,6 +52,19 @@ def make_size_key(shirt, part, lm, polys, displacements=pt.DISPLACEMENTS):
     pt.log(f"size_{part}: 倍率 {k:.4f}, +10 の形で {gain(k):+.2f}cm")
 
 
+def make_fold_key(shirt, lm, polys, fold=pt.width_fold_displacement):
+    """width_folds：身幅 +10cm で、均等に広げた形（size_width × 10）を、脇・背中の縦のしわの形
+    （fold。実測で +10.00cm になるよう倍率を探す）に置き換える差。値 1 で +10cm 分。
+    ブラウザは、身幅が基準より大きいときだけ size_width ÷ 10 を入れる。サイズの計算と検証には使わない"""
+    B = pt.world_coords(shirt, "Basis")
+    U = B + (pt.world_coords(shirt, "size_width") - B) * D
+    base = pt.measure(B, lm, polys)["width"]
+    k = pt.solve_scale(lambda k: pt.measure(B + fold(B, lm, k), lm, polys)["width"] - base, D)
+    F = B + fold(B, lm, k)
+    pt.set_key_from_world(shirt, "width_folds", B + (F - U))
+    pt.log(f"width_folds: 倍率 {k:.4f}, しわの形で {pt.measure(F, lm, polys)['width'] - base:+.2f}cm")
+
+
 def base_and_correction(shirt, lm, polys):
     """体型ごとの基準寸法と、size_* キーの効き方の行列 M（行=寸法, 列=キー）。
     ブラウザは  M × キー = 実寸 − 基準  を解いてキーの値を決める"""
@@ -121,6 +134,7 @@ def main():
         pt.set_key_from_world(shirt, pt.height_key(d), pt.height_key_world(std_shirt, shirt_co))
     for part in pt.SIZE_PARTS:
         make_size_key(shirt, part, lm, polys)
+    make_fold_key(shirt, lm, polys)
 
     base, corr = base_and_correction(shirt, lm, polys)
     pt.write_json(os.path.join(MODELS, "tshirt_male_base.json"), base)

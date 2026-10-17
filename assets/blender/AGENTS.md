@@ -10,6 +10,8 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - `build_presets.py`：入口。髪4種と靴を作り、`apps/web/public/presets/`に書き出す
 - `build_longsleeve.py`：入口。Tシャツの袖を手首まで伸ばした長袖を作り、`apps/web/public/models/`に書き出す（[ADR 0011](../../docs/adr/0011-longsleeve-from-tshirt.md)）
 - `pitari_longsleeve.py`：長袖の共通処理（袖口の先に腕に沿って輪を足す）
+- `build_shirt.py`：入口。長袖のシャツ（`male_casualsuit03`のシャツ）を作り、`apps/web/public/models/`に書き出す（[ADR 0012](../../docs/adr/0012-shirt-from-casualsuit03.md)）
+- `pitari_shirt.py`：シャツの共通処理（シャツの取り出し・基準点・前の開け閉め）
 - `render_presets.py`：プリセットの確認。書き出したglbを重ねて、サムネイル（`apps/web/public/presets/thumbs/`）と体型ごとの確認画像（`out/presets/builds_check.png`）を描き、めり込みを数える
 - `pitari_presets.py`：プリセットの共通処理（素材の選択・灰色のテクスチャ・材質）。`build_tshirt.py`も体の肌と`_shoe`に使う
 - `out/`：生成物（`tshirt_landmarks.json`、確認用の`build.blend`、`renders/`）。gitに入れない
@@ -24,6 +26,8 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/render_presets.py
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_longsleeve.py
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_longsleeve.blend --python assets/blender/verify_sizes.py -- longsleeve
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_shirt.py
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_shirt.blend --python assets/blender/verify_sizes.py -- shirt
 ```
 
 - プリセットの生成は約20秒、確認は約3分。確認は`build_tshirt.py`の体（`avatar_male.glb`）を読むので、体を作り直したら確認もやり直す
@@ -44,6 +48,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 | `tshirt_male_base.json`                         | 標準の身長での体型ごとの基準寸法（cm）。webは使っていない                                                                                                                                                                                              |
 | `tshirt_male_correction.json`                   | 標準の身長での体型ごとのキーの効き方`m`。webは使っていない                                                                                                                                                                                             |
 | `longsleeve_male.glb`、`longsleeve_male_*.json` | 長袖。中身はTシャツの同じ名前のファイルと同じ形（体型キー3個＋身長キー2個＋サイズキー4個、身長ごとの表）                                                                                                                                               |
+| `shirt_male.glb`、`shirt_male_*.json`           | 長袖のシャツ。長袖と同じキーに、前の開け閉めのキー`shirt_close`／`shirt_open`を足したもの                                                                                                                                                              |
 
 生成物だが、Vercelでは再生成できないのでcommitする。
 
@@ -53,6 +58,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - Blenderの単位はメートル。計測結果だけcm
 - サイズキーは`size_length`／`size_width`／`size_shoulder`／`size_sleeve`。値1.0＝+1cm
   - +10cmの形を作り、値0.1でNew Shape from Mixして1cmキーにする
+  - 身幅を大きくした見た目はキー`width_folds`（`build_tshirt.make_fold_key`）。+10cmで、均等に広げた形（`size_width`×10）を、前は体に近いまま脇・背中を縦のしわにし、脇の下から裾へ広げる量を増やした（裾で2倍。胸だけがふくらまず、胸から下へまっすぐ落ちて裾で広がる）形。しわは間隔・強さ・高さによるずれの違う4つの波を重ね、位置は固定の種の乱数で決める（同じ間隔の波だと規則的に見える）（`pitari_tshirt.width_fold_displacement`）に置き換える差。値1で+10cm分。ブラウザは身幅が基準より大きいときだけ`size_width`÷10を入れる。しわの波は一周の長さを余計に増やしてキーの値に比例しない（マイナスでも長さが増える）ので、サイズキーと検証には使わない。均等に広げただけだと風船のようにふくらみ、布の物理演算で垂らしても横の広がりは残った
   - サイズキーには体からの押し出しを入れない。押し出しはブラウザ（`push-out.ts`）が毎回するので、キーは服の形の変化だけにする
   - Blenderのスライダーは±10が上限（受け入れ済み）。glTFとブラウザ側は無制限
 - 体型は細身／標準／がっしり／ぽっちゃりの4つ。キーは`build_slim`／`build_broad`／`build_chubby`。標準体型＝Basis。同時に1つだけ1.0
@@ -98,6 +104,17 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
   - テクスチャ担当のUVは袖の前後の切れ目が階段状なので、袖口の島が短く入れ替わる所はそろえ、袖の向きに飛び出した袖口の位置は隣の列に合わせてから延ばす
 - ジーンズのUVは、まだMakeHumanの元の`UVMap`のまま（テクスチャ担当に頼んでいる）
 
+## シャツ（`pitari_shirt.py`）
+
+- `male_casualsuit03`の先頭1613頂点がシャツ（後ろはジーンズなので消す）。色は無地（元のストライプのテクスチャは使わない）
+- 前は元から左右に分かれていて、裾・左右の前の縁・襟の外側が1本の縁の輪になっている。左右の前身頃は中心で重なっているので、x の正負ではなくUVの島で分ける
+- 基準点はTシャツと同じ形（`measure`・サイズキーがそのまま使える）にして、UVの島（後身頃・左右の前身頃・袖・襟）と縁の輪から求める
+  - 袖口は手首で内側へ折り返され、裏地が前腕の途中まで戻ってそこで縁の輪になっている。袖口は、袖の向きで一番先にある、その輪と同じ数の頂点（手首の折り返し）にする
+  - 袖は付け根から袖口まで12の区間に分け、区間の中心を結んで腕の中心線にする（長袖の袖丈キー・垂れ方のキー・`_sleeve`がそのまま使える）
+- 前の開け閉めはキー2つ。両方0の元の形が「少し開ける」（襟元のV字）
+  - `shirt_close`（閉める）：前を襟元まで閉じる。前身頃は、V字の部分で左右の前の縁を、V字の一番下での位置（左右が元から重なっている所）へ寄せる。V字の始まりは、左右の重なり（右の縁のx−左の縁のx）が下より減り始める高さ（縁の距離で見ると、交差する所で開き始めを見逃す）。襟の前側は首の縦の軸の周りに回して、襟の先を前の中心で合わせる（横に押すと潰れる）
+  - `shirt_open`（開ける）：左右の前身頃と襟の前側を、体の中心の縦の軸の周りに回して横へ開く（前の縁で0.45rad、脇で0）。上から下まで同じだけ開く。体に入る所はブラウザの押し出しで出る
+
 ## 長袖（`pitari_longsleeve.py`）
 
 - Tシャツ（`add_shirt`）の袖口から手首まで、腕に沿って輪を14個足す。Tシャツの頂点は番号を変えないので、基準点・寸法の測り方・サイズキーはTシャツのものをそのまま使う。袖丈は肩先から手首の袖口まで
@@ -105,6 +122,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - 輪の半径は腕の断面と円の中間にして、輪の並びの向きにならす（ひじの凹凸を写さない）。ゆとりは袖口の値から手首の1.2cmへ移す
 - 手首は標準体型で腕の一番細い所を探し、その近くの体の頂点を覚えておく。ほかの体型・身長では、その頂点の平均を手首にする（ぽっちゃりでは一番細い所が手の先になるため）
 - 体型・身長の形は、その体の腕に沿って同じ数の輪を足して作る
+- 身幅・肩幅のキー（と`width_folds`）では、袖が付け根と一緒に動く量を、腕に沿った位置0.45までに0へ下げる（`pitari_longsleeve._taper_sleeves`。袖を平行移動させると袖口が手首から外れて手が出る）
 - 袖丈キーだけは長袖用（`pitari_longsleeve.sleeve_displacement`）。袖の頂点を前腕の向きに、腕の中心線に沿った位置の割合（縫い目0→袖口1）で動かす。Tシャツと同じ縫い目→袖口の直線の向きだと、ひじで曲がった腕から袖口が外れる。頂点ごとに中心線の向きへ動かすと、キーの値と袖丈の関係が直線から外れて検証に通らない
 - 頂点属性`_sleeve`に、腕に沿った位置（縫い目0→袖口1、胴は0）を入れる。ブラウザの`src/lib/sleeve-drape.ts`は、これで袖の中心線を作り、袖の中の腕・手を選ぶ
 - 袖丈が腕より長いときの垂れ方は、布のシミュレーションで作ったキー`drape_3`／`drape_6`／`drape_10`（余りが3・6・10cmのとき。値1で、袖丈キーだけの形から垂れた形への差）。標準体型・標準の身長で、手首から肩側へ8cmより先の袖だけを布として動かし、体に当てて60フレーム垂らす。ブラウザは余った長さで隣の2つを直線で混ぜる（10cmより長ければ`drape_10`のまま）

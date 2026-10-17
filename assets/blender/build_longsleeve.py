@@ -66,6 +66,7 @@ def main():
         pt.set_key_from_world(shirt, pt.height_key(d), pt.height_key_world(std_shirt, co))
     for part in pt.SIZE_PARTS:
         bt.make_size_key(shirt, part, lm, polys, ls.DISPLACEMENTS)
+    bt.make_fold_key(shirt, lm, polys, ls.DISPLACEMENTS["width_folds"])
 
     base, corr = bt.base_and_correction(shirt, lm, polys)
     pt.write_json(os.path.join(bt.MODELS, f"{NAME}_male_base.json"), base)

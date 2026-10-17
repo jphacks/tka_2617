@@ -298,7 +298,25 @@ def sleeve_displacement(P, lm, k):
     return d
 
 
-DISPLACEMENTS = {**pt.DISPLACEMENTS, "sleeve": sleeve_displacement}
+SLEEVE_FOLLOW_END = 0.45    # 身幅・肩幅のキーで、袖が付け根と一緒に動く量を、腕に沿った位置でここまでに 0 へ下げる
+
+
+def _taper_sleeves(fn):
+    """身幅・肩幅のキーで袖を付け根と一緒に平行移動させると、長袖では袖口が手首から外れて手が出るので、
+    付け根では一緒に動かし、ひじの手前までに動く量を 0 へ下げる"""
+    def taper(P, lm, k):
+        d = fn(P, lm, k)
+        t = sleeve_params(P, lm)
+        sl = t > 0
+        d[sl] *= (1 - pt._smooth01(t[sl] / SLEEVE_FOLLOW_END))[:, None]
+        return d
+    return taper
+
+
+DISPLACEMENTS = {**pt.DISPLACEMENTS, "sleeve": sleeve_displacement,
+                 "width": _taper_sleeves(pt.width_displacement),
+                 "width_folds": _taper_sleeves(pt.width_fold_displacement),
+                 "shoulder": _taper_sleeves(pt.shoulder_displacement)}
 
 
 # ---------------------------------------------------------------- 余った袖の垂れ方（布のシミュレーション）
@@ -324,7 +342,6 @@ def _radial_dirs(P, lm, side, idx):
 
 def drape_shape(shirt, body, lm, excess_cm):
     """袖丈キーで excess_cm 長くした長袖の、手首より先の袖を布として手に垂らした形（ワールド座標）"""
-    import bpy
     P0 = pt.mixed_coords(shirt, {"size_sleeve": float(excess_cm)})
     B = pt.world_coords(shirt, "Basis")
     t = sleeve_params(B, lm)
@@ -339,40 +356,7 @@ def drape_shape(shirt, body, lm, excess_cm):
         start[idx] += r * (DRAPE_OPEN * 0.045 * beyond ** 2)[:, None]
     free = arc > s0 - DRAPE_FREE_BACK
 
-    # シェイプキーを持つメッシュを複製すると、消すときにキーの参照が壊れるので、頂点と面だけで作る（ワールド座標）
-    me = bpy.data.meshes.new("drape_tmp")
-    me.from_pydata([tuple(p) for p in start], [], pt.polys_of(shirt))
-    me.update()
-    obj = bpy.data.objects.new("drape_tmp", me)
-    bpy.context.scene.collection.objects.link(obj)
-    pin = obj.vertex_groups.new(name="pin")
-    pin.add([int(i) for i in np.where(~free)[0]], 1.0, "REPLACE")
-    cloth = obj.modifiers.new("cloth", "CLOTH")
-    st = cloth.settings
-    st.quality = 12
-    st.mass = 0.2
-    st.tension_stiffness = st.compression_stiffness = 10.0
-    st.shear_stiffness = 5.0
-    st.bending_stiffness = 0.5                                # 指の間に落ち込まない程度の硬さ
-    st.air_damping = 1.0
-    st.vertex_group_mass = "pin"
-    cloth.collision_settings.distance_min = 0.006
-    cloth.collision_settings.collision_quality = 4
-    cloth.collision_settings.use_self_collision = False
-    col = body.modifiers.new("collision", "COLLISION")
-    body.collision.thickness_outer = 0.008                    # 指の上をなでるように（指の間に入り込まないように）
-    sc = bpy.context.scene
-    cloth.point_cache.frame_start, cloth.point_cache.frame_end = 1, DRAPE_FRAMES
-    for f in range(1, DRAPE_FRAMES + 1):
-        sc.frame_set(f)
-    dg = bpy.context.evaluated_depsgraph_get()
-    ev = obj.evaluated_get(dg).to_mesh()
-    co = np.empty(len(ev.vertices) * 3); ev.vertices.foreach_get("co", co)
-    obj.evaluated_get(dg).to_mesh_clear()
-    res = co.reshape(-1, 3)
-    body.modifiers.remove(col)
-    pt.remove_objects([obj])
-    sc.frame_set(1)
+    res = pt.settle_cloth(start, pt.polys_of(shirt), (~free).astype(float), body, DRAPE_FRAMES)
     moved = np.linalg.norm(res - P0, axis=1)
     pt.log(f"drape_{excess_cm}: 動いた頂点 {int((moved > 1e-4).sum())}、最大 {moved.max() * 100:.1f}cm")
     return res, P0

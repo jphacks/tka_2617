@@ -472,6 +472,16 @@ def key_from_mix(obj, src, value, name, lo=-10.0, hi=10.0):
     return new
 
 
+WIDTH_FRONT = 0.15          # 身幅 +: 前（体に沿う所）は、増やした分のこの割合だけ外へ出す
+# 縦のしわ：胴を一周したときの数（間隔）・強さ・高さによるずれの違う波を重ねる（同じ間隔の波だと規則的に見える）。
+# (一周の数, 強さ, 裾までに位置がずれる量 rad)。位置は WIDTH_FOLD_SEED の乱数で決める（作り直しても同じ形）
+WIDTH_FOLD_WAVES = [(5, 1.0, 0.25), (7, 0.7, -0.35), (9, 0.5, 0.45), (12, 0.3, -0.2)]
+WIDTH_FOLD_SEED = 7
+WIDTH_FRONT_ANGLE = 0.6     # 前の中心からこの角度（rad）までは、しわを出さない
+WIDTH_FOLD_FADE = 0.6       # その先この角度で、しわを 0 から 1 へ上げる（脇・背中で全部）
+WIDTH_FLARE = 1.0           # 脇の下（0）から裾（1）へ、広げる量をこの割合だけ増やす（胸で支えられた布が下へまっすぐ落ちて裾で広がる）
+
+
 def width_displacement(P, lm, k):
     """身幅 +: 脇より下の胴を水平に k 倍ぶん広げ、肩に向かって弱める。袖は縫い目についていく"""
     L, R = lm["sides"]["left"], lm["sides"]["right"]
@@ -484,6 +494,37 @@ def width_displacement(P, lm, k):
     d = np.zeros_like(P)
     d[torso, 0] = P[torso, 0] * k * w[torso]
     d[torso, 1] = (P[torso, 1] - cy) * k * w[torso]
+    follow_seam(P, lm, d)
+    return d
+
+
+def width_fold_displacement(P, lm, k):
+    """身幅を大きくしたときの見た目の形：前は体に近いまま少しだけ外へ出し、増やした分の多くは脇と背中の縦のしわにする
+    （胴を一周したときの位置で、外への出方を波にする）。しわは脇の下から裾まで縦にまっすぐ通す。
+    均等に広げる width_displacement だと、体から離れて風船のようにふくらむため。
+    波は一周の長さを余計に増やすので k に比例せず、マイナスでも長さが増える。サイズキーには使わず、
+    「+10cm で、均等に広げた形をこの形に置き換える差」のキー width_folds にする（make_fold_key）"""
+    L, R = lm["sides"]["left"], lm["sides"]["right"]
+    z_arm = (P[L["armpit"]][2] + P[R["armpit"]][2]) / 2
+    z_top = (P[L["shoulder_tip"]][2] + P[R["shoulder_tip"]][2]) / 2
+    torso = np.array(lm["torso_verts"])
+    cx, cy = P[torso, 0].mean(), P[torso, 1].mean()
+    t = np.clip((P[:, 2] - z_arm) / (z_top - z_arm), 0, 1)
+    wv = 1 - t * t * (3 - 2 * t)
+    X, Y = P[torso, 0] - cx, P[torso, 1] - cy
+    th = np.arctan2(X, -Y)                                   # 前の中心 0、脇 ±π/2、背中 ±π
+    side = _smooth01((np.abs(th) - WIDTH_FRONT_ANGLE) / WIDTH_FOLD_FADE)
+    z_hem = P[lm["hem"]][:, 2].mean()
+    h = np.clip((z_arm - P[torso, 2]) / (z_arm - z_hem), 0, 1)          # 脇の下 0 → 裾 1
+    phases = np.random.default_rng(WIDTH_FOLD_SEED).uniform(0, 2 * np.pi, len(WIDTH_FOLD_WAVES))
+    wave = sum(a * np.cos(n * th + p + drift * h) for (n, a, drift), p in zip(WIDTH_FOLD_WAVES, phases))
+    amp = sum(a for _, a, _ in WIDTH_FOLD_WAVES)
+    wave = 0.5 + 0.5 * wave / amp                                          # 0〜1、平均 0.5
+    flare = 1 + WIDTH_FLARE * h
+    out = k * (WIDTH_FRONT + (1 - WIDTH_FRONT) * 2 * side * wave) * wv[torso] * flare
+    d = np.zeros_like(P)
+    d[torso, 0] = X * out
+    d[torso, 1] = Y * out
     follow_seam(P, lm, d)
     return d
 
@@ -796,6 +837,51 @@ def apply_pitari_uv(obj):
     me.uv_layers.active = uv
     uv.active_render = True
     return uv
+
+
+# ---------------------------------------------------------------- 布のシミュレーション
+
+CLOTH_FRAMES = 60
+
+
+def settle_cloth(P, polys, pin, body, frames=CLOTH_FRAMES, stretch=10.0, mass=0.2):
+    """P（ワールド座標）を布として、pin（頂点ごとの 0〜1、1 は止める）で止め、体に当てて重力で垂らした形（ワールド座標）。
+    stretch は伸び・縮みの硬さ、mass は布の重さ"""
+    me = bpy.data.meshes.new("cloth_tmp")
+    # シェイプキーを持つメッシュを複製すると、消すときにキーの参照が壊れるので、頂点と面だけで作る
+    me.from_pydata([tuple(p) for p in P], [], polys)
+    me.update()
+    obj = bpy.data.objects.new("cloth_tmp", me)
+    bpy.context.scene.collection.objects.link(obj)
+    g = obj.vertex_groups.new(name="pin")
+    for i in np.where(pin > 0)[0]:
+        g.add([int(i)], float(pin[i]), "REPLACE")
+    cloth = obj.modifiers.new("cloth", "CLOTH")
+    st = cloth.settings
+    st.quality = 12
+    st.mass = mass
+    st.tension_stiffness = st.compression_stiffness = stretch
+    st.shear_stiffness = 5.0
+    st.bending_stiffness = 0.5                                # 指の間に落ち込まない程度の硬さ
+    st.air_damping = 1.0
+    st.vertex_group_mass = "pin"
+    cloth.collision_settings.distance_min = 0.006
+    cloth.collision_settings.collision_quality = 4
+    cloth.collision_settings.use_self_collision = False
+    col = body.modifiers.new("collision", "COLLISION")
+    body.collision.thickness_outer = 0.008                    # 指の上をなでるように（指の間に入り込まないように）
+    sc = bpy.context.scene
+    cloth.point_cache.frame_start, cloth.point_cache.frame_end = 1, frames
+    for f in range(1, frames + 1):
+        sc.frame_set(f)
+    dg = bpy.context.evaluated_depsgraph_get()
+    ev = obj.evaluated_get(dg).to_mesh()
+    co = np.empty(len(ev.vertices) * 3); ev.vertices.foreach_get("co", co)
+    obj.evaluated_get(dg).to_mesh_clear()
+    body.modifiers.remove(col)
+    remove_objects([obj])
+    sc.frame_set(1)
+    return co.reshape(-1, 3)
 
 
 def set_point_attribute(obj, name, values):
