@@ -1,6 +1,11 @@
 # format を先に、lint を後に流したいので jobs で順番を固定する
 pre-commit:
   jobs:
+    # mdのtextlintだけはPrettierより先に流す。表の中のコードの前後の空白を消すと、列の幅が変わるため
+    - name: lint md
+      glob: "*.md"
+      run: pnpm exec textlint --fix {staged_files}
+      stage_fixed: true
     - name: format
       glob: "*.{js,mjs,ts,tsx,json,md,yml,yaml,css}"
       run: pnpm exec prettier --write --ignore-unknown {staged_files}
@@ -14,4 +19,11 @@ pre-commit:
       root: "apps/api/"
       glob: "*.{ts,mjs}"
       run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
+    # uvが無い人のcommitは止めず、PRのCIで確かめる（docs/adr/0022-python-lint-with-ruff.md）
+    - name: python
+      glob: "*.py"
+      run: |
+        if ! command -v uvx >/dev/null; then echo "uvが無いのでruffを飛ばす（PRのCIで確かめる）"; exit 0; fi
+        uvx ruff@0.17.1 check --fix {staged_files} && uvx ruff@0.17.1 format {staged_files}
       stage_fixed: true
