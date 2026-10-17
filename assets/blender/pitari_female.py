@@ -175,6 +175,12 @@ def add_fit_body(body, keep, topo, std, shapes, height_shapes, thumb_in):
     M = np.array(body.matrix_world.inverted())
     me.from_pydata([tuple(p) for p in fit_std @ M[:3, :3].T + M[:3, 3]], [], pt.polys_of(body))
     me.shade_smooth()                       # 面ごとに頂点が分かれて glb が大きくならないように
+    # 体と同じ UV を持たせる。glb は UV の継ぎ目で頂点を分けるので、そろえないと頂点の並びが体と変わり、
+    # ブラウザで着せるための体の頂点番号を体に使えない（袖の中に隠れる腕など）
+    src = body.data.uv_layers.active
+    uv = np.empty(len(src.data) * 2)
+    src.data.foreach_get("uv", uv)
+    me.uv_layers.new(name=src.name).data.foreach_set("uv", uv)
     me.update()
     fit = bpy.data.objects.new(FIT_NAME, me)
     bpy.context.scene.collection.objects.link(fit)
