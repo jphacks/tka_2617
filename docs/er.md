@@ -47,7 +47,7 @@ erDiagram
 - 購入時期と季節は[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。
 - 元画像とはブラウザで向き・縮小・EXIF除去を確定した画像であり、カメラの元ファイルとは異なる。
 - 全テーブルでRLSを有効にし、公開ポリシーは設けない。apiのsecret keyだけがDBを操作する。
-- Storageは非公開のgarmentsバケット。JPEG・PNGを許可し、1枚16MiBまで（2048pxのテクスチャのため。利用者が上げる写真は、apiが8MiBまでに抑える）。apiが期限付きURLを発行する。
+- Storageは非公開のgarmentsバケット。JPEG・PNGを許可し、1枚16MiBまで（テクスチャのために上げた。実際のテクスチャは約0.5MB。利用者が上げる写真は、apiが8MiBまでに抑える）。apiが期限付きURLを発行する。
 - Storageの画像はDBの外部キー削除では消えないため、削除サービスが両方を処理する。
 
 ## 今後の設計候補
