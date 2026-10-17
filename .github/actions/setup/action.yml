@@ -1,0 +1,14 @@
+# ci.ymlのNode.jsを使うjobで、同じ準備を繰り返さないようまとめた。checkoutの後に呼ぶ
+name: setup
+description: pnpmとNode.jsを用意して、依存を入れる
+runs:
+  using: composite
+  steps:
+    # pnpmのバージョンは、package.jsonのpackageManagerから決まる
+    - uses: pnpm/action-setup@v6
+    - uses: actions/setup-node@v7
+      with:
+        node-version-file: .node-version
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash

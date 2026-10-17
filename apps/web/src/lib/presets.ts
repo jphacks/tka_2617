@@ -20,6 +20,3 @@ export const PresetsSchema = z.object({
   skinColors: z.array(HexColorSchema),
   sockColors: z.array(HexColorSchema),
 });
-
-export type Preset = z.infer<typeof PresetSchema>;
-export type Presets = z.infer<typeof PresetsSchema>;
