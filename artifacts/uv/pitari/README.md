@@ -293,7 +293,7 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 
 ## ズボン
 
-2026-10-15に、受領した`pitari_trousers.blend`の`jeans`（1462頂点・1432面）へ切り替えた。素材は[`inputs/trousers/`](inputs/trousers/README.md)、テンプレートは`trousers/uv_template.json`のバージョン2。生成物はGitには含めない。方式は[ADR 0024](../../../docs/adr/0024-trousers-uv-template.md)、新モデルへの切り替えは[ADR 0025](../../../docs/adr/0025-trousers-template-from-delivered-uv.md)を参照する。旧モデル用のテクスチャは新モデルへ流用しない。
+2026-10-15に、受領した`pitari_trousers.blend`の`jeans`（1462頂点・1432面）へ切り替えた。素材は[`inputs/trousers/`](inputs/trousers/README.md)、テンプレートは`trousers/uv_template.json`のバージョン2。生成物はGitには含めない。方式は[ADR 0025](../../../docs/adr/0025-trousers-uv-template.md)、新モデルへの切り替えは[ADR 0026](../../../docs/adr/0026-trousers-template-from-delivered-uv.md)を参照する。旧モデル用のテクスチャは新モデルへ流用しない。
 
 ### UVと部位
 
