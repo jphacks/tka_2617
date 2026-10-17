@@ -71,12 +71,18 @@ type Props = {
   heightScale: number;
   /** 体のmorph（体型キー） */
   bodyMorphs: Record<string, number>;
-  /** 上の服（Tシャツか長袖）のglb */
+  /** 上の服（Tシャツ・長袖・シャツ）のglb */
   shirtUrl: string;
   /** 上の服のmorph（体型キー＋身長キー＋サイズキー） */
   shirtMorphs: Record<string, number>;
   /** 服が小さすぎるときはfalse。体だけを表示する */
   showShirt: boolean;
+  /** 上の服の中に着る服（シャツの下のTシャツ）のglb */
+  innerUrl: string;
+  /** 中に着る服のmorph（体型キー＋身長キー＋サイズキー） */
+  innerMorphs: Record<string, number>;
+  /** 中に着ないとき、小さすぎるときはfalse */
+  showInner: boolean;
   /** ズボンのmorph（体型キー＋身長キー＋サイズキー） */
   trouserMorphs: Record<string, number>;
   /** ズボンを着ないとき、小さすぎるときはfalse */
@@ -179,7 +185,7 @@ function shoeFloor(shoe: GarmentCollider): FloorAt {
   };
 }
 
-/** 髪・靴のプリセット。体と同じ体型キー・身長キーを入れると体に重なる */
+/** 髪・靴のプリセットと、中に着る服。体と同じ体型キー・身長キーを入れると体に重なる */
 function PresetModel({
   url,
   morphs,
@@ -223,6 +229,9 @@ function Models({
   shirtUrl,
   shirtMorphs,
   showShirt,
+  innerUrl,
+  innerMorphs,
+  showInner,
   trouserMorphs,
   showTrousers,
   skinColor,
@@ -257,6 +266,13 @@ function Models({
   const sockTints = useMemo(() => ({ socks: sockColor }), [sockColor]);
   // 読み込んだ靴（押し出しの計算で、裾を靴の上に乗せる）
   const [shoeScene, setShoeScene] = useState<Object3D | null>(null);
+  // 読み込んだ中の服（押し出してから、上の服をその外へ押し出す）
+  const [innerScene, setInnerScene] = useState<Object3D | null>(null);
+  const inner = useMemo(() => {
+    if (!innerScene) return null;
+    const mesh = firstMesh(innerScene);
+    return { mesh, topo: shirtTopology(mesh) };
+  }, [innerScene]);
   const armsHidden = useRef<number[]>([]);
   const updateHide = useCallback(() => {
     const hide = hideAttribute(bodyMesh);
@@ -326,8 +342,13 @@ function Models({
         shoeLayer?.geometry.dispose();
       }
       if (showShirt) {
-        // Tシャツはズボンの上に着るので、押し出したズボンの外へも押し出す
+        // 上の服はズボンの上に着るので、押し出したズボンの外へも押し出す
         const layers = showTrousers ? [buildGarmentCollider(trouserMesh)] : [];
+        // 中の服も、体とズボンの外へ押し出してから、上の服をその外へ押し出す
+        if (inner) {
+          updatePush(inner.mesh, bodyBVH.current, inner.topo, { layers });
+          layers.push(buildGarmentCollider(inner.mesh, { wraps: true }));
+        }
         // 長袖は腕に沿った位置（_sleeve）を持つ。袖の中の腕・手（ひじ・親指など）も、袖の面の間から出さない
         const sleeve = shirtMesh.geometry.hasAttribute("_sleeve")
           ? shirtMesh.geometry.getAttribute("_sleeve").array
@@ -370,6 +391,8 @@ function Models({
     onPushStats,
     updateHide,
     shoeScene,
+    inner,
+    innerMorphs,
   ]);
 
   useEffect(() => {
@@ -397,6 +420,15 @@ function Models({
     <>
       <primitive object={avatar.scene} />
       {showShirt && <primitive object={shirt.scene} />}
+      {showShirt && showInner && (
+        <Suspense fallback={null}>
+          <PresetModel
+            url={innerUrl}
+            morphs={innerMorphs}
+            onScene={setInnerScene}
+          />
+        </Suspense>
+      )}
       {showTrousers && <primitive object={trousers.scene} />}
       {/* 髪・靴を選び直しても、読み込み中に体と服が消えないよう、それぞれで待つ */}
       <Suspense fallback={null}>
