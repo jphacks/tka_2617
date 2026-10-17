@@ -1,6 +1,9 @@
 # format を先に、lint を後に流したいので jobs で順番を固定する
 pre-commit:
   jobs:
+    # 秘密が混ざっていたら、整形より先に止める
+    - name: secrets
+      run: bash scripts/check-secrets.sh
     # mdのtextlintだけはPrettierより先に流す。表の中のコードの前後の空白を消すと、列の幅が変わるため
     - name: lint md
       glob: "*.md"

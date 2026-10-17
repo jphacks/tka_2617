@@ -74,6 +74,11 @@ lefthookが、stagedのファイルをPrettierで整形し、ESLintで検査す�
 
 Pythonのファイルは、uvがあればruffで検査して整形する（[ADR 0022](adr/0022-python-lint-with-ruff.md)）。uvが無いときは飛ばすが、PRのCIで同じ検査が走る。まだruffをかけていないディレクトリは、`ruff.toml`の`extend-exclude`にある。
 
+いちばん先に、gitleaksで、stagedの変更に鍵やトークンなどの秘密が混ざっていないかを調べる（`scripts/check-secrets.sh`）。gitleaksが無ければDockerで動かし、どちらも無ければ飛ばす。PRのCIの`secrets`は、履歴をすべて調べる。
+
+- 見つかったら、その変更をstagedから外す。誤検出なら、その行の末尾に`gitleaks:allow`と書く
+- 秘密をpushしてしまったら、履歴から消すだけでは足りない。公開リポジトリなので、見られた前提で鍵を無効にして作り直す
+
 ## DB を変えるとき
 
 1. `supabase migration new <変更の名前>`でmigrationを作り、SQLを書く
