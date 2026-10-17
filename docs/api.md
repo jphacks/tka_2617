@@ -160,12 +160,15 @@ apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBear
 
 `GET/PUT /v1/avatar`、`GET/POST /v1/outfits`、`DELETE /v1/outfits/:id`は未実装。[要件候補](requirements-candidates.md)で検討する。
 
-### アバター設定の候補（未実装）
+### アバター設定の候補（ログインを入れるまで作らない）
 
-- `PUT /v1/avatar`の入力候補：`{ heightCm: number, build: Build }`。
-- `GET /v1/avatar`の出力候補：`{ heightCm: number | null, build: Build | null }`。
+アバターの設定は、ログインを入れるまでAPIを作らず、ブラウザのlocalStorageに保存する。ログインが無いうちにDBへ保存すると、全員が同じデモユーザーなので上書きし合い、身長や性別を誰でも読めてしまうため（[ADR 0036](adr/0036-avatar-settings-in-browser.md)）。
+
+- ログインを入れたら、`GET/PUT /v1/avatar`で次の形を読み書きする。項目と値は`apps/web/src/lib/avatar-settings.ts`の`AvatarSettings`と同じ。
+- `{ gender, heightCm, build, bodyFrame, skinColor, hairId, hairColor }`。まだ登録していなければ`GET`は`null`を返す。
 - `heightCm`は150〜195。3Dモデルで身長を変えられる範囲（[ADR 0008](adr/0008-height-keys-and-tables.md)）。
-- `Build`は`slim`（細身）・`standard`（標準）・`broad`（がっしり）・`chubby`（ぽっちゃり）。体重は持たない（[ADR 0009](adr/0009-build-instead-of-weight.md)）。
+- `build`は`slim`（細身）・`standard`（標準）・`broad`（がっしり）・`chubby`（ぽっちゃり）。体重は持たない（[ADR 0009](adr/0009-build-instead-of-weight.md)）。
+- `bodyFrame`（骨格）は、`gender`が`female`のときだけ値を持ち、ほかは`null`。
 
 ## 参考文献
 

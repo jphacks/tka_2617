@@ -3,8 +3,8 @@ import { test } from "node:test";
 import longsleeveHeightJson from "@/../public/models/longsleeve_male_height.json";
 import shirtHeightJson from "@/../public/models/shirt_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
+import { BUILDS } from "@/lib/avatar-settings";
 import {
-  BUILDS,
   type Fit,
   fitAt,
   fitStatus,

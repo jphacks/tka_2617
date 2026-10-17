@@ -5,11 +5,15 @@ import shirtHeightJson from "@/../public/models/shirt_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import presetsJson from "@/../public/presets/presets.json";
 import {
+  defaultAvatarSettings,
+  heightFromInput,
+  type AvatarSettings,
+  type Build,
+} from "@/lib/avatar-settings";
+import {
   buildKeyValues,
   fitAt,
   fitStatus,
-  HEIGHT_MAX_CM,
-  HEIGHT_MIN_CM,
   heightKeyValues,
   HeightTableSchema,
   MEASUREMENT_KEYS,
@@ -17,7 +21,6 @@ import {
   STRETCH_RATIO,
   topMeasurements,
   WOVEN_STRETCH_RATIO,
-  type Build,
   type Measurements,
 } from "@/lib/garment";
 import type { GarmentView } from "@pitari/api";
@@ -191,12 +194,12 @@ function parseInputs<K extends string>(
 
 /**
  * 試着の状態（体・服・髪・靴の選択と服の実寸）と、そこから決まるmorphの値。
- * 本番のアバター画面と確認ページ（/dev/tryon）で使う
+ * 本番のアバター画面と確認ページ（/dev/tryon）で使う。体と髪は、initialの値で始める
  */
-export function useTryOn() {
-  const [build, setBuild] = useState<Build>("standard");
+export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
+  const [build, setBuild] = useState<Build>(initial.build);
   const [heightInput, setHeightInput] = useState(() =>
-    heightTable.standard_cm.toFixed(1),
+    initial.heightCm.toFixed(1),
   );
   const [top, setTop] = useState<Top>("tshirt");
   const [shirtFront, setShirtFront] = useState<ShirtFront>("partly");
@@ -210,9 +213,9 @@ export function useTryOn() {
   const [trouserInput, setTrouserInput] = useState<TrouserInputs>(() =>
     toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
   );
-  const [hairId, setHairId] = useState<string | null>(presets.hair[0].id);
-  const [hairColor, setHairColor] = useState(presets.hairColors[1]);
-  const [skinColor, setSkinColor] = useState(presets.skinColors[1]);
+  const [hairId, setHairId] = useState(initial.hairId);
+  const [hairColor, setHairColor] = useState(initial.hairColor);
+  const [skinColor, setSkinColor] = useState(initial.skinColor);
   const [shoeId, setShoeId] = useState<string | null>(presets.shoes[0].id);
   const [sockColor, setSockColor] = useState(presets.sockColors[0]);
 
@@ -223,12 +226,9 @@ export function useTryOn() {
   );
 
   // 範囲外や数値でない身長は、標準の身長で表示する
-  const heightValue = Number(heightInput);
-  const isHeightValid =
-    heightInput.trim() !== "" &&
-    heightValue >= HEIGHT_MIN_CM &&
-    heightValue <= HEIGHT_MAX_CM;
-  const heightCm = isHeightValid ? heightValue : heightTable.standard_cm;
+  const heightValue = heightFromInput(heightInput);
+  const isHeightValid = heightValue !== null;
+  const heightCm = heightValue ?? heightTable.standard_cm;
 
   const fit = useMemo(
     () => fitAt(build, heightCm, topTable),
