@@ -89,8 +89,8 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 ## webでの使い方（apps/web）
 
 - 服が着られるかは身幅だけで決める（`fitStatus`）。体の身幅（服の身幅と同じ高さで体を切った胴の一周÷2、`tshirt_male_height.json`の`body_width`）以上ならそのまま、体の身幅より小さく90%以上なら「タイト」、それより小さければ「小さすぎます」と出して服を表示しない（伸び率`STRETCH_RATIO`＝10%）
-- 型は`src/lib/garment.ts`にzodで定義する（`GarmentSchema`、`MeasurementsSchema`、`HeightTableSchema`）
-  - `GarmentSchema`はチーム共通の服データ形式（仮）。`tshirtMeasurements(garment)`で4項目に変換する。形式が確定したら差し替える
+- 3D側の型は`src/lib/garment.ts`にzodで定義する（`MeasurementsSchema`、`HeightTableSchema`）
+  - 服データは`@pitari/api`の`GarmentView`をそのまま使う（ADR 0030）。`topMeasurements(garment)`で4項目、`trouserMeasurements(garment)`で6項目に変換する
 - morph targetは`src/lib/morph.ts`の`setMorph(root, name, value)`で名前から引く。インデックスを直書きしない
 - 体型キー：`buildKeyValues(build)`（選んだ体型だけ1、体とTシャツの両方に入れる）
 - 身長キー：`heightKeyValues(身長, table)`（体とTシャツの両方に入れる）
