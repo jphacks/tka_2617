@@ -46,7 +46,7 @@
 - [0029 DBの型をmigrationから作ってcommitし、apiのSupabaseのクライアントに付ける](0029-commit-db-types.md)
 - [0030 APIの型はapiのzodから作ってHono RPCで渡し、Orvalは入れない](0030-api-types-from-zod-not-orval.md)
 - [0031 テクスチャの保存フォルダを生成日時から始める](0031-texture-filenames-with-dates.md)
-- [0032 完成したテクスチャは、apiが推論サービスから受け取ってStorageに置き、画像のAPIで配る](0032-serve-texture-through-api.md)
+- [0033 完成したテクスチャは、apiが推論サービスから受け取ってStorageに置き、画像のAPIで配る](0033-serve-texture-through-api.md)
 
 ## 参考文献
 

@@ -140,7 +140,7 @@ Tシャツ・長そで・ズボンでテンプレートが違い、長そでは�
 
 画像は`GET /v1/garments/:id/images/:imageId`で取る（2048pxのPNG）。服の一覧と詳細の`images`にも、roleが`texture`の画像として入る。作成中の間は、画面が数秒おきに聞き直す。服が無ければ404。推論サービスにつながらないときは、保存済みのテクスチャがあれば`done`、無ければ503。`message`は決まった文で、推論サービスの理由はapiのログにだけ残す。
 
-完成した作業は、`{プロフィールID}/{服ID}/texture-{UUID}.png`としてStorageに置き、`garment_images`の`texture_job`に作業フォルダ名を記録する。同じ作業は2回保存しない。新しい作業が完成したら、DBの関数`save_garment_texture`で行を1つのトランザクションで差し替え、古い画像を消す。裏面を撮り直す前に保存したテクスチャは使わない。[ADR 0032](adr/0032-serve-texture-through-api.md)を参照。
+完成した作業は、`{プロフィールID}/{服ID}/texture-{UUID}.png`としてStorageに置き、`garment_images`の`texture_job`に作業フォルダ名を記録する。同じ作業は2回保存しない。新しい作業が完成したら、DBの関数`save_garment_texture`で行を1つのトランザクションで差し替え、古い画像を消す。裏面を撮り直す前に保存したテクスチャは使わない。[ADR 0033](adr/0033-serve-texture-through-api.md)を参照。
 
 apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBearerトークン）：
 

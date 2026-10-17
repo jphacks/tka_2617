@@ -2,7 +2,7 @@
 
 日付：2026-10-17
 
-テクスチャを画面とAPIに出さない点は、[ADR 0032](0032-serve-texture-through-api.md)で置き換えた。PC内のフォルダに作る点は変わらない。
+テクスチャを画面とAPIに出さない点は、[ADR 0033](0033-serve-texture-through-api.md)で置き換えた。PC内のフォルダに作る点は変わらない。
 
 ## 背景
 
