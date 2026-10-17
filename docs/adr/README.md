@@ -50,7 +50,8 @@
 - [0033 完成したテクスチャは、apiが推論サービスから受け取ってStorageに置き、画像のAPIで配る](0033-serve-texture-through-api.md)
 - [0034 デモまではアバターを男性だけで作り、女性は時間があれば足す](0034-male-avatar-first.md)
 - [0035 撮影の画面で最初に服の種類を選び、シャツを種類に足す](0035-choose-garment-type-first.md)
-- [0036 シャツのテクスチャは、前後から投影したUVの外周を写真の輪郭に合わせて作る](0036-shirt-texture-from-projected-uv.md)
+- [0036 アバターの設定は、ログインを入れるまでブラウザのlocalStorageに保存する](0036-avatar-settings-in-browser.md)
+- [0037 シャツのテクスチャは、前後から投影したUVの外周を写真の輪郭に合わせて作る](0037-shirt-texture-from-projected-uv.md)
 
 ## 参考文献
 

@@ -163,7 +163,7 @@ if (selected) {
 - `original`：旧v1の遠近補正前JPEG。旧データではmeasurementが補正後JPEG、A4四隅はoriginalにある。
 - `back`・`back_cutout`：裏面のJPEGと表示用の透過PNG。採寸しないので点・A4四隅・縮尺を持たない。裏面がない服もある。
 
-服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。アプリからは`GET /api/garments/{服ID}/texture`で状態を聞き、`done`なら`/api/garments/{服ID}/images/{imageId}`のPNGを貼る（[API一覧](api.md)の「テクスチャの状態を聞く」、[ADR 0033](adr/0033-serve-texture-through-api.md)）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせ、GLBとUVの一致を検証している。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
+服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。アプリからは`GET /api/garments/{服ID}/texture`で状態を聞き、`imageId`があれば`/api/garments/{服ID}/images/{imageId}`のPNGを貼る。作り直しの間も、前に作ったものがあれば`imageId`が返る。`processing`の間は数秒おきに聞き直す（[API一覧](api.md)の「テクスチャの状態を聞く」、[ADR 0033](adr/0033-serve-texture-through-api.md)）。three.jsでは`TextureLoader`で読み、`texture.flipY = false`、`texture.colorSpace = SRGBColorSpace`にしてから`map`に入れる。glTFのUVの向きに合わせるため（runa、#67）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせている。テンプレートのUVは、3つともアプリのglbと一致することを確かめた（#67）。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
 
 現在の画面からはmeasurementとcutoutの2枚を保存し、裏面を撮った場合はbackとback_cutoutも保存する。服1着につき各roleは最大1枚。クローゼットの一覧は表だけを出し、cutout→measurement→originalの順で選ぶ（`garmentPhotoUrl`）。点を見るときは必ずmeasurementを選ぶ。
 
@@ -296,7 +296,7 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 | Tシャツ    | `short_sleeve_top` | `tshirt_male.glb`     | 着丈・身幅・肩幅・袖丈         |
 | ズボン     | `trousers`         | `trousers_male.glb`   | ウエスト・ヒップ・わたり幅など |
 
-シャツは長そでと同じ点で採寸する。テクスチャは、`shirt_male.glb`のpitari UVに合わせて作る（[ADR 0036](adr/0036-shirt-texture-from-projected-uv.md)）。
+シャツは長そでと同じ点で採寸する。テクスチャは、`shirt_male.glb`のpitari UVに合わせて作る（[ADR 0037](adr/0037-shirt-texture-from-projected-uv.md)）。
 
 ## 長そでの受け渡し
 
