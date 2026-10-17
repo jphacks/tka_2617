@@ -5,12 +5,15 @@ import shirtHeightJson from "@/../public/models/shirt_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import presetsJson from "@/../public/presets/presets.json";
 import {
+  defaultAvatarSettings,
+  heightFromInput,
+  type AvatarSettings,
+  type Build,
+} from "@/lib/avatar-settings";
+import {
   buildKeyValues,
   fitAt,
   fitStatus,
-  GarmentSchema,
-  HEIGHT_MAX_CM,
-  HEIGHT_MIN_CM,
   heightKeyValues,
   HeightTableSchema,
   MEASUREMENT_KEYS,
@@ -18,9 +21,9 @@ import {
   STRETCH_RATIO,
   topMeasurements,
   WOVEN_STRETCH_RATIO,
-  type Build,
   type Measurements,
 } from "@/lib/garment";
+import type { GarmentView } from "@pitari/api";
 import { PresetsSchema } from "@/lib/presets";
 import { drapeKeyValues } from "@/lib/sleeve-drape";
 import {
@@ -38,8 +41,13 @@ export const heightTable = HeightTableSchema.parse(tshirtHeightJson);
 export const trouserTable = TrouserTableSchema.parse(trousersHeightJson);
 export const presets = PresetsSchema.parse(presetsJson);
 
-/** 確認用の服データ（チーム共通の形式・仮） */
-export const SAMPLE_GARMENT = GarmentSchema.parse({
+/** 確認用の服データ。服が指定されていないときに着せる */
+type SampleGarment = Pick<
+  GarmentView,
+  "id" | "name" | "category" | "measurements"
+>;
+
+export const SAMPLE_GARMENT = {
   id: "11111111-1111-4111-8111-111111111111",
   name: "白いTシャツ",
   category: "short_sleeve_top",
@@ -55,10 +63,9 @@ export const SAMPLE_GARMENT = GarmentSchema.parse({
     inseamCm: null,
     hemWidthCm: null,
   },
-  measurementVersion: "df2-a4-midpoint-v1",
-});
+} satisfies SampleGarment;
 
-const SAMPLE_LONGSLEEVE = GarmentSchema.parse({
+const SAMPLE_LONGSLEEVE = {
   id: "33333333-3333-4333-8333-333333333333",
   name: "白い長袖",
   category: "long_sleeve_top",
@@ -74,13 +81,12 @@ const SAMPLE_LONGSLEEVE = GarmentSchema.parse({
     inseamCm: null,
     hemWidthCm: null,
   },
-  measurementVersion: "df2-a4-midpoint-v1",
-});
+} satisfies SampleGarment;
 
-const SAMPLE_SHIRT = GarmentSchema.parse({
+const SAMPLE_SHIRT = {
   id: "44444444-4444-4444-8444-444444444444",
   name: "白いシャツ",
-  category: "long_sleeve_top",
+  category: "shirt",
   measurements: {
     shoulderWidthCm: 44,
     sleeveLengthCm: 60,
@@ -93,8 +99,7 @@ const SAMPLE_SHIRT = GarmentSchema.parse({
     inseamCm: null,
     hemWidthCm: null,
   },
-  measurementVersion: "df2-a4-midpoint-v1",
-});
+} satisfies SampleGarment;
 
 /** シャツの中に着るTシャツの実寸。今はサンプルの服で固定する */
 const INNER_TARGET = topMeasurements(SAMPLE_GARMENT);
@@ -135,7 +140,7 @@ export type ShirtFront = keyof typeof SHIRT_FRONTS;
 export const SHIRT_FRONT_IDS = Object.keys(SHIRT_FRONTS) as ShirtFront[];
 export const TOP_IDS = Object.keys(TOPS) as Top[];
 
-export const SAMPLE_TROUSERS = GarmentSchema.parse({
+export const SAMPLE_TROUSERS = {
   id: "22222222-2222-4222-8222-222222222222",
   name: "ジーンズ",
   category: "trousers",
@@ -151,8 +156,7 @@ export const SAMPLE_TROUSERS = GarmentSchema.parse({
     inseamCm: 76,
     hemWidthCm: 19,
   },
-  measurementVersion: "df2-a4-flat-midpoint-v2",
-});
+} satisfies SampleGarment;
 
 export type Inputs = Record<keyof Measurements, string>;
 export type TrouserInputs = Record<keyof TrouserMeasurements, string>;
@@ -190,12 +194,12 @@ function parseInputs<K extends string>(
 
 /**
  * 試着の状態（体・服・髪・靴の選択と服の実寸）と、そこから決まるmorphの値。
- * 本番のアバター画面と確認ページ（/dev/tryon）で使う
+ * 本番のアバター画面と確認ページ（/dev/tryon）で使う。体と髪は、initialの値で始める
  */
-export function useTryOn() {
-  const [build, setBuild] = useState<Build>("standard");
+export function useTryOn(initial: AvatarSettings = defaultAvatarSettings) {
+  const [build, setBuild] = useState<Build>(initial.build);
   const [heightInput, setHeightInput] = useState(() =>
-    heightTable.standard_cm.toFixed(1),
+    initial.heightCm.toFixed(1),
   );
   const [top, setTop] = useState<Top>("tshirt");
   const [shirtFront, setShirtFront] = useState<ShirtFront>("partly");
@@ -209,9 +213,9 @@ export function useTryOn() {
   const [trouserInput, setTrouserInput] = useState<TrouserInputs>(() =>
     toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
   );
-  const [hairId, setHairId] = useState<string | null>(presets.hair[0].id);
-  const [hairColor, setHairColor] = useState(presets.hairColors[1]);
-  const [skinColor, setSkinColor] = useState(presets.skinColors[1]);
+  const [hairId, setHairId] = useState(initial.hairId);
+  const [hairColor, setHairColor] = useState(initial.hairColor);
+  const [skinColor, setSkinColor] = useState(initial.skinColor);
   const [shoeId, setShoeId] = useState<string | null>(presets.shoes[0].id);
   const [sockColor, setSockColor] = useState(presets.sockColors[0]);
 
@@ -222,12 +226,9 @@ export function useTryOn() {
   );
 
   // 範囲外や数値でない身長は、標準の身長で表示する
-  const heightValue = Number(heightInput);
-  const isHeightValid =
-    heightInput.trim() !== "" &&
-    heightValue >= HEIGHT_MIN_CM &&
-    heightValue <= HEIGHT_MAX_CM;
-  const heightCm = isHeightValid ? heightValue : heightTable.standard_cm;
+  const heightValue = heightFromInput(heightInput);
+  const isHeightValid = heightValue !== null;
+  const heightCm = heightValue ?? heightTable.standard_cm;
 
   const fit = useMemo(
     () => fitAt(build, heightCm, topTable),

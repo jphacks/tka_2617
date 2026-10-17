@@ -2,7 +2,7 @@
 
 ## 真上撮影の採寸（現在の方式）
 
-`POST /v1/detections`のoptionsは`{ category: "auto" | "short_sleeve_top" | "long_sleeve_top" | "trousers", stage: "paper" | "garment" | "landmarks" | "cutout" | "all", paperCorners?: [number, number][], bbox?: [number, number, number, number], points?: LandmarkPoint[] }`。stage省略時はall。画像を遠近補正せず、A4の長辺を29.7cm、短辺を21cmとして縮尺を自動計算する。四隅・bbox・ランドマークはすべて送信画像の座標。
+`POST /v1/detections`のoptionsは`{ category: "auto" | "short_sleeve_top" | "long_sleeve_top" | "shirt" | "trousers", stage: "paper" | "garment" | "landmarks" | "cutout" | "all", paperCorners?: [number, number][], bbox?: [number, number, number, number], points?: LandmarkPoint[] }`。stage省略時はall。画像を遠近補正せず、A4の長辺を29.7cm、短辺を21cmとして縮尺を自動計算する。四隅・bbox・ランドマークはすべて送信画像の座標。
 
 画面の1回の操作からpaper→garment→landmarks→cutoutを順に呼び、工程の切り替わりと経過時間から進捗の目安を1%刻みで表示する。推論内部の実測割合や残り時間の予測値ではなく、100%は全処理の完了後だけ表示する。返却値に`cutoutBase64`（透過PNGまたはnull）と`cutoutWidthPx`・`cutoutHeightPx`（null可）を追加する。
 
@@ -48,7 +48,7 @@ multipartの`image`はJPEG、最大8MiB・1200万画素・各辺4096px。ブラ�
 
 ```ts
 {
-  category: "short_sleeve_top" | "long_sleeve_top" | "trousers" | "auto";
+  category: "short_sleeve_top" | "long_sleeve_top" | "shirt" | "trousers" | "auto";
   paperCorners?: [number, number][];
   bbox?: [number, number, number, number];
   points?: { id: number; x: number; y: number; score: number | null }[];
@@ -85,7 +85,7 @@ POSTはmultipartの`image`（測定用JPEG）、`cutoutImage`（任意の透過P
 type Garment = {
   id: string;
   name: string;
-  category: "short_sleeve_top" | "long_sleeve_top" | "trousers";
+  category: "short_sleeve_top" | "long_sleeve_top" | "shirt" | "trousers";
   measurements: Measurements;
   measurementVersion: string;
   purchasedMonth: string | null; // "2026-04"のような年月
@@ -123,7 +123,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 `POST /v1/garments/:id/texture`（webは`POST /api/garments/:id/texture`）。リクエスト本文は不要。現在のプロフィールの服を照合し、保存済みの表のmeasurement画像と裏面のback画像を使う。カテゴリ・保存キー・画像URLはクライアントから受け取らない。
 
-受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗は下の`GET /v1/garments/:id/texture`で確認する。apiはDBの服の登録日時`created_at`を内部の`POST /textures`の`garmentCreatedAt`として送る。作業フォルダと完成画像の確認用ファイル名は生成開始日時（JST）・カテゴリ・服IDの先頭8文字の順に並べる。`job.json`の`textureFile`に確認用ファイル名、`garmentCreatedAt`・`createdAt`・`completedAt`に各日時を記録する。
+受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗は下の`GET /v1/garments/:id/texture`で確認する。apiはDBの服の登録日時`created_at`を内部の`POST /textures`の`garmentCreatedAt`として、裏面の画像のIDを`backImageId`として送る。`backImageId`は、状態を聞くときに、撮り直す前の写真から作った作業を見分けるために使う。作業フォルダと完成画像の確認用ファイル名は生成開始日時（JST）・カテゴリ・服IDの先頭8文字の順に並べる。`job.json`の`textureFile`に確認用ファイル名、`garmentCreatedAt`・`createdAt`・`completedAt`に各日時を記録する。
 
 Tシャツ・長そで・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0026](adr/0026-trousers-template-from-delivered-uv.md)）。推論サービスは、生成物をPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/`に書き出す。[ADR 0023](adr/0023-garment-texture-on-pc.md)、[ADR 0027](adr/0027-request-texture-from-saved-photos.md)を参照。
 
@@ -131,25 +131,27 @@ Tシャツ・長そで・ズボンでテンプレートが違い、長そでは�
 
 `GET /v1/garments/:id/texture`（webは`GET /api/garments/:id/texture`）。apiが推論サービスに状態を問い合わせ、完成していれば画像をStorageへ移して返す。
 
-| 状態                                        | 応答                            |
-| ------------------------------------------- | ------------------------------- |
-| まだ作っていない（裏面が無い、作業が無い）  | `{ status: "none" }`            |
-| 作成中（推論サービスで`queued`か`running`） | `{ status: "processing" }`      |
-| 完成                                        | `{ status: "done", imageId }`   |
-| 失敗                                        | `{ status: "failed", message }` |
+| 状態                                        | 応答                                      |
+| ------------------------------------------- | ----------------------------------------- |
+| まだ作っていない（裏面が無い、作業が無い）  | `{ status: "none" }`                      |
+| 作成中（推論サービスで`queued`か`running`） | `{ status: "processing", imageId? }`      |
+| 完成                                        | `{ status: "done", imageId }`             |
+| 失敗                                        | `{ status: "failed", message, imageId? }` |
 
-画像は`GET /v1/garments/:id/images/:imageId`で取る（2048pxのPNG）。服の一覧と詳細の`images`には入れない。裏面を撮り直した後も、新しいテクスチャができるまで古い写真から作ったものが残るので、必ずこのAPIの`imageId`を使う。作成中の間は、画面が数秒おきに聞き直す。服が無ければ404。推論サービスにつながらないときは、保存済みのテクスチャがあれば`done`、無ければ503。`message`は決まった文で、推論サービスの理由はapiのログにだけ残す。
+画像は`GET /v1/garments/:id/images/:imageId`で取る（2048pxのPNG）。服の一覧と詳細の`images`には入れない。裏面を撮り直した後も、新しいテクスチャができるまで古い写真から作ったものが残るので、必ずこのAPIの`imageId`を使う。`processing`と`failed`の`imageId`は、作り直す前に今の写真から作ったテクスチャで、無ければ省く。画面は`imageId`があれば貼り、`processing`の間は数秒おきに聞き直す。服が無ければ404。推論サービスにつながらないときは、保存済みのテクスチャがあれば`done`、無ければ503。`message`は決まった文で、推論サービスの理由はapiのログにだけ残す。
 
-完成した作業は、`{プロフィールID}/{服ID}/texture-{UUID}.png`としてStorageに置き、`garment_images`の`texture_job`に作業フォルダ名を記録する。同じ作業は2回保存しない。新しい作業が完成したら、DBの関数`save_garment_texture`で行を1つのトランザクションで差し替え、古い画像を消す。裏面を撮り直す前に保存したテクスチャは使わない。[ADR 0033](adr/0033-serve-texture-through-api.md)を参照。
+完成した作業は、`{プロフィールID}/{服ID}/texture-{UUID}.png`としてStorageに置き、`garment_images`の`texture_job`に作業フォルダ名を記録する。同じ作業は2回保存しない。新しい作業が完成したら、DBの関数`save_garment_texture`で行を1つのトランザクションで差し替え、古い画像を消す。関数は服の行をロックしたまま裏面が変わっていないかを確かめ直し、変わっていれば保存せずに`processing`を返す。裏面を撮り直す前に保存したテクスチャは使わない。推論サービスが返す`backImageId`が今の裏面と違う作業も、無い扱いにする。[ADR 0033](adr/0033-serve-texture-through-api.md)を参照。
 
 apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBearerトークン）：
 
-- `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null }`。作業が無ければ404
+- `POST /textures`：フォームの`backImageId`を作業に記録する
+- `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null, backImageId: string | null }`。作業が無ければ404。`backImageId`を返さない推論サービスでは、最新の作業を今の写真のものとみなす
 - `GET /textures/{garmentId}/{job}/texture.png`：`done`の作業のテクスチャ
 
 ## 共通の型
 
-- カテゴリはshort_sleeve_top・long_sleeve_top・trousersの3つ。長そでは33点を受け取り、Tシャツと同じ肩幅・袖丈・身幅・着丈を保存する。
+- カテゴリはshort_sleeve_top・long_sleeve_top・shirt・trousersの4つ。長そでは33点を受け取り、Tシャツと同じ肩幅・袖丈・身幅・着丈を保存する。
+- shirtは着せる3Dモデルを分けるためのカテゴリで、点・寸法の定義は長そでと同じ。apiは推論サービスへlong_sleeve_topとして送り、結果のカテゴリをshirtに戻して返す。テンプレートがないため、shirtのテクスチャ生成の依頼は400を返す（[ADR 0035](adr/0035-choose-garment-type-first.md)）。
 - 点番号はカテゴリ内の1始まり。scoreはヒートマップ値、手動点はnull。アノテーションの可視性vとは別物。
 - MeasurementsはshoulderWidthCm・sleeveLengthCm・bodyWidthCm・bodyLengthCm・waistCm・hipCm・thighWidthCm・riseCm・inseamCm・hemWidthCm。各値は正のcmまたはnull。
 - 購入時期と季節は服の属性で、採寸には使わない。[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。
@@ -159,12 +161,15 @@ apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBear
 
 `GET/PUT /v1/avatar`、`GET/POST /v1/outfits`、`DELETE /v1/outfits/:id`は未実装。[要件候補](requirements-candidates.md)で検討する。
 
-### アバター設定の候補（未実装）
+### アバター設定の候補（ログインを入れるまで作らない）
 
-- `PUT /v1/avatar`の入力候補：`{ heightCm: number, build: Build }`。
-- `GET /v1/avatar`の出力候補：`{ heightCm: number | null, build: Build | null }`。
+アバターの設定は、ログインを入れるまでAPIを作らず、ブラウザのlocalStorageに保存する。ログインが無いうちにDBへ保存すると、全員が同じデモユーザーなので上書きし合い、身長や性別を誰でも読めてしまうため（[ADR 0036](adr/0036-avatar-settings-in-browser.md)）。
+
+- ログインを入れたら、`GET/PUT /v1/avatar`で次の形を読み書きする。項目と値は`apps/web/src/lib/avatar-settings.ts`の`AvatarSettings`と同じ。
+- `{ gender, heightCm, build, bodyFrame, skinColor, hairId, hairColor }`。まだ登録していなければ`GET`は`null`を返す。
 - `heightCm`は150〜195。3Dモデルで身長を変えられる範囲（[ADR 0008](adr/0008-height-keys-and-tables.md)）。
-- `Build`は`slim`（細身）・`standard`（標準）・`broad`（がっしり）・`chubby`（ぽっちゃり）。体重は持たない（[ADR 0009](adr/0009-build-instead-of-weight.md)）。
+- `build`は`slim`（細身）・`standard`（標準）・`broad`（がっしり）・`chubby`（ぽっちゃり）。体重は持たない（[ADR 0009](adr/0009-build-instead-of-weight.md)）。
+- `bodyFrame`（骨格）は、`gender`が`female`のときだけ値を持ち、ほかは`null`。
 
 ## 参考文献
 

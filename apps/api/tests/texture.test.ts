@@ -16,10 +16,19 @@ const id = "11111111-1111-4111-8111-111111111111";
 const path = `/v1/garments/${id}`;
 const headers = { Authorization: `Bearer ${process.env.INTERNAL_API_TOKEN}` };
 const registeredAt = "2026-10-17T02:12:59.163258+00:00";
+const backImageId = "22222222-2222-4222-8222-222222222222";
 const photos = [
-  { role: "measurement", storage_key: "front.jpg" },
-  { role: "back", storage_key: "back.jpg" },
-  { role: "cutout", storage_key: "cutout.png" },
+  {
+    id: "33333333-3333-4333-8333-333333333333",
+    role: "measurement",
+    storage_key: "front.jpg",
+  },
+  { id: backImageId, role: "back", storage_key: "back.jpg" },
+  {
+    id: "44444444-4444-4444-8444-444444444444",
+    role: "cutout",
+    storage_key: "cutout.png",
+  },
 ];
 
 void test("Tシャツ・長そで・ズボンは保存済みのカテゴリ・表裏JPEGで生成を依頼する", async (t) => {
@@ -57,6 +66,7 @@ void test("Tシャツ・長そで・ズボンは保存済みのカテゴリ・�
           assert.equal(form.get("garmentId"), id);
           assert.equal(form.get("category"), category);
           assert.equal(form.get("garmentCreatedAt"), registeredAt);
+          assert.equal(form.get("backImageId"), backImageId);
           assert.equal(await (form.get("front") as File).text(), "front bytes");
           assert.equal(await (form.get("back") as File).text(), "back bytes");
           submitted = true;

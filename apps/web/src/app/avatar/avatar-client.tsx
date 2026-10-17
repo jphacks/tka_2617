@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { AvatarErrorBoundary } from "@/components/avatar-error-boundary";
 import { AvatarFrame } from "@/components/avatar-frame";
 import { ColorChoices } from "@/components/try-on/color-choices";
@@ -14,13 +14,21 @@ import {
   useTryOn,
 } from "@/components/try-on/use-try-on";
 import {
+  BODY_FRAME_LABELS,
+  BODY_FRAMES,
   BUILD_LABELS,
   BUILDS,
+  createAvatarSettingsStore,
+  defaultAvatarSettings,
+  GENDER_LABELS,
+  GENDERS,
   HEIGHT_MAX_CM,
   HEIGHT_MIN_CM,
-  MEASUREMENT_KEYS,
-  MEASUREMENT_LABELS,
-} from "@/lib/garment";
+  heightFromInput,
+  withGender,
+  type AvatarSettings,
+} from "@/lib/avatar-settings";
+import { MEASUREMENT_KEYS, MEASUREMENT_LABELS } from "@/lib/garment";
 import { TROUSER_KEYS, TROUSER_LABELS } from "@/lib/trousers";
 
 // three.jsはブラウザでだけ動かす。読み込み中も同じ大きさの枠を出す
@@ -28,6 +36,10 @@ const TryOnScene = dynamic(() => import("@/components/try-on/try-on-scene"), {
   ssr: false,
   loading: () => <AvatarFrame loading />,
 });
+
+const avatarSettingsStore = createAvatarSettingsStore(
+  () => window.localStorage,
+);
 
 /** 選択肢を横に並べたラジオボタン。選んでいるものを塗る */
 function Segmented<T extends string>({
@@ -117,14 +129,173 @@ function SizeInput({
   );
 }
 
-/** アバター画面：身長・体型と、服・髪・靴を選んで着せる。服の実寸は、今はサンプルの服の値 */
+/** 身長の入力欄。3Dで変えられる範囲の外なら、範囲を出す */
+function HeightInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const isValid = heightFromInput(value) !== null;
+  return (
+    <>
+      <label className="flex items-center justify-between gap-3">
+        <span>身長</span>
+        <span className="flex items-center gap-1.5">
+          <input
+            type="number"
+            inputMode="decimal"
+            min={HEIGHT_MIN_CM}
+            max={HEIGHT_MAX_CM}
+            step={0.5}
+            value={value}
+            onChange={(e) => {
+              onChange(e.target.value);
+            }}
+            aria-invalid={!isValid}
+            className="w-20 rounded border border-line px-2 py-1 text-right text-base tabular-nums aria-invalid:border-red-600"
+          />
+          <span className="text-xs text-muted">cm</span>
+        </span>
+      </label>
+      {!isValid && (
+        <p className="text-right text-xs text-red-600">
+          {HEIGHT_MIN_CM}〜{HEIGHT_MAX_CM}cmで入力してください
+        </p>
+      )}
+    </>
+  );
+}
+
+/** 性別と、女性のときだけ骨格。今はどれを選んでも、男性のアバターを出す */
+function GenderFields({
+  settings,
+  onChange,
+}: {
+  settings: AvatarSettings;
+  onChange: (settings: AvatarSettings) => void;
+}) {
+  return (
+    <>
+      <Row label="性別">
+        <Segmented
+          label="性別"
+          options={GENDERS.map((g) => ({ id: g, label: GENDER_LABELS[g] }))}
+          value={settings.gender}
+          onChange={(gender) => {
+            onChange(withGender(settings, gender));
+          }}
+        />
+        {settings.gender === "female" && (
+          <p className="text-xs leading-relaxed text-description">
+            今は男性のアバターで表示します。骨格は、女性のアバターを用意したときに使います。
+          </p>
+        )}
+      </Row>
+      {settings.bodyFrame !== null && (
+        <Row label="骨格">
+          <Segmented
+            label="骨格"
+            options={BODY_FRAMES.map((f) => ({
+              id: f,
+              label: BODY_FRAME_LABELS[f],
+            }))}
+            value={settings.bodyFrame}
+            onChange={(bodyFrame) => {
+              onChange({ ...settings, bodyFrame });
+            }}
+          />
+        </Row>
+      )}
+    </>
+  );
+}
+
+/** アバター画面：初めて開いたときは体の登録、登録したあとは試着の画面を出す */
 export function AvatarClient() {
+  // サーバーで描くときはlocalStorageが無いので、読み込み中として描く
+  const settings = useSyncExternalStore(
+    avatarSettingsStore.subscribe,
+    avatarSettingsStore.get,
+    () => undefined,
+  );
+  if (settings === undefined)
+    return (
+      <main className="px-4 py-5">
+        <AvatarFrame loading />
+      </main>
+    );
+  if (settings === null)
+    return <AvatarSetup onDone={avatarSettingsStore.save} />;
+  return (
+    <AvatarEditor settings={settings} onChange={avatarSettingsStore.save} />
+  );
+}
+
+/** 初めて開いたときの登録。性別・身長・体型と、女性のときだけ骨格を聞く */
+function AvatarSetup({
+  onDone,
+}: {
+  onDone: (settings: AvatarSettings) => void;
+}) {
+  const [settings, setSettings] = useState(defaultAvatarSettings);
+  const [heightInput, setHeightInput] = useState(() =>
+    defaultAvatarSettings.heightCm.toFixed(1),
+  );
+  const heightCm = heightFromInput(heightInput);
+
+  return (
+    <main className="flex flex-col gap-5 px-4 py-5 text-[13px] motion-safe:animate-fade-in">
+      <p className="text-sm leading-relaxed">
+        服を着せるアバターを、あなたの体に合わせます。あとからアバターの画面で変えられます。
+      </p>
+      {/* 身長はアバターの画面と同じく0.5cm刻みでなくてもよいので、ブラウザの検証は使わない */}
+      <form
+        noValidate
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (heightCm !== null) onDone({ ...settings, heightCm });
+        }}
+      >
+        <GenderFields settings={settings} onChange={setSettings} />
+        <HeightInput value={heightInput} onChange={setHeightInput} />
+        <Row label="体型">
+          <Segmented
+            label="体型"
+            options={BUILDS.map((b) => ({ id: b, label: BUILD_LABELS[b] }))}
+            value={settings.build}
+            onChange={(build) => {
+              setSettings({ ...settings, build });
+            }}
+          />
+        </Row>
+        <button
+          type="submit"
+          disabled={heightCm === null}
+          className="mt-2 min-h-12 w-full rounded bg-main text-sm font-semibold text-white transition hover:opacity-85 active:scale-[0.98] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main"
+        >
+          はじめる
+        </button>
+      </form>
+    </main>
+  );
+}
+
+/** 試着の画面：身長・体型と、服・髪・靴を選んで着せる。体と髪を変えたら設定に保存する。服の実寸は、今はサンプルの服の値 */
+function AvatarEditor({
+  settings,
+  onChange,
+}: {
+  settings: AvatarSettings;
+  onChange: (settings: AvatarSettings) => void;
+}) {
   const {
     build,
     setBuild,
     heightInput,
     setHeightInput,
-    isHeightValid,
     top,
     shirtFront,
     setShirtFront,
@@ -150,7 +321,11 @@ export function AvatarClient() {
     tight,
     sceneProps,
     selectTop,
-  } = useTryOn();
+  } = useTryOn(settings);
+
+  function update(change: Partial<AvatarSettings>) {
+    onChange({ ...settings, ...change });
+  }
 
   return (
     <main className="flex flex-col gap-5 px-4 py-5 text-[13px] motion-safe:animate-fade-in">
@@ -176,43 +351,34 @@ export function AvatarClient() {
       </div>
 
       <Section title="体">
-        <label className="flex items-center justify-between gap-3">
-          <span>身長</span>
-          <span className="flex items-center gap-1.5">
-            <input
-              type="number"
-              inputMode="decimal"
-              min={HEIGHT_MIN_CM}
-              max={HEIGHT_MAX_CM}
-              step={0.5}
-              value={heightInput}
-              onChange={(e) => {
-                setHeightInput(e.target.value);
-              }}
-              aria-invalid={!isHeightValid}
-              className="w-20 rounded border border-line px-2 py-1 text-right text-base tabular-nums aria-invalid:border-red-600"
-            />
-            <span className="text-xs text-muted">cm</span>
-          </span>
-        </label>
-        {!isHeightValid && (
-          <p className="text-right text-xs text-red-600">
-            {HEIGHT_MIN_CM}〜{HEIGHT_MAX_CM}cmで入力してください
-          </p>
-        )}
+        <GenderFields settings={settings} onChange={onChange} />
+        <HeightInput
+          value={heightInput}
+          onChange={(value) => {
+            setHeightInput(value);
+            const heightCm = heightFromInput(value);
+            if (heightCm !== null) update({ heightCm });
+          }}
+        />
         <Row label="体型">
           <Segmented
             label="体型"
             options={BUILDS.map((b) => ({ id: b, label: BUILD_LABELS[b] }))}
             value={build}
-            onChange={setBuild}
+            onChange={(b) => {
+              setBuild(b);
+              update({ build: b });
+            }}
           />
         </Row>
         <ColorChoices
           label="肌の色"
           colors={presets.skinColors}
           value={skinColor}
-          onChange={setSkinColor}
+          onChange={(color) => {
+            setSkinColor(color);
+            update({ skinColor: color });
+          }}
         />
       </Section>
 
@@ -225,6 +391,7 @@ export function AvatarClient() {
               aria-pressed={hairId === (h?.id ?? null)}
               onClick={() => {
                 setHairId(h?.id ?? null);
+                update({ hairId: h?.id ?? null });
               }}
               className="flex flex-col items-center gap-0.5 rounded border border-line p-1 text-[11px] aria-pressed:border-main aria-pressed:font-semibold"
             >
@@ -248,7 +415,10 @@ export function AvatarClient() {
           label="髪の色"
           colors={presets.hairColors}
           value={hairColor}
-          onChange={setHairColor}
+          onChange={(color) => {
+            setHairColor(color);
+            update({ hairColor: color });
+          }}
         />
       </Section>
 

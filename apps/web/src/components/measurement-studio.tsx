@@ -1,6 +1,6 @@
 "use client";
 
-import { categoryLabels } from "@/lib/garment-category";
+import { categoryChoices, categoryLabels } from "@/lib/garment-category";
 import { useState } from "react";
 import Link from "next/link";
 import type {
@@ -54,6 +54,8 @@ export function MeasurementStudio() {
   const [definitions, setDefinitions] = useState<DefinitionResponse | null>(
     null,
   );
+  // 着せる3Dモデルを決めるため、写真より先に選んでもらう。シャツと長そでは写真から見分けない
+  const [chosenCategory, setChosenCategory] = useState<Category | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [back, setBack] = useState<BackPhoto | null>(null);
   const [result, setResult] = useState<DetectionResult | null>(null);
@@ -202,10 +204,10 @@ export function MeasurementStudio() {
       let next = await detect("paper");
       setResult(next);
       showProgress(25, 50, "服を見つけています", 20000);
-      const garment = await detect("garment", next);
+      const garment = await detect("garment", next, chosenCategory ?? "auto");
       next = {
         ...next,
-        category: garment.category,
+        category: garment.category ?? chosenCategory,
         bbox: garment.bbox,
         warnings: [...next.warnings, ...garment.warnings],
       };
@@ -349,7 +351,8 @@ export function MeasurementStudio() {
         if (back) {
           try {
             const backSaved = await uploadBackPhoto(saved.id, back);
-            textureMessage = textureRequestMessage(backSaved.texture);
+            if (ready.category !== "shirt")
+              textureMessage = textureRequestMessage(backSaved.texture);
           } catch {
             backFailed = true;
           }
@@ -388,8 +391,36 @@ export function MeasurementStudio() {
         </p>
       )}
       <fieldset disabled={busy} className="min-w-0 space-y-4">
+        <fieldset disabled={editing !== null} className="min-w-0">
+          <legend className="mb-2 text-sm font-semibold">服の種類</legend>
+          <div className="grid grid-cols-4 gap-2">
+            {categoryChoices.map((choice) => (
+              <label key={choice} className="cursor-pointer">
+                <input
+                  type="radio"
+                  name="category"
+                  value={choice}
+                  checked={chosenCategory === choice}
+                  onChange={() => {
+                    setChosenCategory(choice);
+                    if (result) void changeCategory(choice);
+                  }}
+                  className="peer sr-only"
+                />
+                <span className="flex min-h-11 items-center justify-center rounded border border-main bg-white px-1 text-sm font-semibold transition peer-checked:bg-main peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-main peer-disabled:opacity-40">
+                  {categoryLabels[choice]}
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {!chosenCategory && (
+          <p className="text-xs text-description">
+            服の種類を選ぶと、写真を選べます。アバターでは、選んだ種類の3Dモデルで着せます。
+          </p>
+        )}
         <label
-          className={`${secondary} flex cursor-pointer items-center justify-center`}
+          className={`${secondary} flex cursor-pointer items-center justify-center ${chosenCategory ? "" : "pointer-events-none opacity-40"}`}
         >
           写真を選ぶ・撮影
           <input
@@ -397,6 +428,7 @@ export function MeasurementStudio() {
             accept="image/*"
             capture="environment"
             className="sr-only"
+            disabled={!chosenCategory}
             onChange={(event) => {
               const file = event.target.files?.[0];
               event.target.value = "";
@@ -441,26 +473,9 @@ export function MeasurementStudio() {
         )}
         {result && !editing && (
           <>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-description">
-                {mode === "dimensions" ? "測定結果" : "ドラッグで調整"}
-              </p>
-              <select
-                aria-label="服の種類"
-                className={field}
-                value={result.category ?? ""}
-                onChange={(event) => {
-                  void changeCategory(event.target.value as Category);
-                }}
-              >
-                <option value="" disabled>
-                  種類を選択
-                </option>
-                <option value="short_sleeve_top">Tシャツ</option>
-                <option value="long_sleeve_top">長そで</option>
-                <option value="trousers">パンツ</option>
-              </select>
-            </div>
+            <p className="text-sm text-description">
+              {mode === "dimensions" ? "測定結果" : "ドラッグで調整"}
+            </p>
             <div className="flex gap-2" role="group" aria-label="調整対象">
               {(
                 [
@@ -574,11 +589,14 @@ export function MeasurementStudio() {
                 </div>
               ) : (
                 <p className="text-xs leading-[1.7] text-description">
-                  表と裏を登録すると、テクスチャを生成してPC内に保存します。
+                  {result.category === "shirt"
+                    ? "シャツはまだテクスチャを作れないため、裏面は写真だけを保存します。"
+                    : "表と裏を登録すると、テクスチャを生成してPC内に保存します。"}
                   {result.category === "trousers"
                     ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
-                    : result.category === "long_sleeve_top"
-                      ? "長そでは袖と身頃が重ならないように広げ、両方の袖口と裾まで写してください。"
+                    : result.category === "long_sleeve_top" ||
+                        result.category === "shirt"
+                      ? "袖と身頃が重ならないように広げ、両方の袖口と裾まで写してください。"
                       : "表と同じように平置きして撮ってください。"}
                 </p>
               )}
@@ -747,6 +765,7 @@ export function MeasurementStudio() {
                   disabled={busy}
                   onClick={() => {
                     setEditing(garment);
+                    setChosenCategory(garment.category);
                     setResult(null);
                     setPhoto(null);
                     setBack(null);

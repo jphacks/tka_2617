@@ -1,13 +1,16 @@
 import { z } from "zod";
 
+// シャツは着せる3Dモデルを分けるための種類で、推論では長そでとして検出・採寸する
 export const categorySchema = z.enum([
   "short_sleeve_top",
   "long_sleeve_top",
+  "shirt",
   "trousers",
 ]);
 export const landmarkCounts = {
   short_sleeve_top: 25,
   long_sleeve_top: 33,
+  shirt: 33,
   trousers: 14,
 } as const;
 export const coordinateSchema = z.tuple([
@@ -80,12 +83,7 @@ export const metadataSchema = measurementInputSchema.safeExtend({
 });
 export const detectionOptionsSchema = z
   .object({
-    category: z.enum([
-      "short_sleeve_top",
-      "long_sleeve_top",
-      "trousers",
-      "auto",
-    ]),
+    category: z.enum([...categorySchema.options, "auto"]),
     paperCorners: z
       .array(coordinateSchema)
       .length(4)
