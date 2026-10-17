@@ -5,10 +5,7 @@ export async function readPng(file: File) {
     throw new HttpError(413, "切り抜き画像は8MiB以下にしてください");
   const bytes = Buffer.from(await file.arrayBuffer());
   if (
-    bytes.length < 45 ||
-    bytes.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a" ||
-    bytes.readUInt32BE(8) !== 13 ||
-    bytes.toString("ascii", 12, 16) !== "IHDR" ||
+    !hasPngHeader(bytes) ||
     bytes[24] !== 8 ||
     bytes[25] !== 6 ||
     bytes.toString("ascii", bytes.length - 8, bytes.length - 4) !== "IEND"
@@ -16,18 +13,7 @@ export async function readPng(file: File) {
     throw new HttpError(400, "切り抜き画像は透過PNGにしてください");
   const widthPx = bytes.readUInt32BE(16);
   const heightPx = bytes.readUInt32BE(20);
-  let offset = 33;
-  let hasImageData = false;
-  while (offset + 12 <= bytes.length) {
-    const length = bytes.readUInt32BE(offset);
-    const type = bytes.toString("ascii", offset + 4, offset + 8);
-    if (offset + length + 12 > bytes.length)
-      throw new HttpError(400, "切り抜き画像が壊れています");
-    if (type === "IDAT" && length > 0) hasImageData = true;
-    offset += length + 12;
-    if (type === "IEND") break;
-  }
-  if (!hasImageData || offset !== bytes.length)
+  if (!hasCompleteChunks(bytes))
     throw new HttpError(400, "切り抜き画像が壊れています");
   if (
     !widthPx ||
@@ -40,17 +26,35 @@ export async function readPng(file: File) {
   return { bytes, widthPx, heightPx };
 }
 
-// 推論サービスが作ったテクスチャ（RGBのPNG）の幅と高さを、先頭の署名とIHDRから読む。
-// 中身は推論サービスを信頼し、PNGであることと、DBに入る大きさであることだけを確かめる
+// 推論サービスが作ったテクスチャ（RGBのPNG）の幅と高さを読む。途中で切れたPNGや、DBに入らない大きさならnull
 export function pngSize(bytes: Buffer) {
-  if (
-    bytes.length < 33 ||
-    bytes.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a" ||
-    bytes.toString("ascii", 12, 16) !== "IHDR"
-  )
-    return null;
+  if (!hasPngHeader(bytes) || !hasCompleteChunks(bytes)) return null;
   const widthPx = bytes.readUInt32BE(16);
   const heightPx = bytes.readUInt32BE(20);
   if (!widthPx || !heightPx || widthPx > 4096 || heightPx > 4096) return null;
   return { widthPx, heightPx };
+}
+
+function hasPngHeader(bytes: Buffer) {
+  return (
+    bytes.length >= 45 &&
+    bytes.subarray(0, 8).toString("hex") === "89504e470d0a1a0a" &&
+    bytes.readUInt32BE(8) === 13 &&
+    bytes.toString("ascii", 12, 16) === "IHDR"
+  );
+}
+
+// IHDRの後のチャンクを長さどおりにたどり、画像データがあって、IENDでちょうど終わるかを確かめる
+function hasCompleteChunks(bytes: Buffer) {
+  let offset = 33;
+  let hasImageData = false;
+  while (offset + 12 <= bytes.length) {
+    const length = bytes.readUInt32BE(offset);
+    const type = bytes.toString("ascii", offset + 4, offset + 8);
+    if (offset + length + 12 > bytes.length) return false;
+    if (type === "IDAT" && length > 0) hasImageData = true;
+    offset += length + 12;
+    if (type === "IEND") return hasImageData && offset === bytes.length;
+  }
+  return false;
 }

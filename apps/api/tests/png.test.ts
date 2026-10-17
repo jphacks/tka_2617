@@ -36,12 +36,20 @@ void test("JPEGの偽装・破損PNG・透明度なし・過大な寸法を拒�
   }
 });
 
-void test("テクスチャは、PNGの署名とDBに入る大きさだけを確かめる", () => {
+void test("テクスチャは透明度が無くてもよく、途中で切れたPNGと過大な寸法は拒否する", () => {
   const rgb = Buffer.from(transparent);
   rgb[25] = 2;
   assert.deepEqual(pngSize(rgb), { widthPx: 3, heightPx: 3 });
   const huge = Buffer.from(transparent);
   huge.writeUInt32BE(5000, 16);
-  for (const bytes of [Buffer.from([255, 216, 255]), huge])
+  const invalidChunk = Buffer.from(transparent);
+  invalidChunk.writeUInt32BE(100000, 33);
+  for (const bytes of [
+    Buffer.from([255, 216, 255]),
+    // IENDの手前で切れている
+    transparent.subarray(0, transparent.length - 12),
+    invalidChunk,
+    huge,
+  ])
     assert.equal(pngSize(bytes), null);
 });
