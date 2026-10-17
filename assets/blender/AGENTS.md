@@ -34,6 +34,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 
 - 生成は約30〜50秒、検証は約40秒（画像の書き出しを含む）
 - 検証は標準体型±0.5cm、ほかの体型±1cmで合否を出し、不合格なら終了コード1。身長は標準と150〜195cmの8点で確かめる
+- 書き出した`*_male_height.json`は、webのテスト（`apps/web/tests/`）も読む。webのスキーマで読めるか、寸法からキーを解けるかを確かめるので、書き出し直したら`pnpm --filter @pitari/web test`も流す
 - 生成スクリプトは、途中でPythonのエラーが出てもBlenderが終了コード0を返す。ログの`[pitari] 完了`で終わったかを見る
 - MPFB2はBlenderの拡張機能として有効にしておく（Pythonからは`bl_ext.blender_org.mpfb`でimport）
 - 衣服のアセットのパスは`pitari_tshirt.py`の`MHCLO`に直書きしてある（`C:\MakeHuman\data\clothes\male_casualsuit06\male_casualsuit06.mhclo`）。別のPCで動かすなら直す
