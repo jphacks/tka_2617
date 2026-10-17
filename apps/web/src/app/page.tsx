@@ -1,3 +1,5 @@
+import { TodayContents } from "@/components/today-contents";
+
 export default function TodayPage() {
   return (
     <>
@@ -7,9 +9,7 @@ export default function TodayPage() {
         </div>
       </header>
 
-      <main className="px-6 py-10 text-center">
-        <p className="text-base font-bold">準備中</p>
-      </main>
+      <TodayContents />
     </>
   );
 }
