@@ -15,13 +15,14 @@ echo "比べる先：${base}"
 
 # 先に変数へ入れる。git diffが失敗したら、ここで止まる
 changed=$(git diff --name-only --no-renames --diff-filter=AM "${base}...HEAD")
-tests_changed=$(git diff --name-only --no-renames "${base}...HEAD" -- apps/api/tests apps/web/tests)
+# テストを消しただけでは、テストを足したことにしない
+tests_changed=$(git diff --name-only --no-renames --diff-filter=AM "${base}...HEAD" -- apps/api/tests apps/web/tests)
 
 untested=""
 for app in api web; do
   case "$app" in
     api) pattern='^apps/api/src/(services|lib)/.*\.ts$' ;;
-    web) pattern='^apps/web/src/lib/.*\.ts$' ;;
+    web) pattern='^apps/web/src/lib/.*\.tsx?$' ;;
   esac
   sources=$(printf '%s\n' "$changed" | grep -E "$pattern" || true)
   [[ -z "$sources" ]] && continue
@@ -42,7 +43,10 @@ message="処理を変えたのに、そのアプリのtests/が変わってい�
 echo "テストの無い処理の変更："
 printf '%s' "$untested"
 if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
-  echo "::warning title=テストが変わっていない::${message}"
+  # ファイルごとに出すと、PRの差分の画面でそのファイルに警告が付く
+  while IFS= read -r path; do
+    echo "::warning file=${path},title=テストが変わっていない::${message}"
+  done <<< "${untested%$'\n'}"
 else
   echo "警告：${message}"
 fi
