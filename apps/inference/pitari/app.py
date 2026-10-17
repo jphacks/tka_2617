@@ -38,10 +38,19 @@ def authorize(authorization: str = Header(default="")):
         raise HTTPException(401, "認証できません")
 
 
+class Point(BaseModel):
+    id: int = Field(ge=1, le=25)
+    x: float
+    y: float
+    score: float | None = None
+
+
 class Options(BaseModel):
     category: Literal["short_sleeve_top", "trousers", "auto"]
     paperCorners: list[tuple[float, float]] = Field(default_factory=list, max_length=4)
     bbox: tuple[float, float, float, float] | None = None
+    # 切り抜きの手がかりにだけ使う、前の工程のランドマーク。
+    points: list[Point] = Field(default_factory=list, max_length=25)
     stage: Literal["all", "paper", "garment", "landmarks", "cutout"] = "all"
 
 
@@ -127,7 +136,8 @@ def detect(image: UploadFile = File(...), options: str = Form(...)):
                 warnings.append("服の範囲を指定してください")
             else:
                 try:
-                    cutout = garment_cutout(source, bbox, corners)
+                    hints = points or [point.model_dump() for point in settings.points]
+                    cutout = garment_cutout(source, bbox, corners, hints, category)
                     ok, encoded = cv2.imencode(".png", cutout)
                     if not ok or encoded.nbytes > MAX_BYTES:
                         raise ValueError("切り抜き画像を作成できませんでした")

@@ -32,7 +32,7 @@ async function detect(image: File, options: DetectionOptions) {
   });
 }
 
-// 裏面は表示とテクスチャに使い、寸法は測らない
+// 裏面は表示とテクスチャに使い、寸法は測らない。ランドマークは切り抜きの手がかりに使う
 export async function prepareBackPhoto(
   file: File,
   category: Category,
@@ -44,14 +44,16 @@ export async function prepareBackPhoto(
     stage: "paper",
     category,
     paperCorners: [],
+    points: [],
   });
   const paperCorners =
     paper.paperCorners.length === 4 ? paper.paperCorners : [];
-  showProgress(30, 70, "服を見つけています", 20000);
+  showProgress(30, 70, "服を見つけています", 25000);
   const garment = await detect(photo.file, {
-    stage: "garment",
+    stage: "landmarks",
     category,
     paperCorners,
+    points: [],
   });
   let cutout: DetectionResult | null = null;
   if (garment.bbox) {
@@ -61,6 +63,7 @@ export async function prepareBackPhoto(
       category,
       paperCorners,
       bbox: garment.bbox,
+      points: garment.points,
     });
   }
   if (
