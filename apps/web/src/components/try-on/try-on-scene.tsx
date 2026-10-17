@@ -19,8 +19,11 @@ import {
   MeshStandardMaterial,
   NeutralToneMapping,
   Ray,
+  SRGBColorSpace,
+  TextureLoader,
   Vector3,
   type Object3D,
+  type Texture,
 } from "three";
 import { setMorph } from "@/lib/morph";
 import { stackHems, type FloorAt } from "@/lib/hem-stack";
@@ -87,6 +90,9 @@ type Props = {
   trouserMorphs: Record<string, number>;
   /** ズボンを着ないとき、小さすぎるときはfalse */
   showTrousers: boolean;
+  /** 上の服・ズボンに貼る、服の写真から作ったテクスチャの画像。nullなら材質の色のまま */
+  shirtTextureUrl?: string | null;
+  trouserTextureUrl?: string | null;
   /** 肌の色。肌のテクスチャは明暗だけなので、この色を掛ける */
   skinColor: string;
   /** 髪のglb（public/presets/presets.json）。nullなら髪なし */
@@ -110,6 +116,46 @@ function applyMorphs(root: Object3D, morphs: Record<string, number>) {
     if (setMorph(root, name, value) === 0)
       console.warn(`morph target がありません: ${name}`);
   }
+}
+
+/** 服のメッシュにテクスチャを貼る。読み込む間は材質の色のまま出し、urlが変わったら元の色に戻す */
+function useTextureMap(mesh: Mesh, url: string | null) {
+  useEffect(() => {
+    const material = mesh.material;
+    if (!url || !(material instanceof MeshStandardMaterial)) return;
+    const color = material.color.clone();
+    let texture: Texture | null = null;
+    let active = true;
+    new TextureLoader().load(
+      url,
+      (loaded) => {
+        if (!active) {
+          loaded.dispose();
+          return;
+        }
+        // glTFのUVは画像の左上が原点なので、上下を反転しない（ADR 0037）
+        loaded.flipY = false;
+        loaded.colorSpace = SRGBColorSpace;
+        texture = loaded;
+        material.map = loaded;
+        // 材質の色は画像に掛かるので、白にして写真の色のまま出す
+        material.color.set("#ffffff");
+        material.needsUpdate = true;
+      },
+      undefined,
+      () => {
+        console.warn(`テクスチャを読み込めません: ${url}`);
+      },
+    );
+    return () => {
+      active = false;
+      if (!texture) return;
+      material.map = null;
+      material.color.copy(color);
+      material.needsUpdate = true;
+      texture.dispose();
+    };
+  }, [mesh, url]);
 }
 
 function firstMesh(root: Object3D): Mesh {
@@ -234,6 +280,8 @@ function Models({
   showInner,
   trouserMorphs,
   showTrousers,
+  shirtTextureUrl = null,
+  trouserTextureUrl = null,
   skinColor,
   hairUrl,
   faceUrl,
@@ -256,6 +304,8 @@ function Models({
   );
   const topo = useMemo(() => shirtTopology(shirtMesh), [shirtMesh]);
   const trouserTopo = useMemo(() => shirtTopology(trouserMesh), [trouserMesh]);
+  useTextureMap(shirtMesh, shirtTextureUrl);
+  useTextureMap(trouserMesh, trouserTextureUrl);
 
   // 体の描かない所：靴の中の足、袖の中に隠れる腕（押し出しのたびに選ぶ）
   useEffect(() => {
