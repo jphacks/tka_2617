@@ -162,10 +162,9 @@ void test("裏面を保存できた場合は、生成依頼だけ失敗しても
             garment_images: imageSaved ? photos : [],
           }),
         );
-      if (url.pathname === "/rest/v1/garment_images") {
-        assert.equal(init?.method, "POST");
+      if (url.pathname === "/rest/v1/rpc/replace_garment_back") {
         imageSaved = true;
-        return Promise.resolve(new Response(null, { status: 201 }));
+        return Promise.resolve(Response.json([]));
       }
       if (url.pathname.startsWith("/storage/v1/object/"))
         return Promise.resolve(
