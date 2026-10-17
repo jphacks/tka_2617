@@ -647,12 +647,6 @@ def helper_keep_mask(body):
     return keep
 
 
-def body_bvh(body, P, keep):
-    """helper を除いた体の BVH（P は helper 込みの全頂点のワールド座標）"""
-    polys = [tuple(f.vertices) for f in body.data.polygons if keep[list(f.vertices)].all()]
-    return BVHTree.FromPolygons([Vector(p) for p in P], polys)
-
-
 def vertex_normals(P, polys):
     """面積で重み付けした頂点法線"""
     N = np.zeros_like(P)
@@ -662,30 +656,6 @@ def vertex_normals(P, polys):
             n = np.cross(P[b] - P[a], P[c] - P[a])
             N[[a, b, c]] += n
     return N / np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-12)
-
-
-PUSH_OFFSET = 0.005         # 体から最低 5mm 離す
-
-
-def push_out(P, bvh, edges, offset=PUSH_OFFSET, smooth=4):
-    """体の内側（または offset 未満）にある頂点を体の外へ押し出す。押し出し量は周りになだらかに広げる"""
-    push = np.zeros_like(P)
-    for i, p in enumerate(P):
-        loc, n, _, _ = bvh.find_nearest(Vector(p))
-        sd = (Vector(p) - loc).dot(n)
-        if sd < offset:
-            push[i] = np.array(n) * (offset - sd)
-    if not push.any():
-        return P
-    E = np.asarray(edges)
-    for _ in range(smooth):
-        acc = np.zeros_like(push); cnt = np.zeros(len(P))
-        np.add.at(acc, E[:, 0], push[E[:, 1]]); np.add.at(acc, E[:, 1], push[E[:, 0]])
-        np.add.at(cnt, E[:, 0], 1); np.add.at(cnt, E[:, 1], 1)
-        avg = acc / np.maximum(cnt, 1)[:, None]
-        bigger = np.linalg.norm(avg, axis=1) > np.linalg.norm(push, axis=1)
-        push[bigger] = 0.5 * push[bigger] + 0.5 * avg[bigger]
-    return P + push
 
 
 def bake_body(body):
@@ -767,6 +737,62 @@ def export_glb(obj, path):
                               export_animations=False, export_skins=False, export_yup=True,
                               export_attributes=True)          # "_" で始まる属性（_cover）も出す
     log("GLB:", path)
+
+
+# ---------------------------------------------------------------- 体型・身長ごとの服の形
+
+def capture_builds(dress):
+    """標準以外の体型ごとに体を作り、mhclo で服を着せ直して形だけ取り出す（dress は服を着せる関数）"""
+    shapes = {}
+    for b in BUILDS:
+        if b == "standard":
+            continue
+        body = create_body(macros_for(b))
+        garment = dress(body)
+        shapes[b] = (body_mix_coords(body), world_coords(garment))
+        remove_objects([garment, body])
+        log(f"{b}: 体と服の形を取得")
+    return shapes
+
+
+def capture_heights(dress):
+    """標準体型で身長を ±HEIGHT_SPAN_CM 変えた体を作り、mhclo で服を着せ直して形だけ取り出す。
+    マクロ height の値は、実測の身長差が ±HEIGHT_SPAN_CM になるよう探す"""
+    def measure_height(macro):
+        body = create_body({**macros_for("standard"), "height": macro})
+        h = body_height_cm(body)
+        remove_objects([body])
+        return h
+
+    def solve_macro(target_cm, x1):
+        """身長差が target_cm になるマクロの差をセカント法で探す。
+        MPFB の中でマクロの値が丸められ、同じ身長が続くことがあるので、そこで止める"""
+        x0, f0 = 0.0, 0.0
+        f1 = measure_height(0.5 + x1) - standard_cm
+        for _ in range(8):
+            if abs(f1 - target_cm) < 0.01 or f1 == f0:
+                break
+            x0, f0, x1 = x1, f1, x1 + (target_cm - f1) * (x1 - x0) / (f1 - f0)
+            f1 = measure_height(0.5 + x1) - standard_cm
+        return x1
+
+    standard_cm = measure_height(0.5)
+    shapes = {}
+    for d, sign in HEIGHT_DIRECTIONS.items():
+        dx = solve_macro(sign * HEIGHT_SPAN_CM, sign * 0.1)
+        body = create_body({**macros_for("standard"), "height": 0.5 + dx})
+        got = body_height_cm(body) - standard_cm
+        garment = dress(body)
+        shapes[d] = (body_mix_coords(body), world_coords(garment))
+        remove_objects([garment, body])
+        log(f"{height_key(d)}: マクロ height {0.5 + dx:.4f}, 身長差 {got:+.2f}cm")
+    log(f"標準の身長 {standard_cm:.2f}cm")
+    return standard_cm, shapes
+
+
+def height_key_world(B, P):
+    """±HEIGHT_SPAN_CM の形 P から、1cm あたりのキーの形（ワールド座標）を作る"""
+    return B + (P - B) / HEIGHT_SPAN_CM
 
 
 def write_json(path, data):
