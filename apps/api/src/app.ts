@@ -11,6 +11,7 @@ import {
 } from "#src/routes/detections";
 import { HttpError } from "#src/lib/http-error";
 import { garments } from "#src/routes/garments";
+import { materials } from "#src/routes/materials";
 
 // /v1 は web（BFF）からだけ呼ばれる想定なので、共有トークンが無ければ弾く。
 // ルートは .route("/garments", garments) のように、この式へつなげて足す。
@@ -26,7 +27,8 @@ const v1 = new Hono()
   .route("/detections", detections)
   .route("/measurements", measurements)
   .route("/inference-status", inferenceStatus)
-  .route("/garments", garments);
+  .route("/garments", garments)
+  .route("/materials", materials);
 
 export const app = new Hono()
   .route("/health", health)
@@ -59,6 +61,7 @@ export type {
 } from "#src/lib/measurement-schema";
 export type { MeasurementDefinition } from "#src/lib/measurements";
 export type { GarmentView, Season } from "#src/lib/garment-records";
+export type { GarmentMaterial, Material } from "#src/lib/materials";
 export type {
   TextureRequestResult,
   BackPhotoResponse,

@@ -3,6 +3,8 @@ import { env } from "#src/lib/env";
 import { HttpError } from "#src/lib/http-error";
 import type { Measurements } from "#src/lib/measurement-schema";
 import type { Season } from "#src/lib/garment-records";
+import type { GarmentMaterialInput } from "#src/lib/materials";
+import { setGarmentMaterials } from "#src/lib/garment-materials";
 
 export async function updateGarment(
   id: string,
@@ -11,6 +13,7 @@ export async function updateGarment(
     measurements?: Measurements;
     purchasedMonth?: string | null;
     seasons?: Season[];
+    materials?: GarmentMaterialInput;
   },
 ) {
   const { data, error } = await supabase
@@ -28,5 +31,6 @@ export async function updateGarment(
     .maybeSingle();
   if (error) throw new HttpError(503, "服を更新できませんでした");
   if (!data) throw new HttpError(404, "服が見つかりません");
+  if (values.materials) await setGarmentMaterials(id, values.materials);
   return { id };
 }

@@ -1,6 +1,7 @@
 import { supabase } from "#src/lib/supabase";
 import { env } from "#src/lib/env";
 import {
+  garmentColumns,
   garmentRecordSchema,
   type GarmentRecord,
 } from "#src/lib/garment-records";
@@ -10,7 +11,7 @@ import { HttpError } from "#src/lib/http-error";
 export async function getGarment(id: string) {
   const { data, error } = await supabase
     .from("garments")
-    .select("*, garment_images(*)")
+    .select(garmentColumns)
     .eq("id", id)
     .eq("profile_id", env.DEMO_PROFILE_ID)
     .maybeSingle()

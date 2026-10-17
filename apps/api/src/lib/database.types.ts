@@ -87,6 +87,39 @@ export type Database = {
           },
         ]
       }
+      garment_materials: {
+        Row: {
+          garment_id: string
+          material_id: string
+          percent: number
+        }
+        Insert: {
+          garment_id: string
+          material_id: string
+          percent: number
+        }
+        Update: {
+          garment_id?: string
+          material_id?: string
+          percent?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "garment_materials_garment_id_fkey"
+            columns: ["garment_id"]
+            isOneToOne: false
+            referencedRelation: "garments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "garment_materials_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       garments: {
         Row: {
           category: string
@@ -134,6 +167,24 @@ export type Database = {
           },
         ]
       }
+      materials: {
+        Row: {
+          id: string
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          id: string
+          label: string
+          sort_order: number
+        }
+        Update: {
+          id?: string
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -178,6 +229,14 @@ export type Database = {
           image_id: string
           removed_key: string
         }[]
+      }
+      set_garment_materials: {
+        Args: {
+          new_materials: Json
+          target_garment_id: string
+          target_profile_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
