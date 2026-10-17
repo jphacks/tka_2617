@@ -1,0 +1,8 @@
+{
+  "object": "shirt",
+  "verts": 1613,
+  "faces": 1544,
+  "uv_maps": ["pitari"],
+  "topology_sha256": "896ca38021eecf1261b6ecd991981d0a295171e2048c2e4b2145a062d695cae7",
+  "source": "MakeHuman male_casualsuit03 のシャツの部分（先頭 1613 頂点）"
+}
