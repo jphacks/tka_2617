@@ -54,6 +54,7 @@
 - [0037 テクスチャのUVは、アプリのglbのUVを正とし、変換しない](0037-app-glb-uv-is-source.md)
 - [0038 シャツのテクスチャは、前後から投影したUVの外周を写真の輪郭に合わせて作る](0038-shirt-texture-from-projected-uv.md)
 - [0039 アバターの服の寸法は、基準寸法の半分から2倍までをモデルへ渡し、確かめた範囲の外は案内だけ出す](0039-garment-size-limits.md)
+- [0040 今日の気温と季節は、webのBFFでOpen-Meteoから取り、季節は月と平均気温で決める](0040-today-weather-and-season.md)
 
 ## 参考文献
 
