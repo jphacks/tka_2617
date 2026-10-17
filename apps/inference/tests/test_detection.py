@@ -1,13 +1,16 @@
 import base64
 import io
 import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import cv2
 import numpy as np
 from fastapi import UploadFile
 
+from pitari import detections
 from pitari.app import detect
 
 
@@ -19,6 +22,12 @@ class DetectionTests(unittest.TestCase):
         self.raw = cv2.imencode(".jpg", self.image)[1].tobytes()
         self.corners = [[30, 60], [240, 60], [240, 357], [30, 357]]
         self.box = [290, 50, 630, 430]
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.cache = Path(folder.name)
+        cache = patch.object(detections, "FOLDER", self.cache)
+        cache.start()
+        self.addCleanup(cache.stop)
 
     def request(self, stage, **options):
         return detect(UploadFile(io.BytesIO(self.raw), filename="test.jpg"), json.dumps({"category": "auto", "stage": stage, **options}))
@@ -61,7 +70,7 @@ class DetectionTests(unittest.TestCase):
 
     def test_long_sleeve_keeps_category_and_33_points_through_cutout(self):
         points = [{"id": i, "x": 320, "y": 90, "score": 0.9} for i in range(1, 34)]
-        with patch("pitari.app.models") as models, patch("pitari.app.garment_cutout", return_value=np.full((20, 20, 4), 255, dtype=np.uint8)) as cutout:
+        with patch("pitari.app.models") as models, patch("pitari.app.garment_cutout", return_value=(np.full((20, 20, 4), 255, dtype=np.uint8), np.full((500, 700), 255, dtype=np.uint8))) as cutout:
             models.detect.return_value = ("long_sleeve_top", self.box)
             models.landmarks.return_value = points
             result = self.request("all", paperCorners=self.corners)
@@ -71,3 +80,15 @@ class DetectionTests(unittest.TestCase):
             self.assertEqual(cutout.call_args.args[-2:], (points, "long_sleeve_top"))
             staged = self.request("cutout", category="long_sleeve_top", bbox=self.box, points=points)
             self.assertTrue(staged["cutoutBase64"])
+
+    def test_cutout_with_points_is_remembered_for_the_texture(self):
+        points = [{"id": 7, "x": 320, "y": 90, "score": 0.9}]
+        self.request("cutout", category="short_sleeve_top", bbox=self.box, paperCorners=self.corners)
+        self.assertIsNone(detections.recall(self.raw, 700, 500, "short_sleeve_top"))
+        self.request("cutout", category="short_sleeve_top", bbox=self.box, paperCorners=self.corners, points=points)
+        record = detections.recall(self.raw, 700, 500, "short_sleeve_top")
+        self.assertEqual((record["bbox"], record["paperCorners"], record["points"]), (self.box, self.corners, points))
+        self.assertEqual(record["mask"].shape, (500, 700))
+        self.assertGreater(record["mask"][240, 460], 0)
+        for other in [(self.raw + b"x", 700, 500, "short_sleeve_top"), (self.raw, 700, 500, "trousers"), (self.raw, 350, 250, "short_sleeve_top")]:
+            self.assertIsNone(detections.recall(*other))

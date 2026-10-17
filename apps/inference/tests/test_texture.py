@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from fastapi import HTTPException, UploadFile
 
-from pitari import texture
+from pitari import detections, texture
 from pitari.app import texture_image, texture_status, textures
 
 GARMENT = "11111111-1111-4111-8111-111111111111"
@@ -94,6 +94,28 @@ class TextureTests(unittest.TestCase):
             self.assertEqual(failed["error"], "点が足りません")
             self.assertNotIn("textureFile", failed)
             self.assertTrue((runs[1] / "input_front.jpg").is_file())
+
+    def test_photos_cut_out_before_skip_the_models(self):
+        back = cv2.imencode(".jpg", np.full((40, 30, 3), 60, dtype=np.uint8))[1].tobytes()
+        mask = np.zeros((40, 30), np.uint8)
+        mask[5:35, 5:25] = 255
+        points = [{"id": 1, "x": 10.0, "y": 8.0, "score": 0.9}]
+        seen = {}
+
+        def generate(out, views, inference, **kwargs):
+            seen.update(views)
+            (out / "texture.png").write_bytes(b"generated png")
+            return {"coverage": {}}
+
+        with tempfile.TemporaryDirectory() as folder, patch.object(texture, "OUTPUT", Path(folder) / "textures"), \
+                patch.object(detections, "FOLDER", Path(folder) / "detections"):
+            # シャツは長そでとして切り抜く。
+            detections.remember(self.raw, 30, 40, "long_sleeve_top", [2, 3, 28, 38], [], points, mask, "v1")
+            with patch.object(texture.photo_to_texture, "make_texture", side_effect=generate):
+                texture.make(GARMENT, "shirt", self.raw, back, None, None)
+        self.assertEqual(seen["front"]["detection"]["points"], points)
+        self.assertTrue(np.array_equal(seen["front"]["detection"]["mask"], mask))
+        self.assertIsNone(seen["back"]["detection"])
 
     def test_run_name_is_in_japan_time(self):
         name = texture.run_name(GARMENT, "trousers", datetime(2026, 10, 17, tzinfo=timezone.utc))

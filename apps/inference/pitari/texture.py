@@ -1,5 +1,6 @@
 """服ごとのテクスチャを、UVテンプレートでPC内のフォルダへ作る。完成したものはapiが受け取ってStorageに置く。"""
 
+import io
 import itertools
 import json
 import logging
@@ -11,6 +12,8 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from PIL import Image
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "textures"
 JST = timezone(timedelta(hours=9))
@@ -18,6 +21,7 @@ CATEGORY_LABELS = {"short_sleeve_top": "Tシャツ", "long_sleeve_top": "長そ�
 # 変換の本体は、UVテンプレートと同じ場所にある試行用スクリプトをそのまま使う。
 sys.path.insert(0, str(ROOT.parents[1] / "artifacts/uv/pitari/scripts"))
 import photo_to_texture  # noqa: E402
+from pitari import detections  # noqa: E402
 
 logger = logging.getLogger("pitari")
 # 公開された/api/*から裏面を何度も送られても、CPUの作業が際限なく積まれないようにする。
@@ -128,6 +132,13 @@ def new_folder(name):
             continue
 
 
+def recall(raw, category):
+    """採寸・裏面の登録で切り抜いた写真なら、そのときの範囲・点・服の領域。"""
+    with Image.open(io.BytesIO(raw)) as image:
+        size = image.size
+    return detections.recall(raw, *size, photo_to_texture.MODEL_CATEGORIES.get(category, category))
+
+
 def make(garment_id, category, front, back, models, lock, garment_created_at=None, back_image_id=None):
     started = time.perf_counter()
     created_at = datetime.now(JST)
@@ -142,7 +153,7 @@ def make(garment_id, category, front, back, models, lock, garment_created_at=Non
         for view, raw in (("front", front), ("back", back)):
             if raw:
                 (out / f"input_{view}.jpg").write_bytes(raw)
-                views[view] = {"photo": out / f"input_{view}.jpg"}
+                views[view] = {"photo": out / f"input_{view}.jpg", "detection": recall(raw, category)}
         report = photo_to_texture.make_texture(out, views, LockedInference(models, lock), category=category)
         # 画像だけを持ち出しても分かるよう、フォルダと同じ名前のコピーを置く。既存のBlender確認スクリプトが読むtexture.pngも残す。
         filename = f"{out.name}.png"

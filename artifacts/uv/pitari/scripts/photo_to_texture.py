@@ -427,7 +427,11 @@ def template_ready(category="short_sleeve_top"):
 
 
 def make_texture(out, views, inference, fraction="3d", category="short_sleeve_top"):
-    """views[view]は{"photo", "points", "mask", "bbox"}。photo以外は手で直したときだけ渡す。"""
+    """views[view]は{"photo", "points", "mask", "bbox", "detection"}。points・mask・bboxは手で直したときだけ渡す。
+
+    detectionは、同じ写真を採寸や裏面の登録で切り抜いたときの{"bbox", "paperCorners", "points", "mask", "modelVersion", "widthPx", "heightPx"}。
+    渡すと推論と切り抜きをやり直さない。
+    """
     clock = Stopwatch()
     root = TEMPLATE_ROOTS[category]
     model_category = MODEL_CATEGORIES.get(category, category)
@@ -463,17 +467,25 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
             photo, info = load_photo(photo_path)
         height, width = photo.shape[:2]
         points_path = given.get("points")
+        detection = given.get("detection")
+        if detection and [detection["widthPx"], detection["heightPx"]] != [width, height]:
+            notes.append("切り抜いたときと写真の大きさが違うため、推論し直した")
+            detection = None
         if points_path:
             record = json.loads(Path(points_path).read_text(encoding="utf-8"))
             if [record["widthPx"], record["heightPx"]] != [width, height]:
                 raise SystemExit(f"{points_path}の画像サイズが写真と一致しません")
             notes.append(f"点は{Path(points_path).name}を使った")
         else:
-            # ロックの待ちも含む。モデルの時間は内訳として別に残す。
-            with clock.measure(f"{view}.inference"):
-                result = inference.run(photo, given.get("bbox"), model_category)
-            for step, ms in result.get("timingsMs", {}).items():
-                clock.add(f"{view}.{step}", ms)
+            if detection:
+                result = detection
+                notes.append("採寸・裏面の登録で切り抜いたときの範囲・点・服の領域を使った")
+            else:
+                # ロックの待ちも含む。モデルの時間は内訳として別に残す。
+                with clock.measure(f"{view}.inference"):
+                    result = inference.run(photo, given.get("bbox"), model_category)
+                for step, ms in result.get("timingsMs", {}).items():
+                    clock.add(f"{view}.{step}", ms)
             record = {
                 "imageId": f"photo_{view}.jpg",
                 "view": view,
@@ -484,7 +496,7 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
                 "bbox": result["bbox"],
                 "paperCorners": result["paperCorners"],
                 "modelVersion": result["modelVersion"],
-                "points": [{"id": p["id"], "x": round(p["x"], 2), "y": round(p["y"], 2), "score": round(p["score"], 4), "source": "model"} for p in result["points"]],
+                "points": [{"id": p["id"], "x": round(p["x"], 2), "y": round(p["y"], 2), "score": None if p.get("score") is None else round(p["score"], 4), "source": "model"} for p in result["points"]],
                 "auxPoints": [],
                 "howToEdit": "点がずれていたらx・yを直してsourceをmanualにする。足りない番号は追加する。袖付けの中点を指定するときはauxPointsに{name: aux_armhole_mid_right_front, x, y}を足す",
             }
@@ -497,6 +509,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
                 garment = np.where(np.array(Image.open(mask_path).convert("L")) > 127, 255, 0).astype(np.uint8)
                 if garment.shape != photo.shape[:2]:
                     raise SystemExit(f"{mask_path}の大きさが写真と一致しません")
+            elif detection:
+                garment = detection["mask"]
             else:
                 garment = garment_mask(photo, record["bbox"], record["paperCorners"], record["points"], model_category)
             garment = fill_holes(garment)
