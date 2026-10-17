@@ -17,7 +17,7 @@
 - Actionsで使うVercelの鍵（`VERCEL_TOKEN`）と、プロジェクトのID（`VERCEL_ORG_ID`、`VERCEL_PROJECT_ID`）は、リポジトリのsecretに置く。鍵はpitariのプロジェクトだけに絞り、有効期限を付ける
 - リポジトリのルートに`.vercelignore`を置き、`.env`などの秘密のファイルを送らない
 - Vercelでは、インストールのときにスクリプトを動かさない（`apps/web/vercel.json`の`installCommand`に`--ignore-scripts`）。CLIで送ったファイルには`.git`が無く、ルートの`prepare`（`lefthook install`）が失敗するため。依存のインストールスクリプトは、手元とCIでも`pnpm-workspace.yaml`で止めているので、動きは変わらない。インストールスクリプトが要る依存を足したら、この設定を見直す
-- apiとSupabaseの置き場所は、DBと登録のAPIができてから決める
+- デモではapi・Supabase・推論をrunaのPCで動かし、Vercelは見本アバターの公開体験に使う。構成と公開先の役割は[ADR 0038](0038-local-demo-and-public-avatar.md)で決める
 
 ## 理由
 

@@ -2,6 +2,16 @@
 
 [![IMAGE ALT TEXT HERE](https://jphacks.com/wp-content/uploads/2026/07/IMG_5316.png)](https://www.youtube.com/watch?v=piaNsc6ilBI)
 
+## デモと公開体験
+
+[見本の服をアバターに着せて試す](https://pitari-taupe.vercel.app/avatar)。初めて開くと、アバターの設定を登録する画面が出る。
+
+公開版は、見本の服で身長・体型・服の寸法を変える体験用。撮影・採寸・クローゼットへの保存は、ローカルのapi・Supabase・推論サービスが必要なので、公開版では利用できない。ホーム画面への追加は、この公開版のHTTPSで確認する。
+
+当日の実演はrunaのWindowsのPCで全サービスを動かし、同じネットワークのスマホから接続する。撮影した服の登録からアバターへの試着・組み合わせの変更までを見せる。会場のWi-Fiが使えなければスマホのテザリングに切り替え、実演が難しい場合は提出用に撮影するデモ動画を使う。
+
+構成と理由は[ADR 0038](docs/adr/0038-local-demo-and-public-avatar.md)。起動手順と実機での通し練習は[#76](https://github.com/jphacks/tka_2617/issues/76)、提出用のREADMEと動画は[#78](https://github.com/jphacks/tka_2617/issues/78)で仕上げる。
+
 ## ローカルの環境構築
 
 必要なもの：Node.js 22、pnpm 10.18.0、Docker Desktop、Supabase CLI。Docker Desktopを起動して、リポジトリのルートで実行する。
