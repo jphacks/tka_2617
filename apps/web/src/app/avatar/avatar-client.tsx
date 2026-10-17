@@ -14,6 +14,7 @@ import {
   useTryOn,
   type Worn,
 } from "@/components/try-on/use-try-on";
+import { useGarmentTexture } from "@/components/try-on/use-garment-texture";
 import { useOutfit } from "@/components/try-on/use-outfit";
 import { avatarUrl, type OutfitSlot } from "@/lib/outfit";
 import {
@@ -266,6 +267,17 @@ function AvatarWithOutfit({
   onChange: (settings: AvatarSettings) => void;
 }) {
   const { outfit, top, bottom, takeOff } = useOutfit();
+  // 着せられる服だけ、写真のテクスチャを聞く
+  const textureUrls = {
+    top: useGarmentTexture(
+      top !== "loading" && top !== null && "worn" in top ? outfit.top : null,
+    ),
+    bottom: useGarmentTexture(
+      bottom !== "loading" && bottom !== null && "worn" in bottom
+        ? outfit.bottom
+        : null,
+    ),
+  };
   if (top === "loading" || bottom === "loading")
     return (
       <main className="px-4 py-5">
@@ -287,6 +299,7 @@ function AvatarWithOutfit({
         bottom: bottom && "worn" in bottom ? bottom.worn : null,
       }}
       problems={problems}
+      textureUrls={textureUrls}
       onTakeOff={takeOff}
     />
   );
@@ -381,12 +394,14 @@ function AvatarEditor({
   onChange,
   worn,
   problems,
+  textureUrls,
   onTakeOff,
 }: {
   settings: AvatarSettings;
   onChange: (settings: AvatarSettings) => void;
   worn: Worn;
   problems: Record<OutfitSlot, string | null>;
+  textureUrls: Record<OutfitSlot, string | null>;
   onTakeOff: (slot: OutfitSlot) => void;
 }) {
   const {
@@ -432,7 +447,11 @@ function AvatarEditor({
       <div className="relative">
         <AvatarErrorBoundary>
           <div className="aspect-3/4 w-full touch-none overflow-hidden rounded bg-surface">
-            <TryOnScene {...sceneProps} />
+            <TryOnScene
+              {...sceneProps}
+              shirtTextureUrl={textureUrls.top}
+              trouserTextureUrl={textureUrls.bottom}
+            />
           </div>
         </AvatarErrorBoundary>
         {tooSmall.length > 0 && (
