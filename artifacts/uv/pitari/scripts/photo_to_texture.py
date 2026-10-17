@@ -571,7 +571,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
         debug[filled] = debug[filled] * 0.4 + np.array([0, 200, 255]) * 0.6
         debug[low] = debug[low] * 0.7 + np.array([255, 220, 0]) * 0.3
         debug[uncovered] = (255, 0, 255)
-        Image.fromarray(debug.astype(np.uint8), "RGB").save(out / "debug_texture_coverage.png")
+        # 確認用なので、圧縮を弱めて保存を速くする（約0.5秒→0.2秒）。texture.pngはStorageに置くので小さく保つ。
+        Image.fromarray(debug.astype(np.uint8), "RGB").save(out / "debug_texture_coverage.png", compress_level=1)
     report["timingsMs"] = clock.ms
     total = int(all_uv.sum())
     report["coverage"] = {
