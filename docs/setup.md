@@ -85,11 +85,11 @@ mainにマージすると、CIが通った後にGitHub Actionsが本番に出す
 
 ### Actionsに置いてあるsecret
 
-| 名前                | 中身                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `VERCEL_TOKEN`      | Vercelの鍵。VercelのAccount Settingsの「Tokens」で作る。スコープはpitariのプロジェクトのチームに絞り、有効期限を付ける |
-| `VERCEL_ORG_ID`     | `.vercel/project.json`の`orgId`                                                                                        |
-| `VERCEL_PROJECT_ID` | `.vercel/project.json`の`projectId`                                                                                    |
+| 名前                | 中身                                                                                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `VERCEL_TOKEN`      | Vercelの鍵。VercelのAccount Settingsの「Tokens」で作る。Scopeはpitariのプロジェクトだけにし（「All Projects」にしない）、有効期限を付ける |
+| `VERCEL_ORG_ID`     | `.vercel/project.json`の`orgId`                                                                                                           |
+| `VERCEL_PROJECT_ID` | `.vercel/project.json`の`projectId`                                                                                                       |
 
 鍵を作り直したら`gh secret set VERCEL_TOKEN`で入れ直す（値は画面に出さずに入力できる）。
 
