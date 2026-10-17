@@ -29,10 +29,10 @@ export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
   sleeve: "袖丈",
 };
 
-/** 服データ（short_sleeve_top・long_sleeve_top）からTシャツ・長袖の4項目を取り出す。4項目はnullにならない前提 */
+/** 服データ（short_sleeve_top・long_sleeve_top・shirt）からTシャツ・長袖・シャツの4項目を取り出す。4項目はnullにならない前提 */
 export function topMeasurements(g: GarmentSize): Measurements {
-  if (g.category !== "short_sleeve_top" && g.category !== "long_sleeve_top")
-    throw new Error(`Tシャツ・長袖ではありません: ${g.category}`);
+  if (g.category === "trousers")
+    throw new Error(`Tシャツ・長袖・シャツではありません: ${g.category}`);
   const m = g.measurements;
   return MeasurementsSchema.parse({
     length: m.bodyLengthCm,

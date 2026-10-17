@@ -83,7 +83,7 @@ const SAMPLE_LONGSLEEVE = {
 const SAMPLE_SHIRT = {
   id: "44444444-4444-4444-8444-444444444444",
   name: "白いシャツ",
-  category: "long_sleeve_top",
+  category: "shirt",
   measurements: {
     shoulderWidthCm: 44,
     sleeveLengthCm: 60,

@@ -8,6 +8,7 @@ export type Outfit = Record<OutfitSlot, string | null>;
 const slotOfCategory: Record<Category, OutfitSlot> = {
   short_sleeve_top: "top",
   long_sleeve_top: "top",
+  shirt: "top",
   trousers: "bottom",
 };
 

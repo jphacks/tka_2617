@@ -118,7 +118,8 @@ export function GarmentDetail({ id }: { id: string }) {
         },
       );
       const backSaved = await uploadBackPhoto(id, back);
-      setTextureStatus(textureRequestMessage(backSaved.texture));
+      if (garment.category !== "shirt")
+        setTextureStatus(textureRequestMessage(backSaved.texture));
       const saved = await requestJson<GarmentView>(
         `/api/garments/${encodeURIComponent(id)}`,
       );
@@ -233,16 +234,18 @@ export function GarmentDetail({ id }: { id: string }) {
       <section aria-label="テクスチャ" className="mt-5 rounded bg-surface p-4">
         <p className="text-sm font-semibold">写真からテクスチャを作る</p>
         <p className="mt-2 text-xs leading-relaxed text-description">
-          表と裏の写真がそろうと自動で生成を依頼します。保存済みの写真から作り直すこともできます。完成した画像はPC内に保存されます。
+          {garment.category === "shirt"
+            ? "シャツはまだテクスチャを作れません。"
+            : "表と裏の写真がそろうと自動で生成を依頼します。保存済みの写真から作り直すこともできます。完成した画像はPC内に保存されます。"}
         </p>
-        {!hasTexturePhotos && (
+        {!hasTexturePhotos && garment.category !== "shirt" && (
           <p className="mt-2 text-xs text-description">
             表と裏の写真を登録してください。
           </p>
         )}
         <button
           type="button"
-          disabled={busy || !hasTexturePhotos}
+          disabled={busy || !hasTexturePhotos || garment.category === "shirt"}
           onClick={() => void createTexture()}
           className={`mt-3 min-h-11 w-full rounded bg-main px-4 py-2 text-sm font-semibold text-white disabled:opacity-40 ${focusRing}`}
         >

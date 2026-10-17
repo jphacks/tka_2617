@@ -119,7 +119,7 @@ if (selected) {
 | -------------------- | ------------------------------------------------------------- |
 | `id`                 | 服を識別するUUID文字列                                        |
 | `name`               | 服の名前。空文字列の場合もある                                |
-| `category`           | `short_sleeve_top`・`long_sleeve_top`・`trousers`             |
+| `category`           | `short_sleeve_top`・`long_sleeve_top`・`shirt`・`trousers`    |
 | `measurements`       | 全10項目の確定値。各項目はnumberまたはnull                    |
 | `measurementVersion` | 採寸方式の版。現在は`df2-a4-flat-midpoint-v2`。旧v1も存在する |
 | `createdAt`          | 作成日時。更新日時ではない                                    |
@@ -277,13 +277,26 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 /avatar?top=<上の服のID>&bottom=<下の服のID>
 ```
 
-- `top`は半袖（`short_sleeve_top`）と長袖（`long_sleeve_top`）、`bottom`はズボン（`trousers`）。服の種類と上下の対応は`apps/web/src/lib/outfit.ts`の`outfitSlot`にある
+- `top`は半袖（`short_sleeve_top`）・長袖（`long_sleeve_top`）・シャツ（`shirt`）、`bottom`はズボン（`trousers`）。服の種類と上下の対応は`apps/web/src/lib/outfit.ts`の`outfitSlot`にある
 - 片方だけのこともある。指定が無い側は、今までどおりの服（見本の服など）を着せる
 - 最後に着せた服は、ブラウザのlocalStorage（`pitari.outfit`）に覚えておく。別の服の詳細から押すと、同じ側だけが入れ替わり、もう片方は残る
 - 服を選び直すときは、下のナビの「クローゼット」に戻って服の詳細を開き、もう一度「アバターに着せる」を押す。上を選んだあとに下を選ぶときも同じで、覚えていた上はそのまま残る
 - アバターの画面で服を外すときは、外す側を`null`にした服を`saveOutfit`で保存し、`router.replace(avatarUrl(outfit))`でURLからもその側を消す（#70）。URLを消すだけでは、次に服の詳細から押したときに、覚えていた服がURLに戻ってくる
 - アバターの画面では、`readOutfit(useSearchParams())`で服のIDを読み、`GET /api/garments/{服ID}`で寸法を取る（#70）。IDの形でない値は、指定されていないものとして扱う
 - 服が消されていて取得できないときの表示は、#70で決める
+
+## 服の種類と3Dモデルの対応
+
+撮影の画面では、写真を選ぶ前に服の種類を選ぶ。選んだ種類を`category`に保存し、アバターではこの表の3Dモデルで着せる。表はwebの`categoryModels`（`apps/web/src/lib/garment-category.ts`）に置いた。上の服の値は`TOPS`（`apps/web/src/components/try-on/use-try-on.ts`）のキーで、キーが無くなると型エラーになる。
+
+| 画面の表示 | `category`         | 3Dモデル              | 使う寸法                       |
+| ---------- | ------------------ | --------------------- | ------------------------------ |
+| シャツ     | `shirt`            | `shirt_male.glb`      | 着丈・身幅・肩幅・袖丈         |
+| 長そで     | `long_sleeve_top`  | `longsleeve_male.glb` | 着丈・身幅・肩幅・袖丈         |
+| Tシャツ    | `short_sleeve_top` | `tshirt_male.glb`     | 着丈・身幅・肩幅・袖丈         |
+| ズボン     | `trousers`         | `trousers_male.glb`   | ウエスト・ヒップ・わたり幅など |
+
+シャツは長そでと同じ点で採寸する。シャツのテクスチャはまだ作れない（[ADR 0035](adr/0035-choose-garment-type-first.md)）。
 
 ## 長そでの受け渡し
 
