@@ -8,7 +8,8 @@ const READ_TIMEOUT_MS = 15_000;
 
 /**
  * 服のテクスチャの画像のURL。作成中は数秒おきに聞き直し、完成したら新しいURLを返す。
- * 無い・失敗した・聞けない（推論サービスが止まっているなど）ときはnullで、服は今の色のまま出す
+ * まだ無い・作れなかったときと、最初から聞けないときはnullで、服は材質の色のまま出す。
+ * 一度画像のURLを返した後に聞き直せなかったときは、そのURLを返し続ける
  */
 export function useGarmentTexture(garmentId: string | null): string | null {
   const [found, setFound] = useState<{
@@ -37,7 +38,8 @@ export function useGarmentTexture(garmentId: string | null): string | null {
             timer = setTimeout(check, POLL_MS);
         })
         .catch(() => {
-          // 聞けなくても服は着せられるので、今の色のまま出し、聞き直さない
+          // 前に返した画像はStorageに保存済みで、聞けなくても使えるので、消さずに残す。
+          // 聞けないまま聞き直しても同じなので、聞き直さない
         });
     };
     check();
