@@ -21,13 +21,15 @@ UV_MAP = "UVMap"
 
 
 def main():
-    blender_render.object_mode()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--object", default=TARGET)
     args = parser.parse_args(sys.argv[sys.argv.index("--") + 1:])
     output = args.output
     obj = bpy.data.objects[args.object]
+    # object_mode()はアクティブなオブジェクトにだけ効くので、先にズボンをアクティブにする
+    bpy.context.view_layer.objects.active = obj
+    blender_render.object_mode()
     mesh = obj.data
     layer = mesh.uv_layers[UV_MAP]
     if len(layer.data) != len(mesh.loops):
