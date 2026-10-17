@@ -2,14 +2,26 @@ import { supabase } from "#src/lib/supabase";
 import { env } from "#src/lib/env";
 import { HttpError } from "#src/lib/http-error";
 import type { Measurements } from "#src/lib/measurement-schema";
+import type { Season } from "#src/lib/garment-records";
 
 export async function updateGarment(
   id: string,
-  values: { name?: string; measurements?: Measurements },
+  values: {
+    name?: string;
+    measurements?: Measurements;
+    purchasedMonth?: string | null;
+    seasons?: Season[];
+  },
 ) {
   const { data, error } = await supabase
     .from("garments")
-    .update({ ...values, updated_at: new Date().toISOString() })
+    .update({
+      name: values.name,
+      measurements: values.measurements,
+      purchased_month: values.purchasedMonth,
+      seasons: values.seasons,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .eq("profile_id", env.DEMO_PROFILE_ID)
     .select("id")

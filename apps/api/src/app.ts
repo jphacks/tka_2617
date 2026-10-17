@@ -58,4 +58,4 @@ export type {
   DetectionResult,
 } from "#src/lib/measurement-schema";
 export type { MeasurementDefinition } from "#src/lib/measurements";
-export type { GarmentView } from "#src/lib/garment-records";
+export type { GarmentView, Season } from "#src/lib/garment-records";

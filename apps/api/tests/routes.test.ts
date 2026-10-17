@@ -51,8 +51,22 @@ void test("壊れたJSON・ID・カテゴリをDB呼び出し前に拒否する"
   );
 });
 
-void test("裏面の不正な入力をDB呼び出し前に拒否する", async () => {
+void test("購入時期・季節・裏面の不正な入力をDB呼び出し前に拒否する", async () => {
   const path = "/v1/garments/11111111-1111-4111-8111-111111111111";
+  for (const body of [
+    { purchasedMonth: "2026-13" },
+    { purchasedMonth: "2026/04" },
+    { seasons: ["spring", "rainy"] },
+    { seasons: "summer" },
+    {},
+  ]) {
+    const response = await app.request(path, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    assert.equal(response.status, 400, JSON.stringify(body));
+  }
   const empty = new FormData();
   assert.equal(
     (await app.request(`${path}/back`, { method: "PUT", headers, body: empty }))

@@ -7,6 +7,7 @@ import {
   measurementsSchema,
 } from "#src/lib/measurement-schema";
 import { HttpError } from "#src/lib/http-error";
+import { purchasedMonthSchema, seasonSchema } from "#src/lib/garment-records";
 import { createGarment } from "#src/services/create-garment";
 import { listGarments } from "#src/services/list-garments";
 import { getGarment } from "#src/services/get-garment";
@@ -108,15 +109,30 @@ export const garments = new Hono()
         .object({
           name: z.string().trim().max(100).optional(),
           measurements: measurementsSchema.optional(),
+          purchasedMonth: purchasedMonthSchema.nullable().optional(),
+          // 送られた順や重複に関係なく、春夏秋冬の順で保存する
+          seasons: z
+            .array(seasonSchema)
+            .max(4)
+            .transform((values) =>
+              seasonSchema.options.filter((season) => values.includes(season)),
+            )
+            .optional(),
         })
         .strict()
         .refine(
           (value) =>
-            value.name !== undefined || value.measurements !== undefined,
+            value.name !== undefined ||
+            value.measurements !== undefined ||
+            value.purchasedMonth !== undefined ||
+            value.seasons !== undefined,
         ),
       (result, c) => {
         if (!result.success)
-          return c.json({ error: "名前と寸法を確認してください" }, 400);
+          return c.json(
+            { error: "名前・寸法・購入時期・季節を確認してください" },
+            400,
+          );
       },
     ),
     async (c) =>

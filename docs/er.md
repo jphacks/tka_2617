@@ -42,7 +42,7 @@ erDiagram
 - categoryはshort_sleeve_top・trousers。measurementsは[API一覧](api.md)の共通型。
 - 画像は服1着につき各roleを1枚ずつ保存できる。現在のv2ではランドマーク・A4四隅ともmeasurement画像に保存する。cutoutは表示用PNGでpoints・paper_cornersは空配列、pixels_per_cmはnull。旧v1ではA4四隅はoriginal画像にある。
 - backは裏面のJPEG、back_cutoutは裏面の表示用PNG。どちらも採寸しないため、points・paper_cornersは空配列、pixels_per_cm・model_versionはnull。差し替えのたびに新しいキーで保存し、行の入れ替えは関数`replace_garment_back`（`20261017000200_replace_garment_back.sql`）で1つのトランザクションにする。関数はapiの`service_role`だけが実行できる（[ADR 0020](adr/0020-back-photo-as-separate-role.md)）。
-- purchased_monthは購入した年月（YYYY-MM）、seasonsは着る季節の複数選択。
+- 購入時期と季節は[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。
 - 元画像とはブラウザで向き・縮小・EXIF除去を確定した画像であり、カメラの元ファイルとは異なる。
 - 全テーブルでRLSを有効にし、公開ポリシーは設けない。apiのsecret keyだけがDBを操作する。
 - Storageは非公開のgarmentsバケット。JPEG・PNGを許可し、1枚8MiBまで。apiが期限付きURLを発行する。

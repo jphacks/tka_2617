@@ -32,7 +32,7 @@ JSONはcamelCase、DBはsnake_case。エラーはHTTPステータスと`{ error:
 | GET      | `/v1/garments`          | 一覧。任意のcategoryで絞り込み、最新100件 |
 | POST     | `/v1/garments`          | 写真・点・確定した寸法を登録              |
 | GET      | `/v1/garments/:id`      | 詳細                                      |
-| PATCH    | `/v1/garments/:id`      | 名前・寸法を変更                          |
+| PATCH    | `/v1/garments/:id`      | 名前・寸法・購入時期・季節を変更          |
 | PUT      | `/v1/garments/:id/back` | 裏面の写真を登録・差し替え                |
 | DELETE   | `/v1/garments/:id`      | 写真と服を削除                            |
 
@@ -85,6 +85,8 @@ type Garment = {
   category: "short_sleeve_top" | "trousers";
   measurements: Measurements;
   measurementVersion: string;
+  purchasedMonth: string | null; // "2026-04"のような年月
+  seasons: ("spring" | "summer" | "autumn" | "winter")[];
   createdAt: string;
   images: {
     id: string;
@@ -102,7 +104,7 @@ type Garment = {
 
 画像URLは非公開Storageの10分間有効な署名URL。期限が切れたら一覧・詳細を再取得する。pointsとpaperCornersはそれぞれ所属する画像レコード内のピクセル座標。3D担当には主にcategory・measurements・measurementVersionを渡す。
 
-PATCHの入力は`{ name?, measurements? }`、成功は`200 { id }`。寸法オブジェクトは全体を置き換える。カテゴリ変更と保存後の点編集は初期版では非対応。DELETEは画像を先に消してから行を削除し、成功は204。途中失敗は503を返し、再試行できる。
+PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功は`200 { id }`。寸法オブジェクトと季節の配列は全体を置き換える。purchasedMonthは`YYYY-MM`、nullで未設定に戻す。seasonsは春夏秋冬の重複しない0〜4件で、季節の順に並べて保存する。カテゴリ変更と保存後の点編集は初期版では非対応。DELETEは画像を先に消してから行を削除し、成功は204。途中失敗は503を返し、再試行できる。
 
 ### PUT /v1/garments/:id/back
 
@@ -117,6 +119,7 @@ PATCHの入力は`{ name?, measurements? }`、成功は`200 { id }`。寸法オ�
 - カテゴリは初期版ではshort_sleeve_topとtrousersの2つ。
 - 点番号はカテゴリ内の1始まり。scoreはヒートマップ値、手動点はnull。アノテーションの可視性vとは別物。
 - MeasurementsはshoulderWidthCm・sleeveLengthCm・bodyWidthCm・bodyLengthCm・waistCm・hipCm・thighWidthCm・riseCm・inseamCm・hemWidthCm。各値は正のcmまたはnull。
+- 購入時期と季節は服の属性で、採寸には使わない。[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。
 - 新規登録のmeasurementVersionは`df2-a4-flat-midpoint-v2`。旧v1の取得・数値編集も可能。ウエストとヒップは幅の2倍。
 
 ## 後続の設計候補
