@@ -44,11 +44,65 @@
 
    webは http://localhost:3000 、apiは http://localhost:3001 で動く。http://localhost:3000/api/health が`{"ok":true}`を返せば、webからapiまでつながっている。
 
+## mainを取り込んだあと
+
+他の人の変更をmainから取り込んだら、画面を確かめる前に、依存・DB・推論サービスを今のmainに合わせる。どれかが古いと、画面は開いても、登録・裏面の保存・テクスチャの生成が失敗する。
+
+1. mainを最新にする
+
+   ```bash
+   git switch main
+   git pull
+   ```
+
+2. 依存を入れ直す。`pnpm-lock.yaml`が変わっていなくても、毎回実行してよい
+
+   ```bash
+   pnpm install
+   ```
+
+   Windowsでは、動いている`pnpm dev`がファイルをつかんで失敗することがある。そのときは先に`pnpm dev`を止める。
+
+3. ローカルDBに、まだ当たっていないmigrationを当てる
+
+   ```bash
+   supabase migration list --local
+   supabase migration up --local
+   ```
+
+   一覧で`Remote`（ローカルDBの側）が空の行が、まだ当たっていないmigration。`supabase db reset`はローカルのデータを消すので、ここでは使わない。
+
+4. `pnpm dev`を止めて、起動し直す。ファイルの変更は自動で読み直すが、依存を入れ直したあとは起動し直す
+
+5. 採寸やテクスチャを確かめるときは、推論サービスも止めて起動し直す。推論サービスはファイルの変更を読み直さない。`apps/inference/requirements.txt`が変わったときは、[推論サービスのREADME](../apps/inference/README.md)の手順で依存も入れ直す
+
+   ```powershell
+   ./apps/inference/.venv/Scripts/python.exe apps/inference/run.py
+   ```
+
+6. つながっているか確かめる
+   - http://localhost:3000/api/health が`{"ok":true}`を返す
+   - http://localhost:3000/api/inference-status の`weightsPresent`と`detectorPresent`が`true`。`modelLoaded`は最初の採寸までは`false`のまま
+
+### ブラウザで確かめること
+
+写真は、A4の用紙と服を同じ平面に平置きし、真上から撮る（[採寸の定義](measurement.md)）。
+
+- 撮影（http://localhost:3000/capture ）：Tシャツ・長そで・パンツを撮り、「寸法を測定」→「クローゼットに登録」。種類が違えば「服の種類」で選び直す。裏面も撮れる
+- クローゼット（http://localhost:3000/ ）から服の詳細：裏面の撮影と撮り直し、購入時期と季節の保存、「テクスチャを作る」
+- アバター（http://localhost:3000/avatar ）：体・髪・服・靴を選んで着せる
+- テクスチャ：受け付けると`apps/inference/textures/{生成日時}_{種類}_{服IDの先頭8文字}/`ができる。数十秒〜数分で`job.json`の`status`が`done`になり、フォルダと同じ名前の`.png`ができる
+
+採寸とテクスチャには、Gitに含まれない次のものが要る。無くても、ほかの画面は確かめられる。
+
+- 推論サービスの設定（`INFERENCE_TOKEN`）とモデル：[推論サービスのREADME](../apps/inference/README.md)
+- UVテンプレート：Tシャツは`artifacts/uv/pitari/uv_template.json`、長そでは`artifacts/uv/pitari/longsleeve/uv_template.json`、ズボンは`artifacts/uv/pitari/trousers/uv_template.json`。無い種類は「テクスチャを作る」が503になる。元のモデル（`.blend`など）を持っている人から受け取って`artifacts/uv/pitari/inputs/`に置き、[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)の手順で作る
+
 ## 服の採寸を開発するとき
 
 Python推論サービスは別起動。依存の隔離・モデルの配置・画面の操作は[推論サービスのREADME](../apps/inference/README.md)を参照する。採寸画面は`http://localhost:3000/capture`。
 
-既存のローカルDBに新しいmigrationだけを適用する場合は`supabase migration up --local`を使う。`db reset`は既存のローカルデータを消すため、保存済みデータが必要な環境では実行しない。
+mainを取り込んで新しいmigrationが入ったときは、上の「mainを取り込んだあと」の手順で当てる。
 
 ## スマホで撮影する
 
