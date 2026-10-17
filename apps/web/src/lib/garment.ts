@@ -1,36 +1,8 @@
+import type { GarmentView } from "@pitari/api";
 import { z } from "zod";
 
-/* ---------------------------------------------------------------- 服データ（チーム共通の形式・仮） */
-
-const cm = z.number().nullable();
-
-/** 服データの寸法。measure/ が写真からDeepFashion2の点で測った値（cm）。カテゴリに無い項目はnull */
-export const GarmentMeasurementsSchema = z.object({
-  shoulderWidthCm: cm, // 肩幅DF2 7→25
-  sleeveLengthCm: cm, // 袖丈DF2 7→9
-  bodyWidthCm: cm, // 身幅DF2 12→20（脇の下→脇の下）
-  bodyLengthCm: cm, // 着丈DF2 1→16（後ろ襟ぐり中心→裾の中心）
-  waistCm: cm,
-  hipCm: cm,
-  thighWidthCm: cm,
-  riseCm: cm,
-  inseamCm: cm,
-  hemWidthCm: cm,
-});
-
-export const GarmentSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  category: z.enum([
-    "short_sleeve_top",
-    "long_sleeve_top",
-    "shirt",
-    "trousers",
-  ]),
-  measurements: GarmentMeasurementsSchema,
-  measurementVersion: z.string(),
-});
-export type Garment = z.infer<typeof GarmentSchema>;
+/** 3Dに着せるのに使う服データの項目。APIのGarmentViewのうち、寸法と種類だけ */
+export type GarmentSize = Pick<GarmentView, "category" | "measurements">;
 
 /* ---------------------------------------------------------------- 3D側の寸法 */
 
@@ -58,7 +30,7 @@ export const MEASUREMENT_LABELS: Record<MeasurementKey, string> = {
 };
 
 /** 服データ（short_sleeve_top・long_sleeve_top・shirt）からTシャツ・長袖・シャツの4項目を取り出す。4項目はnullにならない前提 */
-export function topMeasurements(g: Garment): Measurements {
+export function topMeasurements(g: GarmentSize): Measurements {
   if (g.category === "trousers")
     throw new Error(`Tシャツ・長袖・シャツではありません: ${g.category}`);
   const m = g.measurements;
