@@ -10,6 +10,7 @@
   内側は股の縫い目とする。股の縫い目は脚の内側よりやや前にあるため、内側の細い帯には背面の写真が入る。
 """
 
+import hashlib
 import json
 import sys
 from collections import Counter, defaultdict
@@ -36,6 +37,12 @@ PARTS = ["front_right", "front_left", "back_right", "back_left"]
 DF2_PAIRS = [[1, 3], [4, 14], [5, 13], [6, 12], [7, 11], [8, 10]]
 DF2_CENTERS = [2, 9]
 
+# 受領したjeansの面配列とUV配列のSHA-256。求め方はexport_trousers_mesh.pyと同じで、mesh_info.jsonの値とは違う。
+SOURCE_SHA256 = {
+    "topology": "9aabb905e06856d3f826984ab5fe8581778eb078a4789b62f888a8d2463ac4c1",
+    "uvmap": "db11a0796d873c21d8ad26143c27e49e4981be9689de5db8c3394e7c908e6d0a",
+}
+
 
 def df2_table(view):
     # 前面の写真では画像の左が着用者の右脚、背面の写真（左右に裏返して置く）では左脚。
@@ -57,6 +64,11 @@ def df2_table(view):
 
 def load():
     data = json.loads((OUT / "data/mesh_export.json").read_text(encoding="utf-8"))
+    # 別のメッシュから作ると、アプリのGLBのUVと合わないテンプレートになる
+    for name, key in (("topology", "faces"), ("uvmap", "uv")):
+        digest = hashlib.sha256(json.dumps(data[key], separators=(",", ":")).encode()).hexdigest()
+        if digest != SOURCE_SHA256[name]:
+            raise SystemExit(f"mesh_export.jsonの{key}が受領したズボンと違います。メッシュを変えた場合は、SOURCE_SHA256とテンプレートの版を更新してください")
     return data, np.array(data["vertices"]), np.array(data["uv"]), data["faces"], data["face_loops"]
 
 
@@ -152,6 +164,8 @@ def fold_line(members, faces, face_loops, vertices, uv, side, bottom, top):
                     point = p + t * (q - p)
                     if best is None or outward * point[0] > outward * best[0][0]:
                         best = (point, pu + t * (qu - pu))
+        if best is None:
+            raise SystemExit(f"{side}の高さ{height:.3f}で、脚の断面が見つかりません")
         path3d.append(best[0])
         path_uv.append(best[1])
     path3d.append(vertices[top[0]])
