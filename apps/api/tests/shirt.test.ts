@@ -116,8 +116,16 @@ void test("シャツはテンプレートがないので、テクスチャを依
         category: "shirt",
         created_at: "2026-10-17T00:00:00Z",
         garment_images: [
-          { role: "measurement", storage_key: "front.jpg" },
-          { role: "back", storage_key: "back.jpg" },
+          {
+            id: "22222222-2222-4222-8222-222222222222",
+            role: "measurement",
+            storage_key: "front.jpg",
+          },
+          {
+            id: "33333333-3333-4333-8333-333333333333",
+            role: "back",
+            storage_key: "back.jpg",
+          },
         ],
       }),
     ),
