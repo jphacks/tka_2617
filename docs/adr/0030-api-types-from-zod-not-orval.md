@@ -9,6 +9,7 @@ AIがAPIの型を画面ごとに書くと、同じ形の型が何か所にもで
 調べると、今のPitariでは、APIの型はすでに機械的に作られていた。
 
 - apiのzodスキーマから`z.infer`で型を作り、`apps/api/src/app.ts`からexportする
+  - ただし、`GarmentView`、`BackPhotoResponse`、`MeasurementDefinition`は、zodを使わずにapiで手で書いた型をexportしている（`GarmentView`の`category`など、一部の項目はzodの型を使っている）。どれもapiの1か所にあるので、webとずれることは無い。ただ、routeが返す値をzodで検証していないので、型と実際に返す値がずれる可能性は残る
 - webは`import type { GarmentView } from "@pitari/api"`のように受け取る
 - webからapiは`src/server/api.ts`の`hc<AppType>`（Hono RPC）で呼び、入力と出力の型はapiのrouteから推論される
 
@@ -34,7 +35,7 @@ AIがAPIの型を画面ごとに書くと、同じ形の型が何か所にもで
 
 ## 影響
 
-- 今ある`requestJson<T>`の手書きの応答の形は、すぐには直さない。そのコードを触るときに、apiで応答全体の型を`z.infer`で作ってexportし、置き換える
+- apiの手書きの型（`GarmentView`など）と、今ある`requestJson<T>`の手書きの応答の形は、すぐには直さない。そのコードを触るときに、apiで応答全体の型を`z.infer`で作ってexportし、置き換える
 - `openapi.yaml`は作らない。APIの説明は、これまでどおり`docs/api.md`を手で直す。実装とずれる可能性は残る
 - 見直す条件：TypeScript以外からAPIを使うことになったとき（ネイティブのアプリ、外部の開発者など）。または、`docs/api.md`と実装のずれが問題になったとき。その場合は、先に`@hono/zod-openapi`を考える
 
