@@ -169,6 +169,7 @@ export type Database = {
       }
       save_garment_texture: {
         Args: {
+          expected_back_image_id: string
           new_image: Json
           target_garment_id: string
           target_profile_id: string

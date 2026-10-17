@@ -11,7 +11,7 @@ const sourceSchema = z.object({
   category: categorySchema,
   created_at: z.iso.datetime({ offset: true }),
   garment_images: z.array(
-    z.object({ role: z.string(), storage_key: z.string() }),
+    z.object({ id: z.uuid(), role: z.string(), storage_key: z.string() }),
   ),
 });
 
@@ -23,7 +23,7 @@ export async function requestGarmentTexture(id: string) {
     );
   const { data, error } = await supabase
     .from("garments")
-    .select("category, created_at, garment_images(role, storage_key)")
+    .select("category, created_at, garment_images(id, role, storage_key)")
     .eq("id", id)
     .eq("profile_id", env.DEMO_PROFILE_ID)
     .maybeSingle();
@@ -51,6 +51,8 @@ export async function requestGarmentTexture(id: string) {
   form.set("garmentId", id);
   form.set("category", source.data.category);
   form.set("garmentCreatedAt", source.data.created_at);
+  // 状態を聞くときに、裏面を撮り直す前の写真から作った作業を見分けるため
+  form.set("backImageId", back.id);
   for (const [field, image] of [
     ["front", front],
     ["back", back],
