@@ -23,6 +23,14 @@
 - DB変更は`supabase/migrations`のみ。新しいテーブルはRLSを有効にし、`docs/er.md`を更新する。
 - 設計上の決定は`docs/adr/`に1件ずつ残す。候補要件は`docs/requirements-candidates.md`へ。
 
+## commitとPR
+
+- ブランチは`feature/<自分の名前>/<内容>`。PRは目的を1つにする。
+- PRの差分は400行くらいまで。`bash scripts/pr-size.sh`で数える（生成物とバイナリは数えない。PRのマージ先と比べるので、積み上げたPRでもそのPRの分だけを数える）。超えそうなら先にPRを分け、分けないなら本文に理由を書く。
+- commitは、それだけで意味が通り、lintと型が通る単位に分ける。整形・名前の変更・生成物の更新は、機能の変更と別のcommitにする。
+- メッセージは`feat(web): 〜する`の形（`fix`・`docs`・`chore`・`ci`・`refactor`など）。本文に「なぜ」を書く。
+- PR本文は`.github/pull_request_template.md`に沿って書く。
+
 ## セキュリティと権限
 
 - 外部API・backend呼び出しは`apps/web/src/server/`に置き、先頭で`import "server-only"`する。秘密の値を`NEXT_PUBLIC_`にしない。
