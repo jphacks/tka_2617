@@ -172,6 +172,11 @@ export type PushOptions = {
   layers?: GarmentCollider[];
   /** 押し出す前に、服の今の形（ワールド座標）を変える（裾のたまりなど） */
   prepare?: (pos: Float32Array) => void;
+  /**
+   * prepareの後の服の形（ワールド座標）と体の形から、ほかにも服で覆われる体の頂点を決める（手にかぶせた袖など）。
+   * coveredと違い、服の裾より下の点も比べる
+   */
+  coveredAfterPrepare?: (pos: Float32Array, bodyPos: Float32Array) => number[];
 };
 
 /**
@@ -181,7 +186,12 @@ export function updatePush(
   garment: Mesh,
   body: BodyCollider,
   topo: Topology,
-  { covered = body.covered, layers = [], prepare }: PushOptions = {},
+  {
+    covered = body.covered,
+    layers = [],
+    prepare,
+    coveredAfterPrepare,
+  }: PushOptions = {},
 ): PushStats {
   const t0 = performance.now();
   const attr = ensurePushAttribute(garment);
@@ -270,6 +280,19 @@ export function updatePush(
       PUSH_OFFSET_M / 2,
       true,
     );
+    if (coveredAfterPrepare) {
+      const bodyPos = body.geometry.getAttribute("position")
+        .array as Float32Array;
+      coverTips(
+        pos,
+        push,
+        topo,
+        garmentIndex.array,
+        bodyPos,
+        coveredAfterPrepare(pos, bodyPos),
+        PUSH_OFFSET_M / 2,
+      );
+    }
     // 内側の服の縁（ズボンのウエストの上端など）が、頂点の間から出ないようにする
     for (const layer of layers) {
       coverTips(

@@ -31,6 +31,9 @@
 - [0014 ランドマークの編集を隠し、寸法名付き矢印で示す](0014-measurement-arrows.md)
 - [0015 服の写真をモデル固定のUVテンプレートで貼る](0015-uv-template-for-photo-texture.md)
 - [0016 採寸中は細かな進捗の目安と経過時間を表示する](0016-measurement-progress-estimate.md)
+- [0017 髪・靴のプリセットは、骨格ではなく体と同じシェイプキーで体に合わせる](0017-presets-follow-body-with-shape-keys.md)
+- [0018 長袖は、Tシャツの袖を手首まで伸ばして作る](0018-longsleeve-from-tshirt.md)
+- [0019 長袖のシャツは、male_casualsuit03 のシャツを使い、前の開け閉めはキーで作る](0019-shirt-from-casualsuit03.md)
 
 ## 参考文献
 

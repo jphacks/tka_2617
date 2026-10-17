@@ -5,7 +5,7 @@
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" --background --python assets/blender/build_tshirt.py
 
 出力:
-  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover）
+  apps/web/public/models/avatar_male.glb               体（体型キー、身長キー、服の下の重み _cover、靴ごとの靴で隠れる所 _shoe_<靴>、肌の明暗テクスチャ、親指を曲げるキー thumb_in）
   apps/web/public/models/tshirt_male.glb               Tシャツ（体型キー 3 個＋身長キー 2 個＋サイズキー 4 個）
   apps/web/public/models/tshirt_male_base.json         体型ごとの基準寸法（cm）
   apps/web/public/models/tshirt_male_height.json       標準の身長と、体型・身長ごとの基準寸法とキーの効き方 M、体の身幅
@@ -22,6 +22,7 @@ sys.path.insert(0, HERE)
 import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 import pitari_tshirt as pt  # noqa: E402
+import pitari_presets as pp  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
 MODELS = os.path.join(ROOT, "apps", "web", "public", "models")
@@ -29,12 +30,12 @@ OUT = os.path.join(HERE, "out")
 D = 10.0                    # +10cm の形を作ってから 0.1 倍で 1cm キーにする
 
 
-def make_size_key(shirt, part, lm, polys):
+def make_size_key(shirt, part, lm, polys, displacements=pt.DISPLACEMENTS):
     """part の +10cm の形を作り（実測で +10.00cm になるよう倍率を探す）、0.1 倍で size_part にする。
     体からの押し出しはキーに入れない（ブラウザの push-out.ts が毎回押し出す）。
     入れると、キーをマイナスで使ったときに押し出しが逆向きにかかり、裾などが頂点ごとにばらばらに内側へ引かれる"""
     B = pt.world_coords(shirt, "Basis")
-    disp = pt.DISPLACEMENTS[part]
+    disp = displacements[part]
     base = pt.measure(B, lm, polys)[part]
 
     def shape(k):
@@ -49,6 +50,19 @@ def make_size_key(shirt, part, lm, polys):
     pt.key_from_mix(shirt, work, 1.0 / D, f"size_{part}")
     shirt.shape_key_remove(shirt.data.shape_keys.key_blocks[work])
     pt.log(f"size_{part}: 倍率 {k:.4f}, +10 の形で {gain(k):+.2f}cm")
+
+
+def make_fold_key(shirt, lm, polys, fold=pt.width_fold_displacement):
+    """width_folds：身幅 +10cm で、均等に広げた形（size_width × 10）を、脇・背中の縦のしわの形
+    （fold。実測で +10.00cm になるよう倍率を探す）に置き換える差。値 1 で +10cm 分。
+    ブラウザは、身幅が基準より大きいときだけ size_width ÷ 10 を入れる。サイズの計算と検証には使わない"""
+    B = pt.world_coords(shirt, "Basis")
+    U = B + (pt.world_coords(shirt, "size_width") - B) * D
+    base = pt.measure(B, lm, polys)["width"]
+    k = pt.solve_scale(lambda k: pt.measure(B + fold(B, lm, k), lm, polys)["width"] - base, D)
+    F = B + fold(B, lm, k)
+    pt.set_key_from_world(shirt, "width_folds", B + (F - U))
+    pt.log(f"width_folds: 倍率 {k:.4f}, しわの形で {pt.measure(F, lm, polys)['width'] - base:+.2f}cm")
 
 
 def base_and_correction(shirt, lm, polys):
@@ -103,6 +117,10 @@ def main():
     shirt = pt.add_shirt(body)
     shirt.shape_key_add(name="Basis", from_mix=False)
     std_body = pt.body_mix_coords(body)
+    # 靴を一度ずつ着せて、靴で隠れる体の頂点グループ（Delete.<靴>）だけを残す
+    for asset, _ in pp.SHOES.values():
+        pt.remove_objects([pp.add_asset(body, "shoes", asset)])
+    thumb_in = pt.thumb_in_shape(body)
 
     lm = pt.find_landmarks(shirt)
     polys = pt.polys_of(shirt)
@@ -116,6 +134,7 @@ def main():
         pt.set_key_from_world(shirt, pt.height_key(d), pt.height_key_world(std_shirt, shirt_co))
     for part in pt.SIZE_PARTS:
         make_size_key(shirt, part, lm, polys)
+    make_fold_key(shirt, lm, polys)
 
     base, corr = base_and_correction(shirt, lm, polys)
     pt.write_json(os.path.join(MODELS, "tshirt_male_base.json"), base)
@@ -126,16 +145,21 @@ def main():
     shirt.parent = None
     shirt.matrix_world = mw
     pt.simple_material(shirt, "tshirt", (0.92, 0.92, 0.95, 1.0))
+    pt.apply_pitari_uv(shirt)                     # 写真から貼る用の UV（テクスチャ担当が作ったもの）
 
-    # 体：helper を消して標準体型を Basis に → 体型キー・身長キー → 服の下の重み（_cover）
+    # 体：helper を消して標準体型を Basis に → 体型キー・身長キー → 服の下の重み（_cover）、靴ごとの靴で隠れる所（_shoe_<靴>）
     keep = pt.bake_body(body)
-    pt.simple_material(body, "skin", (0.80, 0.64, 0.55, 1.0))
+    pp.skin_material(body)
     pt.set_point_attribute(body, "_cover", pt.cover_weights(body, shirt, lm))
+    for sid, (asset, _) in pp.SHOES.items():
+        pt.set_point_attribute(body, f"_shoe_{sid}", pp.vertex_group_weights(body, pp.shoe_delete_group(asset)))
     body.shape_key_add(name="Basis", from_mix=False)
     for b, (body_co, _) in shapes.items():
         pt.set_key_from_world(body, pt.build_key(b), body_co[keep])
     for d, (body_co, _) in height_shapes.items():
         pt.set_key_from_world(body, pt.height_key(d), pt.height_key_world(std_body[keep], body_co[keep]))
+    # 長袖が手にかぶさるときに、親指を袖の中に収める（ブラウザが入れる）
+    pt.set_key_from_world(body, "thumb_in", thumb_in[keep])
     pt.write_json(os.path.join(MODELS, "tshirt_male_height.json"),
                   height_table(shirt, body, lm, polys, standard_cm))
     moved = np.linalg.norm(pt.world_coords(body) - std_body[keep], axis=1).max()
@@ -148,4 +172,5 @@ def main():
     pt.log("完了")
 
 
-main()
+if __name__ == "__main__":       # build_longsleeve.py から関数だけを import できるように
+    main()

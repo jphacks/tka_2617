@@ -1,0 +1,96 @@
+{
+  "avatar": {
+    "path": "/models/avatar_male.glb"
+  },
+  "hair": [
+    {
+      "id": "short",
+      "name": "ショート",
+      "path": "/presets/hair/short.glb",
+      "source": "short02",
+      "thumbs": {
+        "front": "/presets/thumbs/hair_short_front.png",
+        "angle": "/presets/thumbs/hair_short_angle.png"
+      }
+    },
+    {
+      "id": "medium",
+      "name": "ミディアム",
+      "path": "/presets/hair/medium.glb",
+      "source": "short03",
+      "thumbs": {
+        "front": "/presets/thumbs/hair_medium_front.png",
+        "angle": "/presets/thumbs/hair_medium_angle.png"
+      }
+    },
+    {
+      "id": "long",
+      "name": "ロング",
+      "path": "/presets/hair/long.glb",
+      "source": "long01",
+      "thumbs": {
+        "front": "/presets/thumbs/hair_long_front.png",
+        "angle": "/presets/thumbs/hair_long_angle.png"
+      }
+    },
+    {
+      "id": "spiky",
+      "name": "無造作ショート",
+      "path": "/presets/hair/spiky.glb",
+      "source": "short01",
+      "thumbs": {
+        "front": "/presets/thumbs/hair_spiky_front.png",
+        "angle": "/presets/thumbs/hair_spiky_angle.png"
+      }
+    }
+  ],
+  "shoes": [
+    {
+      "id": "sneaker",
+      "name": "スニーカー（白）",
+      "path": "/presets/shoes/sneaker.glb",
+      "source": "shoes05",
+      "thumbs": {
+        "front": "/presets/thumbs/shoes_sneaker_front.png",
+        "angle": "/presets/thumbs/shoes_sneaker_angle.png"
+      }
+    },
+    {
+      "id": "leather",
+      "name": "革靴（黒）",
+      "path": "/presets/shoes/leather.glb",
+      "source": "shoes04",
+      "thumbs": {
+        "front": "/presets/thumbs/shoes_leather_front.png",
+        "angle": "/presets/thumbs/shoes_leather_angle.png"
+      }
+    }
+  ],
+  "face": {
+    "path": "/presets/face/face.glb"
+  },
+  "hairColors": [
+    "#1E1B19",
+    "#3E2C22",
+    "#6B4A32",
+    "#9C7451",
+    "#C9A86A",
+    "#9A9894"
+  ],
+  "skinColors": [
+    "#F3E2D2",
+    "#E8CBB0",
+    "#D6AC89",
+    "#BC8963",
+    "#8F5E3D",
+    "#5C3B26"
+  ],
+  "sockColors": [
+    "#F2F2F2",
+    "#B8B8B8",
+    "#55575C",
+    "#1F1F22",
+    "#2B3A55",
+    "#D6C6AA"
+  ]
+}
