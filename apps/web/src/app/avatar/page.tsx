@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AvatarClient } from "@/app/avatar/avatar-client";
+import { AvatarFrame } from "@/components/avatar-frame";
 
 export const metadata: Metadata = {
   title: "アバター | Pitari",
@@ -13,7 +15,16 @@ export default function AvatarPage() {
           <h1 className="text-base font-semibold">アバター</h1>
         </div>
       </header>
-      <AvatarClient />
+      {/* 着せる服をURLのクエリから読むため、その部分はブラウザで描く */}
+      <Suspense
+        fallback={
+          <main className="px-4 py-5">
+            <AvatarFrame loading />
+          </main>
+        }
+      >
+        <AvatarClient />
+      </Suspense>
     </>
   );
 }
