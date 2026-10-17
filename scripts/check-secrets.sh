@@ -12,8 +12,19 @@ if command -v gitleaks >/dev/null; then
   gitleaks "${args[@]}" .
   status=$?
 elif command -v docker >/dev/null && docker info >/dev/null 2>&1; then
-  # Git BashからDockerにパスを渡すとき、/repoが書き換えられないようにする
-  MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd):/repo" "$image" "${args[@]}" /repo
+  # git worktreeで取り出したフォルダでは、.gitがファイルで、gitの本体は別の場所にある。
+  # 作業フォルダだけを渡すとコンテナの中でgitが本体を見つけられず、調べずに通ってしまうので、本体も渡す。
+  # コンテナの中の場所は/repoと/gitに固定する（WindowsのC:/…のパスはコンテナの中で使えないため）
+  top=$(git rev-parse --show-toplevel)
+  git_dir=$(git rev-parse --path-format=absolute --git-dir)
+  common_dir=$(git rev-parse --path-format=absolute --git-common-dir)
+  # ふつうは空。worktreeでは/worktrees/<名前>になる
+  worktree_part=${git_dir#"$common_dir"}
+  # Git BashからDockerにパスを渡すとき、/repoなどが書き換えられないようにする
+  MSYS_NO_PATHCONV=1 docker run --rm \
+    -v "$top:/repo" -v "$common_dir:/git" \
+    -e "GIT_DIR=/git${worktree_part}" -e GIT_WORK_TREE=/repo \
+    "$image" "${args[@]}" /repo
   status=$?
 else
   echo "gitleaksもDockerも無いので、秘密の検出を飛ばす（PRのCIで調べる）"
