@@ -26,6 +26,7 @@
 - [0009 アバターの体は、体重ではなく4つの体型から選ぶ](0009-build-instead-of-weight.md)
 - [0010 髪・靴のプリセットは、骨格ではなく体と同じシェイプキーで体に合わせる](0010-presets-follow-body-with-shape-keys.md)
 - [0011 長袖は、Tシャツの袖を手首まで伸ばして作る](0011-longsleeve-from-tshirt.md)
+- [0012 長袖のシャツは、male_casualsuit03 のシャツを使い、前の開け閉めはキーで作る](0012-shirt-from-casualsuit03.md)
 
 ## 参考文献
 
