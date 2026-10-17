@@ -149,9 +149,9 @@ def _textured_material(name, image, alpha_clip):
     return mat
 
 
-def skin_material(body):
+def skin_material(body, src=SKIN):
     # 灰色にすると唇やほおの赤みも消えて顔色が悪く見えるので、平均の色からの色の差は残す
-    img = gray_texture(SKIN, "skin_detail", SKIN_GRAY_MEDIAN, keep_alpha=False, file_format="JPEG", keep_hue=True)
+    img = gray_texture(src, "skin_detail", SKIN_GRAY_MEDIAN, keep_alpha=False, file_format="JPEG", keep_hue=True)
     body.data.materials.clear()
     body.data.materials.append(_textured_material("skin", img, alpha_clip=False))
 

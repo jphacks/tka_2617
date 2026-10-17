@@ -23,7 +23,7 @@ ARMPIT_DROP = 0.01          # 身幅は脇の下の高さで測る（measure/ �
                             # 脇の頂点のすぐ近くは押し出しで上下に動き、切り口が不安定になるので 1cm だけ下げる
 SHOULDER_DROP = 0.02        # 肩幅の切り口は後ろ襟ぐり中心から 2cm 下を通す（襟の穴を避ける）
 
-# 標準体型（男性）。体型プリセットはここからの差分で作る
+# 標準体型（男性）。体型プリセットはここからの差分で作る。女性はマクロ gender だけを変える
 STANDARD_MACROS = {
     "gender": 1.0, "age": 0.5, "muscle": 0.5, "weight": 0.5, "proportions": 0.5,
     "height": 0.5, "cupsize": 0.5, "firmness": 0.5,
@@ -43,8 +43,11 @@ BUILD_MACROS = {
 }
 
 
-def macros_for(build):
-    return {**STANDARD_MACROS, **BUILD_MACROS[build]}
+GENDER_MACROS = {"male": 1.0, "female": 0.0}
+
+
+def macros_for(build, gender="male"):
+    return {**STANDARD_MACROS, "gender": GENDER_MACROS[gender], **BUILD_MACROS[build]}
 
 
 def build_key(build):
@@ -890,15 +893,17 @@ def set_point_attribute(obj, name, values):
     a.data.foreach_set("value", np.asarray(values, dtype=np.float32))
 
 
-def export_glb(obj, path):
+def export_glb(obj, path, others=()):
+    """obj（と others）を 1 つの glb に書き出す"""
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    objs = [obj, *others]
     for o in bpy.context.view_layer.objects:
-        o.select_set(False)
-    obj.select_set(True)
+        o.select_set(o in objs)
     bpy.context.view_layer.objects.active = obj
-    if obj.data.shape_keys:
-        for k in obj.data.shape_keys.key_blocks:
-            k.value = 0.0
+    for o in objs:
+        if o.data.shape_keys:
+            for k in o.data.shape_keys.key_blocks:
+                k.value = 0.0
     bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", use_selection=True,
                               export_apply=False, export_morph=True, export_morph_normal=True,
                               export_animations=False, export_skins=False, export_yup=True,
@@ -917,25 +922,25 @@ def _garment_coords(body, dress):
     return coords if many else coords[0]
 
 
-def capture_builds(dress):
+def capture_builds(dress, gender="male"):
     """標準以外の体型ごとに体を作り、mhclo で服を着せ直して形だけ取り出す（dress は服を着せる関数）。
     dress が服のリストを返したときは、服の形もリストで返す"""
     shapes = {}
     for b in BUILDS:
         if b == "standard":
             continue
-        body = create_body(macros_for(b))
+        body = create_body(macros_for(b, gender))
         shapes[b] = (body_mix_coords(body), _garment_coords(body, dress))
         remove_objects([body])
         log(f"{b}: 体と服の形を取得")
     return shapes
 
 
-def capture_heights(dress):
+def capture_heights(dress, gender="male"):
     """標準体型で身長を ±HEIGHT_SPAN_CM 変えた体を作り、mhclo で服を着せ直して形だけ取り出す。
     マクロ height の値は、実測の身長差が ±HEIGHT_SPAN_CM になるよう探す"""
     def measure_height(macro):
-        body = create_body({**macros_for("standard"), "height": macro})
+        body = create_body({**macros_for("standard", gender), "height": macro})
         h = body_height_cm(body)
         remove_objects([body])
         return h
@@ -956,7 +961,7 @@ def capture_heights(dress):
     shapes = {}
     for d, sign in HEIGHT_DIRECTIONS.items():
         dx = solve_macro(sign * HEIGHT_SPAN_CM, sign * 0.1)
-        body = create_body({**macros_for("standard"), "height": 0.5 + dx})
+        body = create_body({**macros_for("standard", gender), "height": 0.5 + dx})
         got = body_height_cm(body) - standard_cm
         shapes[d] = (body_mix_coords(body), _garment_coords(body, dress))
         remove_objects([body])

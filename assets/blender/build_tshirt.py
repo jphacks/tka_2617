@@ -81,10 +81,14 @@ def base_and_correction(shirt, lm, polys):
     return base, corr
 
 
-def height_table(shirt, body, lm, polys, standard_cm):
+def height_table(shirt, body, lm, polys, standard_cm, body_width=None):
     """体型ごとに、いくつかの身長で基準寸法とキーの効き方 M、体の身幅を測る（身長の昇順）。
-    ブラウザは前後の身長の値を直線で補間して使う"""
+    ブラウザは前後の身長の値を直線で補間して使う。
+    body_width(キーの値, 身幅を測る高さ) を渡すと、体の身幅をそれで測る（女性は胸の一周も見る）"""
     body_polys = pt.polys_of(body)
+    if body_width is None:
+        def body_width(values, z):
+            return pt.body_width(pt.mixed_coords(body, values), body_polys, z)
     heights = sorted(pt.HEIGHT_SAMPLES_CM + [round(standard_cm, 2)])
     builds = {}
     for b in pt.BUILDS:
@@ -98,7 +102,7 @@ def height_table(shirt, body, lm, polys, standard_cm):
             m0 = m({})
             M = np.column_stack([(m({p: 5}) - m({p: -5})) / 10 for p in pt.SIZE_PARTS])
             z = pt.width_height(pt.mixed_coords(shirt, pt.build_values(b, {}, h)), lm)
-            bw = pt.body_width(pt.mixed_coords(body, pt.build_values(b, None, h)), body_polys, z)
+            bw = body_width(pt.build_values(b, None, h), z)
             builds[b].append({"height_cm": h_cm,
                               "body_width": round(bw, 2),
                               "base": {p: round(float(v), 2) for p, v in zip(pt.SIZE_PARTS, m0)},
