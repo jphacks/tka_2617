@@ -125,7 +125,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons? }`、成功�
 
 受付成功は202と`{ status: "accepted" }`。服がなければ404、表裏の写真が不足していれば400、待ちが満杯なら429、推論サービス・テンプレート・Storageを利用できなければ503。受付成功は生成完了を意味しない。完成・失敗は下の`GET /v1/garments/:id/texture`で確認する。apiはDBの服の登録日時`created_at`を内部の`POST /textures`の`garmentCreatedAt`として、裏面の画像のIDを`backImageId`として送る。`backImageId`は、状態を聞くときに、撮り直す前の写真から作った作業を見分けるために使う。作業フォルダと完成画像の確認用ファイル名は生成開始日時（JST）・カテゴリ・服IDの先頭8文字の順に並べる。`job.json`の`textureFile`に確認用ファイル名、`garmentCreatedAt`・`createdAt`・`completedAt`に各日時を記録する。
 
-Tシャツ・長そで・シャツ・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。シャツは前後からまっすぐ投影したshirt_male.glbのpitari UVを使い、写真の点は長そでとして推定する（[ADR 0037](adr/0037-shirt-texture-from-projected-uv.md)）。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0026](adr/0026-trousers-template-from-delivered-uv.md)）。推論サービスは、生成物をPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/`に書き出す。[ADR 0023](adr/0023-garment-texture-on-pc.md)、[ADR 0027](adr/0027-request-texture-from-saved-photos.md)を参照。
+Tシャツ・長そで・シャツ・ズボンでテンプレートが違い、長そでは受領したlongsleeve_male.glbのpitari UVを使う。シャツは前後からまっすぐ投影したshirt_male.glbのpitari UVを使い、写真の点は長そでとして推定する（[ADR 0038](adr/0038-shirt-texture-from-projected-uv.md)）。ズボンは受領したGLBと一致するバージョン2を使う（[ADR 0026](adr/0026-trousers-template-from-delivered-uv.md)）。推論サービスは、生成物をPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/`に書き出す。[ADR 0023](adr/0023-garment-texture-on-pc.md)、[ADR 0027](adr/0027-request-texture-from-saved-photos.md)を参照。
 
 ### テクスチャの状態を聞く
 
@@ -151,7 +151,7 @@ apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBear
 ## 共通の型
 
 - カテゴリはshort_sleeve_top・long_sleeve_top・shirt・trousersの4つ。長そでは33点を受け取り、Tシャツと同じ肩幅・袖丈・身幅・着丈を保存する。
-- shirtは着せる3Dモデルを分けるためのカテゴリで、点・寸法の定義は長そでと同じ。apiは推論サービスへlong_sleeve_topとして送り、結果のカテゴリをshirtに戻して返す。テクスチャはシャツのUVテンプレートで作る（[ADR 0035](adr/0035-choose-garment-type-first.md)、[ADR 0037](adr/0037-shirt-texture-from-projected-uv.md)）。
+- shirtは着せる3Dモデルを分けるためのカテゴリで、点・寸法の定義は長そでと同じ。apiは推論サービスへlong_sleeve_topとして送り、結果のカテゴリをshirtに戻して返す。テクスチャはシャツのUVテンプレートで作る（[ADR 0035](adr/0035-choose-garment-type-first.md)、[ADR 0038](adr/0038-shirt-texture-from-projected-uv.md)）。
 - 点番号はカテゴリ内の1始まり。scoreはヒートマップ値、手動点はnull。アノテーションの可視性vとは別物。
 - MeasurementsはshoulderWidthCm・sleeveLengthCm・bodyWidthCm・bodyLengthCm・waistCm・hipCm・thighWidthCm・riseCm・inseamCm・hemWidthCm。各値は正のcmまたはnull。
 - 購入時期と季節は服の属性で、採寸には使わない。[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。

@@ -296,7 +296,7 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 | Tシャツ    | `short_sleeve_top` | `tshirt_male.glb`     | 着丈・身幅・肩幅・袖丈         |
 | ズボン     | `trousers`         | `trousers_male.glb`   | ウエスト・ヒップ・わたり幅など |
 
-シャツは長そでと同じ点で採寸する。テクスチャは、`shirt_male.glb`のpitari UVに合わせて作る（[ADR 0037](adr/0037-shirt-texture-from-projected-uv.md)）。
+シャツは長そでと同じ点で採寸する。テクスチャは、`shirt_male.glb`のpitari UVに合わせて作る（[ADR 0038](adr/0038-shirt-texture-from-projected-uv.md)）。
 
 ## 長そでの受け渡し
 
