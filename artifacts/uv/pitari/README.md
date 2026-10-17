@@ -209,8 +209,8 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 
 `pitari_uv_work.blend`の対象の服に確認画像を貼り、前・後ろ・着用者の右と左・前後の脇の下（左右、体を隠して）・襟まわり（前・後ろ）の10視点で描画した（`renders/sheet_check_*.png`）。
 
-- **文字の反転**：前から「前 FRONT」、後ろから「後 BACK」が正しく読める。カラーグリッドの文字も反転していない。
-- **部位・左右の取り違え**：前から見て画面の左に「R 右」と「右袖 前 R-F」、後ろから見て画面の左に「L 左」と「左袖 後 L-B」が出る。着用者の左右と一致する。
+- **文字の反転**：前から「`前 FRONT`」、後ろから「`後 BACK`」が正しく読める。カラーグリッドの文字も反転していない。
+- **部位・左右の取り違え**：前から見て画面の左に「`R 右`」と「`右袖 前 R-F`」、後ろから見て画面の左に「`L 左`」と「`左袖 後 L-B`」が出る。着用者の左右と一致する。
 - **マスクの塗り残し**：部位の色分けで、色のない面はなかった。島の縁の暗い点は、色を8px広げるとほぼ消えた。
 - **ランドマーク**：テクスチャに描いた番号と、3D座標から置いた球（作業用.blendの`pitari_uv_check`コレクション）が同じ位置に出る。UV座標と3D座標の対応は一致している。
 - **ゆがみ**：身頃はおおむね正方形のまま。袖山・袖付け・脇の下で升目が伸びる。前後の境目は階段状に見える（上記「必要な変更」）。
@@ -293,7 +293,7 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 
 ## ズボン
 
-2026-10-15に、受領した`pitari_trousers.blend`の`jeans`（1462頂点・1432面）へ切り替えた。素材は[`inputs/trousers/`](inputs/trousers/README.md)、テンプレートは`trousers/uv_template.json`のバージョン2。生成物はGitには含めない。方式は[ADR 0024](../../../docs/adr/0024-trousers-uv-template.md)、新モデルへの切り替えは[ADR 0025](../../../docs/adr/0025-trousers-template-from-delivered-uv.md)を参照する。旧モデル用のテクスチャは新モデルへ流用しない。
+2026-10-15に、受領した`pitari_trousers.blend`の`jeans`（1462頂点・1432面）へ切り替えた。素材は[`inputs/trousers/`](inputs/trousers/README.md)、テンプレートは`trousers/uv_template.json`のバージョン2。生成物はGitには含めない。方式は[ADR 0025](../../../docs/adr/0025-trousers-uv-template.md)、新モデルへの切り替えは[ADR 0026](../../../docs/adr/0026-trousers-template-from-delivered-uv.md)を参照する。旧モデル用のテクスチャは新モデルへ流用しない。
 
 ### UVと部位
 
@@ -327,7 +327,7 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 
 Wikimedia Commonsのジーンズの前面・背面の写真（[501xx-front.jpg](https://commons.wikimedia.org/wiki/File:501xx-front.jpg)・[501xx-back.jpg](https://commons.wikimedia.org/wiki/File:501xx-back.jpg)、Tokunori、CC BY-SA 4.0、872×1163px、木の床、A4なし）で試した。写真はGitに含めていない。
 
-- 最初は脚の間と腰の外側の床が服の領域に残った。ランドマークの輪郭の外を背景として教える処理（[ADR 0023](../../../docs/adr/0023-trousers-cutout-with-landmarks.md)）で取れた。
+- 最初は脚の間と腰の外側の床が服の領域に残った。ランドマークの輪郭の外を背景として教える処理（[ADR 0024](../../../docs/adr/0024-trousers-cutout-with-landmarks.md)）で取れた。
 - 推論の9番が股より上（前面41px・背面89px）に出て、三角形が裏返った。股を脚の間の輪郭の一番上へ動かし、内部の点を三角形の辺に沿って解き、服の領域を丸めたところ、裏返りは0になった。
 - 写真から色を取れたテクセルは96%、近くの色で補ったものは4%、塗れなかったものは0%。前のボタンフライ、後ろのポケットのステッチと赤いタブが、正しい位置と向きで貼れた。
 - 背面では、脚の付け根の濃い影が服の領域に入り、股が実際より下になった。股を下から見ると、写真の床の色が少し出る。脇には写真の折り目の明るい色落ちがそのまま入る。
