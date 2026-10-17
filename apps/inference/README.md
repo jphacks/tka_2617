@@ -171,4 +171,4 @@ DBには`supabase/migrations/20261017000100_long_sleeve_top.sql`の適用が必�
 
 フォルダと確認用画像の名前は`{生成日時}_{種類}_{服ID先頭8文字}`で、例は`2026-10-17_11-01-58_長そで_d6156da4.png`。生成日時は変換を開始した日本時間で、`年-月-日_時-分-秒`の順。処理の完了時刻は`job.json`の`completedAt`、服をクローゼットに登録した時刻は`garmentCreatedAt`で確認する。古い履歴など登録日時が不明なら`garmentCreatedAt`は`null`。
 
-確認用画像の名前は`job.json`の`textureFile`に記録する。生成に失敗したフォルダには完成画像がないため、最新画像を探すときは下から順に見て、`.png`のあるフォルダを選ぶ。既存の`texture.png`はBlender確認スクリプトとの互換性のため保持する。[命名の決定](../../docs/adr/0030-texture-filenames-with-dates.md)を参照。
+確認用画像の名前は`job.json`の`textureFile`に記録する。生成に失敗したフォルダには完成画像がないため、最新画像を探すときは下から順に見て、`.png`のあるフォルダを選ぶ。既存の`texture.png`はBlender確認スクリプトとの互換性のため保持する。[命名の決定](../../docs/adr/0031-texture-filenames-with-dates.md)を参照。
