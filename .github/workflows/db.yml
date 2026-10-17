@@ -8,12 +8,16 @@ on:
     paths:
       - "supabase/**"
       - "apps/api/src/lib/database.types.ts"
+      # db:typesで使うSupabase CLIの版はここにある
+      - "apps/api/package.json"
       - ".github/workflows/db.yml"
   push:
     branches: [main]
     paths:
       - "supabase/**"
       - "apps/api/src/lib/database.types.ts"
+      # db:typesで使うSupabase CLIの版はここにある
+      - "apps/api/package.json"
       - ".github/workflows/db.yml"
 
 permissions:
@@ -28,6 +32,15 @@ jobs:
         with:
           # 版で型の書き方が変わるので、apps/apiのdb:typesと同じ版に固定する。上げるときは両方を変えて型を作り直す
           version: 2.90.0
+      # 版が違うと型の書き方が変わり、手元で作った型とCIで作った型が合わなくなる
+      - name: Supabase CLIの版がdb:typesと同じか
+        run: |
+          package_version=$(grep -o -E 'supabase@[0-9.]+' apps/api/package.json | cut -d@ -f2)
+          cli_version=$(supabase --version)
+          if [ "$package_version" != "$cli_version" ]; then
+            echo "::error title=Supabase CLIの版が違う::apps/apiのdb:typesは${package_version}、CIは${cli_version}。両方を同じ版にして型を作り直す"
+            exit 1
+          fi
       # DBだけを起動し、migrationとseed.sqlを順に流す。途中で失敗したら止まる
       - run: supabase db start
       # DBの関数（plpgsql）の型の誤りや、使っていない変数などを見る。警告では落とさない
