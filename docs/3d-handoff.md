@@ -287,7 +287,7 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 
 ## 服の種類と3Dモデルの対応
 
-撮影の画面では、写真を選ぶ前に服の種類を選ぶ。選んだ種類を`category`に保存し、アバターではこの表の3Dモデルで着せる。表はwebの`categoryModels`（`apps/web/src/lib/garment-category.ts`）に置いた。上の服の値は`TOPS`（`apps/web/src/components/try-on/use-try-on.ts`）のキーで、キーが無くなると型エラーになる。
+撮影の画面では、寸法を測定する前に服の種類を選ぶ。選んだ種類を`category`に保存し、アバターではこの表の3Dモデルで着せる。表はwebの`categoryModels`（`apps/web/src/lib/garment-category.ts`）に置いた。上の服の値は`TOPS`（`apps/web/src/components/try-on/use-try-on.ts`）のキーで、キーが無くなると型エラーになる。
 
 | 画面の表示 | `category`         | 3Dモデル              | 使う寸法                       |
 | ---------- | ------------------ | --------------------- | ------------------------------ |
