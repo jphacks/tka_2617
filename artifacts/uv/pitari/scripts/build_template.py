@@ -10,6 +10,7 @@
 UV展開図の画像はなぞらない。部位・点・マスクはすべてBlenderの面と面コーナーのUVから作る。
 """
 
+import argparse
 import hashlib
 import json
 import math
@@ -30,6 +31,7 @@ SIZE = 2048
 TEMPLATE_ID = "pitari-short-sleeve-top"
 TEMPLATE_VERSION = "0.1.0"
 UV_LAYER = "pitari"
+SOURCE_BLEND = ROOT / "inputs/tshirt/pitari.blend"
 # 輪郭の区間を何cmおきに区切るか。写真側も同じ割合の位置で区切る。
 SAMPLE_SPACING_M = 0.03
 # 内部点の間隔（テクスチャのピクセル）。輪郭の点の間隔（約50px）と同程度にする。
@@ -563,6 +565,15 @@ def boundary_of(mask):
 
 
 def main():
+    global ROOT, TEMPLATE_ID, SOURCE_BLEND
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--category", choices=["short_sleeve_top", "long_sleeve_top"], default="short_sleeve_top")
+    args = parser.parse_args()
+    if args.category == "long_sleeve_top":
+        SOURCE_BLEND = ROOT / "inputs/longsleeve/pitari_longsleeve.blend"
+        ROOT = ROOT / "longsleeve"
+        TEMPLATE_ID = "pitari-long-sleeve-top"
+    (ROOT / "check").mkdir(parents=True, exist_ok=True)
     data = json.loads((ROOT / "data/mesh_export.json").read_text(encoding="utf-8"))
     topology = Topology(data)
     V, faces = topology.V, topology.faces
@@ -579,6 +590,12 @@ def main():
 
     # 島：pitariのUVで2つ。法線の平均が前を向く方を前面とする。
     pitari = topology.islands(topology.uv)
+    if args.category == "long_sleeve_top":
+        # 受領UVは前後2領域と背面の袖の小島3つ。元のUVを保ち、写真の前後だけをまとめる。
+        bounds = [topology.uv[loops, 1] for loops in topology.face_loops]
+        if any(values.min() < 0.5 < values.max() for values in bounds):
+            raise SystemExit("長そでのUVが前後の領域をまたいでいます")
+        pitari = np.array([0 if values.mean() > 0.5 else 1 for values in bounds])
     if pitari.max() != 1:
         raise SystemExit(f"pitariのUV島が2つではない（{pitari.max() + 1}個）。テンプレートを作り直す必要がある")
     facing = [float((topology.normals[pitari == k] @ forward).mean()) for k in (0, 1)]
@@ -587,7 +604,12 @@ def main():
     view_island = {"front": front_island, "back": 1 - front_island}
 
     # 袖と身頃の境界：元のUVMapでは袖が別の島になっている。袖付けの線として使う。
-    original = topology.islands(np.array(data["uv"]["UVMap"], dtype=float))
+    if "sleeve_vertices" in data:
+        # 長そでには元のUVMapがないため、受領した袖の頂点集合で袖付けを決める。
+        sleeves = [set(data["sleeve_vertices"][side]) for side in ("right", "left")]
+        original = np.array([next((i + 1 for i, vertices in enumerate(sleeves) if set(face) <= vertices), 0) for face in faces])
+    else:
+        original = topology.islands(np.array(data["uv"]["UVMap"], dtype=float))
     original_count = original.max() + 1
     mean_x = [topology.centers[original == k, 0].mean() for k in range(original_count)]
     sleeve_islands = sorted(range(original_count), key=lambda k: -abs(mean_x[k] - center_x))[:2]
@@ -608,6 +630,8 @@ def main():
     # 元のUVMapでは前身頃だった面のうち、pitariで背面の島に入った帯（脇）。
     original_front_body = max((k for k in range(original_count) if k not in sleeve_islands), key=lambda k: (topology.normals[original == k] @ forward).mean())
     side_wrap = [fi for fi in range(face_count) if original[fi] == original_front_body and island_name[pitari[fi]] == "back"]
+    if args.category == "long_sleeve_top":
+        side_wrap = []
 
     surface = Surface(topology, pitari)
 
@@ -1102,6 +1126,16 @@ def main():
             "note": f"背面写真では画像の左が着用者の左。画像の左側の点を{number}と呼ぶ場合に限り{front_anchor}に対応する",
         }
 
+    if args.category == "long_sleeve_top":
+        # 袖の途中の追加点は輪郭から補間する。袖口・脇・裾は長そで固有の番号に対応させる。
+        numbers = dict(zip(range(1, 26), [1, 2, 3, 4, 5, 6, 7, 9, 11, 12, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 26, 28, 29, 31, 33]))
+        df2_front = {str(numbers[int(k)]): v for k, v in df2_front.items()}
+        df2_back = {str(numbers[int(k)]): v for k, v in df2_back.items()}
+        for table in (df2_front, df2_back):
+            for entry in table.values():
+                if entry.get("note"):
+                    entry["note"] = "前後・左右の扱いは半袖と同じ。長そでの番号へ対応済み"
+
     # ---- 出力JSON
     def point_json(view):
         result = {}
@@ -1116,7 +1150,7 @@ def main():
             result[name] = item
         return result
 
-    blend_sha = hashlib.sha256((PROJECT / "pitari.blend").read_bytes()).hexdigest() if (PROJECT / "pitari.blend").exists() else None
+    blend_sha = hashlib.sha256(SOURCE_BLEND.read_bytes()).hexdigest() if SOURCE_BLEND.exists() else None
     topology_hash = hashlib.sha256(
         json.dumps([faces, np.round(topology.uv, 6).tolist()]).encode("utf-8")
     ).hexdigest()
@@ -1163,9 +1197,9 @@ def main():
         "status": "draft：テンプレートと3D上の確認まで。実写の前面・背面写真での検証は未実施",
         "generated_by": "artifacts/uv/pitari/scripts/build_template.py",
         "source": {
-            "blend_file": "pitari.blend",
+            "blend_file": str(SOURCE_BLEND.relative_to(PROJECT)).replace("\\", "/"),
             "blend_sha256": blend_sha,
-            "working_copy": "artifacts/uv/pitari/pitari_uv_work.blend",
+            "working_copy": None if args.category == "long_sleeve_top" else "artifacts/uv/pitari/pitari_uv_work.blend",
             "blender_version": "4.3.2",
             "object": data["object"],
             "mesh": data["mesh"],
@@ -1267,6 +1301,14 @@ def main():
         ],
         "checks": checks,
     }
+    template["category"] = args.category
+    if args.category == "long_sleeve_top":
+        template["df2_pairs"] = [[2, 6], [3, 5]] + [[n, 40 - n] for n in range(7, 20)]
+        template["df2_spread_checks"] = [[7, 33], [11, 29], [12, 28], [16, 24], [19, 21]]
+        template["df2_centers"] = [1, 4, 20]
+        for spec in template["views"].values():
+            spec["df2_table"] = spec.pop("df2_short_sleeve_top")
+        template["photo_input_spec"]["left_right_rule"] = "左右のペアはdf2_pairsに従い写真上のxで決め直す。前面は画像の左が着用者の右、背面は着用者の左"
     (ROOT / "uv_template.json").write_text(json.dumps(template, ensure_ascii=False, indent=1), encoding="utf-8")
     (ROOT / "data").mkdir(exist_ok=True)
     (ROOT / "data/inspection_report.json").write_text(

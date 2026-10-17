@@ -42,7 +42,7 @@ SPREAD_CHECKS = [(7, 25), (9, 23), (10, 22), (12, 20), (15, 17)]
 CENTERS = [1, 4, 16]
 FONT = "C:/Windows/Fonts/BIZ-UDGothicB.ttc"
 # カテゴリごとのテンプレートの場所。ズボンはbuild_trousers_template.pyで作る。
-TEMPLATE_ROOTS = {"short_sleeve_top": ROOT, "trousers": ROOT / "trousers"}
+TEMPLATE_ROOTS = {"short_sleeve_top": ROOT, "long_sleeve_top": ROOT / "longsleeve", "trousers": ROOT / "trousers"}
 
 
 def load_photo(path):

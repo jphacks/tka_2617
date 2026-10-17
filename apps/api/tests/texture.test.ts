@@ -21,8 +21,8 @@ const photos = [
   { role: "cutout", storage_key: "cutout.png" },
 ];
 
-void test("Tシャツ・ズボンは保存済みのカテゴリ・表裏JPEGで生成を依頼する", async (t) => {
-  for (const category of ["short_sleeve_top", "trousers"]) {
+void test("Tシャツ・長そで・ズボンは保存済みのカテゴリ・表裏JPEGで生成を依頼する", async (t) => {
+  for (const category of ["short_sleeve_top", "long_sleeve_top", "trousers"]) {
     await t.test(category, async (t) => {
       const downloaded: string[] = [];
       let submitted = false;

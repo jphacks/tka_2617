@@ -161,8 +161,11 @@ if (selected) {
 - `measurement`：採寸するJPEG。v2ではブラウザで向き・縦横比を維持した縮小・EXIF除去を済ませた長辺1600px以下の写真を変形せず保存する。点とA4四隅はこの画像上の座標。
 - `cutout`：クローゼット表示用の背景透過PNG。服の輪郭を抽出し、余白を切り詰めた画像。points・paperCornersは空配列、pixelsPerCm・modelVersionはnull。採寸や3DのUVテクスチャには使わない。
 - `original`：旧v1の遠近補正前JPEG。旧データではmeasurementが補正後JPEG、A4四隅はoriginalにある。
+- `back`・`back_cutout`：裏面のJPEGと表示用の透過PNG。採寸しないので点・A4四隅・縮尺を持たない。裏面がない服もある。
 
-現在の画面からはmeasurementとcutoutの2枚を保存する。服1着につき各roleは最大1枚。クローゼットでは`images.find((image) => image.role === "cutout")`を優先し、旧データではmeasurementへフォールバックする。点を見るときは必ずmeasurementを選ぶ。
+服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{服ID}/{日時}/texture.png`に作る。DB・Storage・APIには含めず、画面にも出さない（[ADR 0022](adr/0022-garment-texture-on-pc.md)）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせ、GLBとUVの一致を検証している。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
+
+現在の画面からはmeasurementとcutoutの2枚を保存し、裏面を撮った場合はbackとback_cutoutも保存する。服1着につき各roleは最大1枚。クローゼットの一覧は表だけを出し、cutout→measurement→originalの順で選ぶ（`garmentPhotoUrl`）。点を見るときは必ずmeasurementを選ぶ。
 
 ### points
 
@@ -185,9 +188,9 @@ if (selected) {
 | 保存先                      | 主なデータ                                                                                                              |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `profiles`                  | id、display_name、created_at。今はデモ用の1ユーザー                                                                     |
-| `garments`                  | id、profile_id、category、name、measurements、measurement_version、created_at、updated_at                               |
+| `garments`                  | id、profile_id、category、name、measurements、measurement_version、purchased_month、seasons、created_at、updated_at     |
 | `garment_images`            | id、garment_id、storage_key、role、width_px、height_px、points、pixels_per_cm、paper_corners、model_version、created_at |
-| Storageの`garments`バケット | measurement.jpg・cutout.png、旧データのoriginal.jpg                                                                     |
+| Storageの`garments`バケット | measurement.jpg・cutout.png、裏面のback-_.jpg・back_cutout-_.png、旧データのoriginal.jpg                                |
 
 `measurements`、`points`、`paper_corners`はjsonb。jsonbはJSONのオブジェクト・配列をDBの列に保存する型。DB列名はsnake_caseだが、measurementsの中のキーはshoulderWidthCmなどのcamelCaseのまま。
 
@@ -265,3 +268,7 @@ await requestJson(`/api/garments/${garment.id}`, {
 measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過PNG。どちらもUV展開済みテクスチャではない。写真をそのままGLBへ貼れば柄が正しく合う、という契約にはしていない。また、少数の平置き寸法だけで実際の立体形状・厚み・着用時のしわは一意に決まらない。
 
 最初の接続確認は、手動で寸法を入れたTシャツを1着登録→APIで取得→3D画面にGLBを表示→1項目の寸法変更を反映、の順に進める。HRNetの精度検証と並行して進められる。
+
+## 長そでの受け渡し
+
+`long_sleeve_top`の登録・採寸・写真からのテクスチャ生成に対応した。寸法キーはTシャツと同じ4項目。素材は`artifacts/uv/pitari/inputs/longsleeve/`へ整理し、生成テンプレートは`artifacts/uv/pitari/longsleeve/`へ保存する。受領GLBとBlenderの頂点・UVの一致を検証済み。[再生成と制約](../artifacts/uv/pitari/inputs/longsleeve/README.md)を参照。既存のアバター画面への長そで着せ替え表示はこの登録フローとは別で、今回追加していない。
