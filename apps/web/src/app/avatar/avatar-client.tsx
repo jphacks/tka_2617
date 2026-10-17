@@ -29,7 +29,7 @@ const TryOnScene = dynamic(() => import("@/components/try-on/try-on-scene"), {
   loading: () => <AvatarFrame loading />,
 });
 
-/** 選択肢を横に並べたボタン。選んでいるものを塗る */
+/** 選択肢を横に並べたラジオボタン。選んでいるものを塗る */
 function Segmented<T extends string>({
   label,
   options,
@@ -41,6 +41,7 @@ function Segmented<T extends string>({
   value: T;
   onChange: (id: T) => void;
 }) {
+  // 本物のラジオボタンを見えないように置き、矢印キーでの移動と選択はブラウザに任せる
   return (
     <div
       role="radiogroup"
@@ -48,18 +49,21 @@ function Segmented<T extends string>({
       className="flex flex-wrap gap-1.5"
     >
       {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          role="radio"
-          aria-checked={value === o.id}
-          onClick={() => {
-            onChange(o.id);
-          }}
-          className="rounded-full border border-line px-3.5 py-1.5 text-[13px] transition aria-checked:border-main aria-checked:bg-main aria-checked:font-semibold aria-checked:text-white"
-        >
-          {o.label}
-        </button>
+        <label key={o.id} className="cursor-pointer">
+          <input
+            type="radio"
+            name={label}
+            value={o.id}
+            checked={value === o.id}
+            onChange={() => {
+              onChange(o.id);
+            }}
+            className="peer sr-only"
+          />
+          <span className="block rounded-full border border-line px-3.5 py-1.5 text-[13px] transition peer-checked:border-main peer-checked:bg-main peer-checked:font-semibold peer-checked:text-white peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-main">
+            {o.label}
+          </span>
+        </label>
       ))}
     </div>
   );
