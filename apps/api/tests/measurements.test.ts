@@ -96,3 +96,35 @@ void test("手入力の確定値を推定値で上書きせず保存用スキー
   assert.equal(parsed.measurements.waistCm, 79);
   assert.equal(parsed.measurements.hipCm, null);
 });
+
+void test("長そでの33点を受け取り、Tシャツと同じ4項目を長そでの番号で計算する", () => {
+  const input = measurementInputSchema.parse({
+    ...base,
+    category: "long_sleeve_top",
+    points: [
+      point(7, 100, 100),
+      point(33, 550, 100),
+      point(11, 100, 700),
+      point(16, 100, 350),
+      point(24, 600, 350),
+      point(1, 350, 50),
+      point(20, 350, 750),
+    ],
+  });
+  const measurements = calculateMeasurements(input);
+  assert.equal(measurements.shoulderWidthCm, 45);
+  assert.equal(measurements.sleeveLengthCm, 60);
+  assert.equal(measurements.bodyWidthCm, 50);
+  assert.equal(measurements.bodyLengthCm, 70);
+  assert.equal(measurements.waistCm, null);
+  assert.equal(
+    measurementInputSchema.safeParse({ ...input, category: "short_sleeve_top" })
+      .success,
+    false,
+  );
+  assert.equal(
+    measurementInputSchema.safeParse({ ...input, points: [point(34, 0, 0)] })
+      .success,
+    false,
+  );
+});

@@ -119,7 +119,7 @@ if (selected) {
 | -------------------- | ------------------------------------------------------------- |
 | `id`                 | 服を識別するUUID文字列                                        |
 | `name`               | 服の名前。空文字列の場合もある                                |
-| `category`           | `short_sleeve_top`または`trousers`                            |
+| `category`           | `short_sleeve_top`・`long_sleeve_top`・`trousers`             |
 | `measurements`       | 全10項目の確定値。各項目はnumberまたはnull                    |
 | `measurementVersion` | 採寸方式の版。現在は`df2-a4-flat-midpoint-v2`。旧v1も存在する |
 | `createdAt`          | 作成日時。更新日時ではない                                    |

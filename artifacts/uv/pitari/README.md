@@ -219,7 +219,7 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 
 ## 写真で試す
 
-`scripts/photo_to_texture.py`で、前面・背面の写真からテクスチャを作り、`scripts/preview_texture.py`で3Dモデルに貼って確かめる。**試行用で、実際の服の写真ではまだ確かめていない。** 結果は`trials/`に置く（`.gitignore`で除外済み）。
+アプリでは、裏面を保存すると推論サービスが同じ処理（`make_texture`）で服ごとのテクスチャを`apps/inference/textures/`に作る（[推論サービスのREADME](../../../apps/inference/README.md)の「服ごとのテクスチャ」）。手で試すときは、`scripts/photo_to_texture.py`で、前面・背面の写真からテクスチャを作り、`scripts/preview_texture.py`で3Dモデルに貼って確かめる。**試行用で、実際の服の写真ではまだ確かめていない。** 結果は`trials/`に置く（`.gitignore`で除外済み）。
 
 ### 1. 撮る
 
@@ -302,16 +302,37 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 - 写真側の固定点は1・2・3・6・7・9・11・12番。2番（ウエスト中心）と9番（股）は、左右の島に1つずつある固定点の両方に使う。股は推論の9番を脚の間のすき間の一番上へ動かしてから使う。
 - 推論の点の左右は、写真で左に出る番号を先に書いた組（1と3、4と14、5と13、6と12、7と11、8と10）で決め直す。実写の前面で、4〜7番が画像の左に出ることを確かめた。
 
-### 作り直す
+### 作り直す・試す
 
-リポジトリ直下で実行する。テンプレートの生成は数十秒。
+リポジトリ直下で実行する。テンプレートの生成は数十秒、変換は推論込みで約1分。
 
 ```powershell
 & "C:/Program Files/Blender Foundation/Blender 4.3/blender.exe" -b artifacts/uv/pitari/inputs/trousers/pitari_trousers.blend --python artifacts/uv/pitari/scripts/export_trousers_mesh.py -- artifacts/uv/pitari/trousers/data/mesh_export.json
 ./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/build_trousers_template.py
+./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/photo_to_texture.py --category trousers --front 前面.jpg --back 背面.jpg --out artifacts/uv/pitari/trials/jeans_new_uv
+& "C:/Program Files/Blender Foundation/Blender 4.3/blender.exe" -b artifacts/uv/pitari/inputs/trousers/pitari_trousers.blend --python artifacts/uv/pitari/scripts/preview_trousers_texture.py -- artifacts/uv/pitari/trials/jeans_new_uv
+./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/make_contact_sheets.py --dir artifacts/uv/pitari/trials/jeans_new_uv/renders --trousers --title 新しいUVのジーンズ
+./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/verify_trousers_assets.py
 ```
 
-`trousers/check/template_parts.png`で部位と三角形を確かめる。元の`.blend`は保存しない。
+`trousers/check/template_parts.png`で部位と三角形、`trials/jeans_new_uv/sheet.png`で3Dモデルに貼った見え方を確かめる。元の`.blend`は保存しない。結果のフォルダには`texture.png`（2048×2048）・`preview.blend`（アバター付き）・`trousers_textured.glb`（ズボン単体、テクスチャ内包）を書き出す。`trousers/data/asset_validation.json`に素材間の整合性の検査結果がある。
+
+### 今回の写真での結果（2026-10-15）
+
+`inputs/trousers/ジーンズ表面.jpg`と`ジーンズ背面.jpg`を使用。前回の推論点を再利用し、股と内股に残った床をマスクから除いた。使用した推論点の`points_front.json`・`points_back.json`と補正済みの`mask_front.png`・`mask_back.png`は`trials/jeans_new_uv/`に保存した。同じ結果を再生成する場合は、上の変換コマンドにこれらを`--front-points`・`--back-points`・`--front-mask`・`--back-mask`で指定する。今回の床の色を使う補正は試行フォルダの`refine_masks.py`だけに置き、一般の服の切り抜きには適用していない。
+
+写真から96.02%、近くの色で3.98%を補い、塗り残しと三角形の反転は0。前後・左右・股の6視点で確認した。前開き・後ろポケット・赤いタブの向きは正しく、床の混入を除いた。写真のしわと前後の色差、脇の継ぎ目は残る。GLBの11個のシェイプキーは名前と変形量を維持している。
+
+### 実際の写真で試した結果（2026-10-13）
+
+Wikimedia Commonsのジーンズの前面・背面の写真（[501xx-front.jpg](https://commons.wikimedia.org/wiki/File:501xx-front.jpg)・[501xx-back.jpg](https://commons.wikimedia.org/wiki/File:501xx-back.jpg)、Tokunori、CC BY-SA 4.0、872×1163px、木の床、A4なし）で試した。写真はGitに含めていない。
+
+- 最初は脚の間と腰の外側の床が服の領域に残った。ランドマークの輪郭の外を背景として教える処理（[ADR 0024](../../../docs/adr/0024-trousers-cutout-with-landmarks.md)）で取れた。
+- 推論の9番が股より上（前面41px・背面89px）に出て、三角形が裏返った。股を脚の間の輪郭の一番上へ動かし、内部の点を三角形の辺に沿って解き、服の領域を丸めたところ、裏返りは0になった。
+- 写真から色を取れたテクセルは96%、近くの色で補ったものは4%、塗れなかったものは0%。前のボタンフライ、後ろのポケットのステッチと赤いタブが、正しい位置と向きで貼れた。
+- 背面では、脚の付け根の濃い影が服の領域に入り、股が実際より下になった。股を下から見ると、写真の床の色が少し出る。脇には写真の折り目の明るい色落ちがそのまま入る。
+
+Tシャツのテクスチャは、ズボンに対応させる前後で同じ写真から作り直し、画素の差が0であることを確かめた。
 
 ## Claude CodeからBlenderを操作する（MCPの接続）
 
@@ -358,6 +379,8 @@ MCPでつなぐと、Claude Codeが**起動中のBlenderの開いているファ
 | `selftest_synthetic.py`     | Python           | 合成写真でphoto_to_texture.pyの動作を確かめる                        |
 | `export_trousers_mesh.py`   | Blender          | ズボンの面・面コーナー・UV・法線を書き出す                           |
 | `build_trousers_template.py` | Python          | ズボンのテンプレート（部位・固定点・区間・三角形・マスク）を作る     |
+| `preview_trousers_texture.py` | Blender        | 受領したズボンにテクスチャを貼り、確認画像・別の.blend・GLBを出力する |
+| `verify_trousers_assets.py` | Python | 受領したUV展開図・ランドマーク・GLBと生成物の対応を検証する |
 
 `pitari.blend`のUVやメッシュを変えたら、テンプレートを作り直して`template_version`を上げる。`source.topology_sha256`が変わったら、古いテンプレートで作ったテクスチャは使えない。
 

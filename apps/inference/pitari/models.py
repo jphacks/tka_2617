@@ -85,7 +85,7 @@ class Models:
         if self.detector is None:
             self.processor = AutoProcessor.from_pretrained(DETECTOR, local_files_only=True)
             self.detector = AutoModelForZeroShotObjectDetection.from_pretrained(DETECTOR, local_files_only=True).cpu().eval()
-        caption = {"auto": "t-shirt. trousers.", "short_sleeve_top": "t-shirt.", "trousers": "trousers."}[category]
+        caption = {"auto": "short sleeve t-shirt. long sleeve top. trousers.", "short_sleeve_top": "short sleeve t-shirt.", "long_sleeve_top": "long sleeve top.", "trousers": "trousers."}[category]
         inputs = self.processor(images=Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)), text=caption, return_tensors="pt")
         with torch.inference_mode():
             output = self.detector(**inputs)
@@ -93,7 +93,11 @@ class Models:
         labels = result["text_labels"] if "text_labels" in result else result.get("labels", [])
         candidates = []
         for box, score, label in zip(result["boxes"], result["scores"], labels):
-            detected = "trousers" if "trousers" in str(label) else "short_sleeve_top" if "shirt" in str(label) else None
+            label = str(label).lower()
+            if category != "auto":
+                detected = category
+            else:
+                detected = "trousers" if "trousers" in label else "long_sleeve_top" if "long" in label else "short_sleeve_top" if "shirt" in label or "short" in label else None
             if detected and (category == "auto" or category == detected):
                 candidates.append((float(score), detected, box.tolist()))
         if not candidates:

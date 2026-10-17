@@ -17,8 +17,8 @@ def object_mode():
         bpy.ops.object.mode_set(mode="OBJECT")
 
 
-def texture_material(name, image):
-    """pitariのUVで画像をBase Colorに貼るだけの材質。"""
+def texture_material(name, image, uv_map=UV_MAP):
+    """指定のUV（既定はpitari）で画像をBase Colorに貼るだけの材質。"""
     material = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     material.use_nodes = True
     nodes, links = material.node_tree.nodes, material.node_tree.links
@@ -27,7 +27,7 @@ def texture_material(name, image):
     shader = nodes.new("ShaderNodeBsdfPrincipled")
     texture = nodes.new("ShaderNodeTexImage")
     uv = nodes.new("ShaderNodeUVMap")
-    uv.uv_map = UV_MAP
+    uv.uv_map = uv_map
     texture.image = image
     links.new(uv.outputs["UV"], texture.inputs["Vector"])
     links.new(texture.outputs["Color"], shader.inputs["Base Color"])

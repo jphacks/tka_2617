@@ -64,7 +64,7 @@ def crop_transform(bbox, output_width=288, output_height=384):
 
 
 def decode_heatmaps(heatmaps, inverse, category, width, height):
-    start, count = (0, 25) if category == "short_sleeve_top" else (168, 14)
+    start, count = {"short_sleeve_top": (0, 25), "long_sleeve_top": (25, 33), "trousers": (168, 14)}[category]
     if heatmaps.shape != (294, 96, 72):
         raise ValueError("モデルの出力形式がDeepFashion2用HRNetと一致しません")
     points = []
