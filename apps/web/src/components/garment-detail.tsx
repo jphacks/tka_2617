@@ -3,8 +3,9 @@
 import { categoryLabels } from "@/lib/garment-category";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { GarmentView, Season, TextureRequestResult } from "@pitari/api";
-import { CameraIcon } from "@/components/icons";
+import { CameraIcon, PersonIcon } from "@/components/icons";
 import { GarmentMeasurements } from "@/components/garment-measurements";
 import { MeasurementProgress } from "@/components/measurement-progress";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
@@ -12,6 +13,7 @@ import { prepareBackPhoto, uploadBackPhoto } from "@/lib/back-photo";
 import type { MeasurementProgressState } from "@/lib/measurement-progress";
 import { requestJson } from "@/lib/request";
 import { textureRequestMessage } from "@/lib/garment-texture";
+import { avatarUrl, loadOutfit, saveOutfit, wear } from "@/lib/outfit";
 
 const seasons: { value: Season; label: string }[] = [
   { value: "spring", label: "春" },
@@ -25,6 +27,7 @@ const focusRing =
 type Details = Pick<GarmentView, "purchasedMonth" | "seasons">;
 
 export function GarmentDetail({ id }: { id: string }) {
+  const router = useRouter();
   const [garment, setGarment] = useState<GarmentView | null>(null);
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -259,6 +262,19 @@ export function GarmentDetail({ id }: { id: string }) {
         <h2 className="mt-1 text-lg font-semibold wrap-anywhere">
           {garment.name || "名前なし"}
         </h2>
+        <button
+          type="button"
+          onClick={() => {
+            // localStorageはブラウザにしか無いので、表示のときではなく押したときに読む
+            const outfit = wear(loadOutfit(window.localStorage), garment);
+            saveOutfit(window.localStorage, outfit);
+            router.push(avatarUrl(outfit));
+          }}
+          className={`mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded bg-main text-sm font-semibold text-white transition hover:opacity-85 active:scale-[0.98] ${focusRing}`}
+        >
+          <PersonIcon className="size-4.5" strokeWidth={1.8} />
+          アバターに着せる
+        </button>
       </div>
 
       <dl className="mt-5 border-t border-line">
