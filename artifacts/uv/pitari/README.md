@@ -327,7 +327,7 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 
 Wikimedia Commonsのジーンズの前面・背面の写真（[501xx-front.jpg](https://commons.wikimedia.org/wiki/File:501xx-front.jpg)・[501xx-back.jpg](https://commons.wikimedia.org/wiki/File:501xx-back.jpg)、Tokunori、CC BY-SA 4.0、872×1163px、木の床、A4なし）で試した。写真はGitに含めていない。
 
-- 最初は脚の間と腰の外側の床が服の領域に残った。ランドマークの輪郭の外を背景として教える処理（[ADR 0023](../../../docs/adr/0023-trousers-cutout-with-landmarks.md)）で取れた。
+- 最初は脚の間と腰の外側の床が服の領域に残った。ランドマークの輪郭の外を背景として教える処理（[ADR 0024](../../../docs/adr/0024-trousers-cutout-with-landmarks.md)）で取れた。
 - 推論の9番が股より上（前面41px・背面89px）に出て、三角形が裏返った。股を脚の間の輪郭の一番上へ動かし、内部の点を三角形の辺に沿って解き、服の領域を丸めたところ、裏返りは0になった。
 - 写真から色を取れたテクセルは96%、近くの色で補ったものは4%、塗れなかったものは0%。前のボタンフライ、後ろのポケットのステッチと赤いタブが、正しい位置と向きで貼れた。
 - 背面では、脚の付け根の濃い影が服の領域に入り、股が実際より下になった。股を下から見ると、写真の床の色が少し出る。脇には写真の折り目の明るい色落ちがそのまま入る。
