@@ -163,7 +163,7 @@ if (selected) {
 - `original`：旧v1の遠近補正前JPEG。旧データではmeasurementが補正後JPEG、A4四隅はoriginalにある。
 - `back`・`back_cutout`：裏面のJPEGと表示用の透過PNG。採寸しないので点・A4四隅・縮尺を持たない。裏面がない服もある。
 
-服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{服ID}/{日時}/texture.png`に作る。DB・Storage・APIには含めず、画面にも出さない（[ADR 0022](adr/0022-garment-texture-on-pc.md)）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせ、GLBとUVの一致を検証している。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
+服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{服ID}/{日時}/texture.png`に作る。DB・Storage・APIには含めず、画面にも出さない（[ADR 0023](adr/0023-garment-texture-on-pc.md)）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせ、GLBとUVの一致を検証している。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
 
 現在の画面からはmeasurementとcutoutの2枚を保存し、裏面を撮った場合はbackとback_cutoutも保存する。服1着につき各roleは最大1枚。クローゼットの一覧は表だけを出し、cutout→measurement→originalの順で選ぶ（`garmentPhotoUrl`）。点を見るときは必ずmeasurementを選ぶ。
 
@@ -204,14 +204,14 @@ Storageのキーは`{profileId}/{garmentId}/measurement.jpg`または`cutout.png
 
 ### 3D表示の実装で主に使う場所
 
-| ファイル                                                                                      | 役割・扱い                                                                                    |
-| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| [apps/web/src/app/avatar/page.tsx](../apps/web/src/app/avatar/page.tsx)                       | 実在するアバター画面。今は準備中。ここに3D表示コンポーネントを組み込む                        |
-| `apps/web/src/components/avatar-viewer.tsx`                                                   | 新規作成の候補。3D表示・体型調整の操作を置く。まだ存在しない                                  |
-| `apps/web/src/lib/garment-to-model.ts`                                                        | 新規作成の候補。保存寸法からモデル固有パラメータへの変換を置く。まだ存在しない                |
-| `apps/web/public/models/`                                                                     | 共有可能な固定GLBの配置候補。まだモデルは置いていない。私的なユーザーデータの保存先にはしない |
-| [apps/web/src/lib/request.ts](../apps/web/src/lib/request.ts)                                 | 既存の画面側API取得ヘルパー                                                                   |
-| [apps/web/src/components/closet-contents.tsx](../apps/web/src/components/closet-contents.tsx) | 保存済みの服を取得して表示する実装例                                                          |
+| ファイル                                                                                      | 役割・扱い                                                                                         |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [apps/web/src/app/avatar/page.tsx](../apps/web/src/app/avatar/page.tsx)                       | アバター画面。体・髪・服・靴を選んで着せる（`avatar-client.tsx`）                                  |
+| `apps/web/src/components/try-on/`                                                             | 3D表示（`try-on-scene.tsx`）と、試着の状態と計算（`use-try-on.ts`）。`/avatar`と`/dev/tryon`で使う |
+| `apps/web/src/lib/garment-to-model.ts`                                                        | 新規作成の候補。保存寸法からモデル固有パラメータへの変換を置く。まだ存在しない                     |
+| `apps/web/public/models/`                                                                     | 体と服の固定GLB（Blenderのスクリプトが書き出す）。私的なユーザーデータの保存先にはしない           |
+| [apps/web/src/lib/request.ts](../apps/web/src/lib/request.ts)                                 | 既存の画面側API取得ヘルパー                                                                        |
+| [apps/web/src/components/closet-contents.tsx](../apps/web/src/components/closet-contents.tsx) | 保存済みの服を取得して表示する実装例                                                               |
 
 3Dライブラリは現時点のpackage.jsonに追加されていない。採用するものを決め、依存追加はプロジェクトルールに沿って確認する。window・canvas等を使う表示部分はクライアントコンポーネントとして実装し、共通レイアウトと下部ナビは維持する。
 

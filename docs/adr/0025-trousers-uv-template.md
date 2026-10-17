@@ -4,7 +4,7 @@
 
 ## 背景
 
-Tシャツと同じく、ズボンも表と裏の写真から服ごとのテクスチャを作りたい（[ADR 0015](0015-uv-template-for-photo-texture.md)、[ADR 0022](0022-garment-texture-on-pc.md)）。`pitari.blend`のズボン（`Human.male_casualsuit06.001`）には、MakeHuman由来の`UVMap`しかない。Tシャツのように専用に展開したUVはない。
+Tシャツと同じく、ズボンも表と裏の写真から服ごとのテクスチャを作りたい（[ADR 0015](0015-uv-template-for-photo-texture.md)、[ADR 0023](0023-garment-texture-on-pc.md)）。`pitari.blend`のズボン（`Human.male_casualsuit06.001`）には、MakeHuman由来の`UVMap`しかない。Tシャツのように専用に展開したUVはない。
 
 ## 決定
 
