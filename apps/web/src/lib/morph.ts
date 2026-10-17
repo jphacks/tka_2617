@@ -17,13 +17,3 @@ export function setMorph(root: Object3D, name: string, value: number): number {
   });
   return hit;
 }
-
-/** root以下にあるmorph target名の一覧 */
-export function morphNames(root: Object3D): string[] {
-  const names = new Set<string>();
-  root.traverse((o) => {
-    const dict = (o as Mesh).morphTargetDictionary;
-    if (dict) Object.keys(dict).forEach((n) => names.add(n));
-  });
-  return [...names];
-}

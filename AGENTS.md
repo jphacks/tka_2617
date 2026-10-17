@@ -7,7 +7,7 @@
 - ブラウザ→`apps/web`（Next.js、画面とBFF）→`apps/api`（Hono）→Supabase。DBとStorageに触れるのはapiだけ。
 - 画面はスマホ向けのPWA（[ADR](docs/adr/0003-pwa.md)）。ネイティブのアプリは作らない。
 - 各アプリのルール： [web](apps/web/AGENTS.md)、[api](apps/api/AGENTS.md)。3Dモデルを作るBlenderのスクリプトは`assets/blender/`（[ルール](assets/blender/AGENTS.md)）。
-- 開発：`pnpm install`、`pnpm dev`。確認：`pnpm lint`、`pnpm typecheck`、`pnpm build`。整形：`pnpm format`。
+- 開発：`pnpm install`、`pnpm dev`。確認：`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build`。整形：`pnpm format`。
 - Python：`uvx ruff@0.17.1 check --fix`、`uvx ruff@0.17.1 format`。まだ対象外のディレクトリは`ruff.toml`の`extend-exclude`。
 - ローカルDB：`supabase start`。DB型生成：`pnpm --filter @pitari/api db:types`。
 - 必要なときに読む：[初回セットアップ](docs/setup.md)、[API一覧](docs/api.md)、[ER図](docs/er.md)、[候補要件](docs/requirements-candidates.md)、[ADR](docs/adr/README.md)。
@@ -15,12 +15,21 @@
 ## 開発ルール
 
 - 読みやすい名前と素直なコードを選ぶ。共通化は本当に同じ処理だけ。コメントは必要な「なぜ」だけを書く。仕様番号は振らない。
+- 書き直したら、使わなくなったファイル・export・依存を消す。`pnpm knip`で見つかり、CIでも止まる。「あとで使う」exportは、使うときに足す。
 - importはwebで`@/`、apiで`#src/`を使う。
 - deprecatedな書き方を避ける。Next.jsの実装前に`apps/web/node_modules/next/dist/docs`の該当ガイドを確認する。
 - docs・コメントは日本語。PR本文やレビューを含め、英語と日本語の間に半角スペースを入れない。コード・コマンド・URLの空白は維持する。mdは`pnpm lint`のtextlintで確かめる。
 - API追加は`docs/api.md`→zodスキーマ→apiのroute→webのBFFの順。
 - DB変更は`supabase/migrations`のみ。新しいテーブルはRLSを有効にし、`docs/er.md`を更新する。
 - 設計上の決定は`docs/adr/`に1件ずつ残す。候補要件は`docs/requirements-candidates.md`へ。
+
+## commitとPR
+
+- ブランチは`feature/<自分の名前>/<内容>`。PRは目的を1つにする。
+- PRの差分は400行くらいまで。`bash scripts/pr-size.sh`で数える（生成物とバイナリは数えない。PRのマージ先と比べるので、積み上げたPRでもそのPRの分だけを数える）。超えそうなら先にPRを分け、分けないなら本文に理由を書く。
+- commitは、それだけで意味が通り、lintと型が通る単位に分ける。整形・名前の変更・生成物の更新は、機能の変更と別のcommitにする。
+- メッセージは`feat(web): 〜する`の形（`fix`・`docs`・`chore`・`ci`・`refactor`など）。本文に「なぜ」を書く。
+- PR本文は`.github/pull_request_template.md`に沿って書く。
 
 ## セキュリティと権限
 

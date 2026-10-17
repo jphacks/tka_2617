@@ -1,7 +1,7 @@
 "use client";
 
 import { categoryLabels } from "@/lib/garment-category";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import type { GarmentView, Season, TextureRequestResult } from "@pitari/api";
 import { CameraIcon } from "@/components/icons";
@@ -36,12 +36,22 @@ export function GarmentDetail({ id }: { id: string }) {
   const [progress, setProgress] = useState<MeasurementProgressState | null>(
     null,
   );
+  // 応答の順で上書きし合わないよう、保存は1件ずつ順に送る
+  const saveQueue = useRef(Promise.resolve());
+  const pendingSaves = useRef(0);
+  const savedDetails = useRef<Details>({ purchasedMonth: null, seasons: [] });
+  const failedSaves = useRef(0);
 
   useEffect(() => {
     let active = true;
     requestJson<GarmentView>(`/api/garments/${encodeURIComponent(id)}`)
       .then((data) => {
-        if (active) setGarment(data);
+        if (!active) return;
+        savedDetails.current = {
+          purchasedMonth: data.purchasedMonth,
+          seasons: data.seasons,
+        };
+        setGarment(data);
       })
       .catch((failure: unknown) => {
         if (active)
@@ -56,25 +66,34 @@ export function GarmentDetail({ id }: { id: string }) {
     };
   }, [id, attempt]);
 
-  async function saveDetails(values: Partial<Details>) {
-    if (!garment) return;
-    const previous = garment;
-    setGarment({ ...garment, ...values });
+  function saveDetails(values: Partial<Details>) {
+    setGarment((current) => current && { ...current, ...values });
     setStatus("保存しています…");
-    try {
-      await requestJson(`/api/garments/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      setStatus("保存しました");
-    } catch (failure) {
-      setGarment(previous);
-      setMonthInputKey((key) => key + 1);
-      setStatus(
-        failure instanceof Error ? failure.message : "保存できませんでした",
-      );
-    }
+    const failuresAtStart = failedSaves.current;
+    pendingSaves.current += 1;
+    saveQueue.current = saveQueue.current.then(async () => {
+      try {
+        // 先に積んだ保存が失敗したら、その表示を前提にした後続の変更も送らない
+        if (failedSaves.current !== failuresAtStart) return;
+        await requestJson(`/api/garments/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values),
+        });
+        savedDetails.current = { ...savedDetails.current, ...values };
+        if (pendingSaves.current === 1) setStatus("保存しました");
+      } catch (failure) {
+        failedSaves.current += 1;
+        const saved = savedDetails.current;
+        setGarment((current) => current && { ...current, ...saved });
+        setMonthInputKey((key) => key + 1);
+        setStatus(
+          failure instanceof Error ? failure.message : "保存できませんでした",
+        );
+      } finally {
+        pendingSaves.current -= 1;
+      }
+    });
   }
 
   async function captureBack(file: File) {
@@ -95,13 +114,13 @@ export function GarmentDetail({ id }: { id: string }) {
           });
         },
       );
-      const saved = await uploadBackPhoto(id, back);
-      setTextureStatus(textureRequestMessage(saved.texture));
-      setGarment(
-        await requestJson<GarmentView>(
-          `/api/garments/${encodeURIComponent(id)}`,
-        ),
+      const backSaved = await uploadBackPhoto(id, back);
+      setTextureStatus(textureRequestMessage(backSaved.texture));
+      const saved = await requestJson<GarmentView>(
+        `/api/garments/${encodeURIComponent(id)}`,
       );
+      // 購入時期や季節は保存待ちの変更があり得るので、写真だけを差し替える
+      setGarment((current) => current && { ...current, images: saved.images });
       setStatus(
         back.cutoutImage
           ? "裏面を保存しました"
@@ -257,8 +276,9 @@ export function GarmentDetail({ id }: { id: string }) {
               className={`h-10 rounded-md bg-surface px-3 text-sm tabular-nums ${focusRing}`}
               onChange={(event) => {
                 const value = event.target.value;
-                if (/^\d{4}-(0[1-9]|1[0-2])$/.test(value))
-                  void saveDetails({ purchasedMonth: value });
+                if (value === "") saveDetails({ purchasedMonth: null });
+                else if (/^\d{4}-(0[1-9]|1[0-2])$/.test(value))
+                  saveDetails({ purchasedMonth: value });
               }}
             />
             {garment.purchasedMonth && (
@@ -267,7 +287,7 @@ export function GarmentDetail({ id }: { id: string }) {
                 className={`flex size-8 items-center justify-center rounded-full text-sub hover:text-main ${focusRing}`}
                 onClick={() => {
                   setMonthInputKey((key) => key + 1);
-                  void saveDetails({ purchasedMonth: null });
+                  saveDetails({ purchasedMonth: null });
                 }}
               >
                 ×
@@ -292,7 +312,7 @@ export function GarmentDetail({ id }: { id: string }) {
                   aria-pressed={selected}
                   className={`flex size-10 items-center justify-center rounded-full text-[13px] transition active:scale-95 ${focusRing} ${selected ? "bg-main font-semibold text-white" : "border border-line text-sub hover:border-main hover:text-main"}`}
                   onClick={() => {
-                    void saveDetails({
+                    saveDetails({
                       seasons: seasons
                         .map((season) => season.value)
                         .filter((season) =>
