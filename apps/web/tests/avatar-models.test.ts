@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
+import presetsJson from "@/../public/presets/presets.json";
 import { heightFromInput } from "@/lib/avatar-settings";
 import { AVATAR_MODELS, type ModelGender } from "@/lib/avatar-models";
 
@@ -111,6 +112,24 @@ void test("入力できる身長は性別ごと（女性は140〜185cm、男性�
         assert.equal(rows[0].height_cm, min);
         assert.equal(rows[rows.length - 1].height_cm, max);
       }
+    }
+  }
+});
+
+void test("どちらの性別も、髪・靴・顔のパーツのglbがある（女性はpresets/female/の下）", () => {
+  const paths = [
+    ...presetsJson.hair.map((h) => h.path),
+    ...presetsJson.shoes.map((s) => s.path),
+    presetsJson.face.path,
+  ];
+  assert.equal(
+    AVATAR_MODELS.female.presetUrl("/presets/hair/short.glb"),
+    "/presets/female/hair/short.glb",
+  );
+  for (const gender of GENDERS) {
+    for (const p of paths) {
+      const url = AVATAR_MODELS[gender].presetUrl(p);
+      assert.ok(existsSync(path.join(PUBLIC, url)), `${url}がありません`);
     }
   }
 });

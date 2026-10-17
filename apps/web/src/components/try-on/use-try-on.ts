@@ -368,6 +368,13 @@ export function useTryOn(
     wearTrousers && trouserStatus === "tight" ? "ズボン" : null,
   ].filter((name) => name !== null);
 
+  // 靴は、押し出しなどのeffectが同じオブジェクトかで見るので、選び直したときだけ作り直す
+  const shoe = useMemo(() => {
+    const found = presets.shoes.find((s) => s.id === shoeId);
+    return found ? { id: found.id, path: models.presetUrl(found.path) } : null;
+  }, [shoeId, models]);
+  const hairPath = presets.hair.find((h) => h.id === hairId)?.path;
+
   /** TryOnSceneにそのまま渡す値（計算時間の計測などは各画面で足す） */
   const sceneProps = {
     heightScale: heightCm / heightTable.standard_cm,
@@ -383,10 +390,10 @@ export function useTryOn(
     trouserMorphs,
     showTrousers: wearTrousers && trouserStatus !== "tooSmall",
     skinColor,
-    hairUrl: presets.hair.find((h) => h.id === hairId)?.path ?? null,
-    faceUrl: presets.face.path,
+    hairUrl: hairPath ? models.presetUrl(hairPath) : null,
+    faceUrl: models.presetUrl(presets.face.path),
     hairColor,
-    shoe: presets.shoes.find((s) => s.id === shoeId) ?? null,
+    shoe,
     sockColor,
   };
 

@@ -39,6 +39,14 @@ function modelsOf(
     trouserTable: TrouserTableSchema.parse(json.trousers),
     /** 入力できる身長（cm）。Blenderで基準寸法とキーの効き方を測った範囲 */
     heightRangeCm,
+    /**
+     * presets.jsonの髪・靴・顔のパーツのglbのパスを、この性別の体に合わせたものにする。
+     * 女性はBlenderが同じ名前でpresets/female/の下に書き出す
+     */
+    presetUrl: (path: string) =>
+      gender === "male"
+        ? path
+        : path.replace(/^\/presets\//, `/presets/${gender}/`),
   };
 }
 
