@@ -1,0 +1,18 @@
+name: pr-tests
+
+# 処理を変えたのにテストが変わっていないPRを警告する。jobは落とさない（scripts/pr-tests.sh）
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pr-tests:
+    runs-on: ubuntu-latest
+    steps:
+      # PRでは、baseにマージした形のcommitがcheckoutされる。その1つ前（HEAD^1）がbaseの先頭なので、2つだけ取る
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - run: bash scripts/pr-tests.sh HEAD^1
