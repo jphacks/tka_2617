@@ -84,10 +84,10 @@ Pythonのファイルは、uvがあればruffで検査して整形する（[ADR 
 1. `supabase migration new <変更の名前>`でmigrationを作り、SQLを書く
    - `profiles`を作るときは、`supabase/seed.sql`にデモユーザー（`apps/api/.env.example`の`DEMO_PROFILE_ID`）の行も入れる。`supabase db reset`のたびに流れる
 2. `supabase db reset`でローカルのDBに反映する
-3. `pnpm --filter @pitari/api db:types`で型を作り直す
+3. `pnpm --filter @pitari/api db:types`で型（`apps/api/src/lib/database.types.ts`）を作り直し、commitする。CLIの版で型の書き方が変わるので、手元のCLIではなく、`npx`で決まった版を使う（[ADR 0029](adr/0029-commit-db-types.md)）
 4. [docs/er.md](er.md) を更新する
 
-PRでは、CIの`db`（`.github/workflows/db.yml`）が、空のDBにmigrationと`seed.sql`を流し、`supabase db lint`でDBの関数を確かめる。`supabase/`を変えたPRだけで動く。
+PRでは、CIの`db`（`.github/workflows/db.yml`）が、空のDBにmigrationと`seed.sql`を流し、`supabase db lint`でDBの関数を確かめる。作り直した型がcommitした型と違えば落ちる。`supabase/`かDBの型を変えたPRだけで動く。
 
 ## webをVercelにデプロイする
 

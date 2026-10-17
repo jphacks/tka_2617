@@ -16,7 +16,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "db:types": "supabase gen types typescript --local > src/lib/database.types.ts"
+    "db:types": "npx --yes supabase@2.90.0 gen types typescript --local > src/lib/database.types.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.3",
