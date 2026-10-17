@@ -42,6 +42,7 @@
 - [0025 ズボンのテクスチャは、脚ごとのUVの島を前後に分けて表と裏の写真を貼る](0025-trousers-uv-template.md)
 - [0026 ズボンのテクスチャを受領したモデルとUVへ切り替える](0026-trousers-template-from-delivered-uv.md)
 - [0027 保存済みの表裏写真からテクスチャを再生成できるようにする](0027-request-texture-from-saved-photos.md)
+- [0028 長そでの登録と受領UVを使ったテクスチャ生成](0028-long-sleeve-top.md)
 
 ## 参考文献
 

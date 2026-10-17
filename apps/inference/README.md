@@ -154,3 +154,9 @@ web・api・推論・ローカルSupabaseの起動後、リポジトリ直下で
 
 - [DeepFashion2](https://github.com/switchablenorms/DeepFashion2)
 - [HRNet公式実装](https://github.com/svip-lab/HRNet-for-Fashion-Landmark-Estimation.PyTorch)
+
+## 長そでの登録
+
+`long_sleeve_top`を検出・採寸・切り抜きで受け付ける。長そでは33点で、サイズ入力はTシャツと同じ着丈・身幅・肩幅・袖丈。既存のHRNetの重みを使い、モデルの追加取得は不要。自動分類が違う場合は撮影後の「服の種類」で長そでを選び直す。
+
+DBには`supabase/migrations/20261017000100_long_sleeve_top.sql`の適用が必要。ローカルDBを起動して`supabase migration up --local`を実行する。クラウドへの適用はこの変更では行わない。

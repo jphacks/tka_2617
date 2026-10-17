@@ -2,7 +2,7 @@
 
 ## 真上撮影の採寸（現在の方式）
 
-`POST /v1/detections`のoptionsは`{ category: "auto" | "short_sleeve_top" | "trousers", stage: "paper" | "garment" | "landmarks" | "cutout" | "all", paperCorners?: [number, number][], bbox?: [number, number, number, number], points?: LandmarkPoint[] }`。stage省略時はall。画像を遠近補正せず、A4の長辺を29.7cm、短辺を21cmとして縮尺を自動計算する。四隅・bbox・ランドマークはすべて送信画像の座標。
+`POST /v1/detections`のoptionsは`{ category: "auto" | "short_sleeve_top" | "long_sleeve_top" | "trousers", stage: "paper" | "garment" | "landmarks" | "cutout" | "all", paperCorners?: [number, number][], bbox?: [number, number, number, number], points?: LandmarkPoint[] }`。stage省略時はall。画像を遠近補正せず、A4の長辺を29.7cm、短辺を21cmとして縮尺を自動計算する。四隅・bbox・ランドマークはすべて送信画像の座標。
 
 画面の1回の操作からpaper→garment→landmarks→cutoutを順に呼び、工程の切り替わりと経過時間から進捗の目安を1%刻みで表示する。推論内部の実測割合や残り時間の予測値ではなく、100%は全処理の完了後だけ表示する。返却値に`cutoutBase64`（透過PNGまたはnull）と`cutoutWidthPx`・`cutoutHeightPx`（null可）を追加する。
 
@@ -47,7 +47,7 @@ multipartの`image`はJPEG、最大8MiB・1200万画素・各辺4096px。ブラ�
 
 ```ts
 {
-  category: "short_sleeve_top" | "trousers" | "auto";
+  category: "short_sleeve_top" | "long_sleeve_top" | "trousers" | "auto";
   paperCorners?: [number, number][];
   bbox?: [number, number, number, number];
   points?: { id: number; x: number; y: number; score: number | null }[];
@@ -84,7 +84,7 @@ POSTはmultipartの`image`（測定用JPEG）、`cutoutImage`（任意の透過P
 type Garment = {
   id: string;
   name: string;
-  category: "short_sleeve_top" | "trousers";
+  category: "short_sleeve_top" | "long_sleeve_top" | "trousers";
   measurements: Measurements;
   measurementVersion: string;
   purchasedMonth: string | null; // "2026-04"のような年月
@@ -128,7 +128,7 @@ Tシャツとズボンでテンプレートが違い、ズボンは受領したG
 
 ## 共通の型
 
-- カテゴリは初期版ではshort_sleeve_topとtrousersの2つ。
+- カテゴリはshort_sleeve_top・long_sleeve_top・trousersの3つ。長そでは33点を受け取り、Tシャツと同じ肩幅・袖丈・身幅・着丈を保存する。
 - 点番号はカテゴリ内の1始まり。scoreはヒートマップ値、手動点はnull。アノテーションの可視性vとは別物。
 - MeasurementsはshoulderWidthCm・sleeveLengthCm・bodyWidthCm・bodyLengthCm・waistCm・hipCm・thighWidthCm・riseCm・inseamCm・hemWidthCm。各値は正のcmまたはnull。
 - 購入時期と季節は服の属性で、採寸には使わない。[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。

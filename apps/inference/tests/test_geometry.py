@@ -58,6 +58,16 @@ class GeometryTests(unittest.TestCase):
         self.assertAlmostEqual(points[0]["y"], 400)
         self.assertEqual(decode_heatmaps(heatmaps, inverse, "short_sleeve_top", 1000, 1000), [])
 
+    def test_long_sleeve_uses_all_33_channels_without_other_categories(self):
+        _, inverse = crop_transform([200, 100, 500, 700])
+        heatmaps = np.zeros((294, 96, 72), dtype=np.float32)
+        heatmaps[25:58, 48, 36] = 0.9
+        points = decode_heatmaps(heatmaps, inverse, "long_sleeve_top", 1000, 1000)
+        self.assertEqual([p["id"] for p in points], list(range(1, 34)))
+        self.assertEqual(decode_heatmaps(heatmaps, inverse, "short_sleeve_top", 1000, 1000), [])
+        self.assertEqual(decode_heatmaps(heatmaps, inverse, "trousers", 1000, 1000), [])
+        self.assertAlmostEqual(points[-1]["x"], 350)
+
     def test_candidate_is_only_a_rectangle_proposal(self):
         image = np.zeros((800, 1000, 3), dtype=np.uint8)
         cv2.rectangle(image, (50, 100), (260, 397), (255, 255, 255), -1)
