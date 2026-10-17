@@ -15,7 +15,7 @@ function AvatarErrorFallback(_props: object, { retry }: ErrorInfo) {
           type="button"
           onClick={() => {
             // three.jsを最初の表示で読み込まないよう、ここでも動的に読み込む
-            void import("@/components/avatar-canvas")
+            void import("@/components/try-on/try-on-scene")
               .then(({ clearModelCache }) => {
                 clearModelCache();
               })
