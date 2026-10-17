@@ -72,6 +72,6 @@ Dockerを使うのはローカルSupabaseだけ。`supabase start`後にDocker D
 #### ハッカソンで開発した独自機能・技術
 * **AIの誤りを止める独自のlintのルール**：サーバー専用のファイルに`import "server-only"`を書き忘れる、秘密に見える名前の環境変数を`NEXT_PUBLIC_`にする、画面から外部のURLを直接呼ぶ、Honoのルートを別の文で足してwebから型が見えなくなる、などを止める（[apps/web/eslint.config.mjs](apps/web/eslint.config.mjs)、[apps/api/eslint.config.mjs](apps/api/eslint.config.mjs)）
 * **Blenderが書き出した3Dの表を、webのテストで確かめる**：服の表（身長・体型ごとのシェイプキーの効き方）を実際に読み、4体型×4身長で「寸法からキーを解き、キーから寸法を作り直すと元に戻るか」を確かめる。ズボンは、写真の寸法が矛盾しても、キーの値が暴れないことを確かめる（抑えないと284まで、抑えると15.8に収まる）（[apps/web/tests/](apps/web/tests/)）
-* **PRの大きさの警告**：ロックファイルやBlenderの書き出しなどの生成物に印を付けて除き（[.gitattributes](.gitattributes)）、400行を超えたら警告する。AIが作るPRは大きくなりやすいため（[scripts/pr-size.sh](scripts/pr-size.sh)）
+* **PRの大きさの警告**：ロックファイルやBlenderの書き出しなどの生成物に印を付けて除き（[.gitattributes](.gitattributes)）、テストも除いて、400行を超えたら警告する。AIが作るPRは大きくなりやすく、テストを数えるとテストを書かなくなるため（[scripts/pr-size.sh](scripts/pr-size.sh)）
 * **テストの書き忘れの警告**：処理（apiの`src/services`・`src/lib`、webの`src/lib`）を変えたのに、同じアプリの`tests/`が変わっていないPRで、そのファイルに警告を付ける。AIに処理を書かせても、テストが一緒に作られなかったため（[scripts/pr-tests.sh](scripts/pr-tests.sh)）
 * **migrationを空のDBで確かめる**：DBに関係するファイルを変えたPRと、mainへのマージのときに、SupabaseのDBを空の状態で起動する。migrationとseedが最後まで通るか、DBの関数に誤りが無いか、commitしたDBの型がmigrationと合っているかを確かめる（[.github/workflows/db.yml](.github/workflows/db.yml)）
