@@ -11,7 +11,7 @@ Blenderでは、目標の寸法からキーの値を求める処理（solveKeys�
 ## 決定
 
 - Blenderから、glbと一緒に計測データのjsonを書き出す。中身は、キーの名前、基準の寸法、連動を打ち消す逆行列、計測線の頂点の座標、キー値1あたりの頂点の移動量、部位ごとに長さを足す辺
-- ブラウザで、このjsonを使ってsolveKeysを解く（`apps/web/src/lib/solve-keys.ts`）
+- ブラウザで、このjsonを使ってsolveKeysを解く（`apps/web/src/lib/solve-keys.ts`）（その後、身長ごとの表で解く方式（[0008](0008-height-keys-and-tables.md)）に置き換え、`solve-keys.ts`とjsonは消した）
   1. 逆行列で、キー値の見当をつける
   2. その値で計測線の長さを測り、目標とのずれの0.5倍ずつキー値を直す
   3. ずれが全部位で0.01cm未満になるまで繰り返す（最大50回）
