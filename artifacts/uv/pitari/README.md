@@ -15,7 +15,7 @@
 
 ## ファイル
 
-Gitで共有するのはこのREADMEと`scripts/`だけ。元モデルの`pitari.blend`は別途用意し、リポジトリ直下へ置く。作業用Blenderファイル、写真、`uv_template.json`、`data/`・`masks/`・`check/`・`renders/`・`trials/`はローカル専用で、cloneには含まれない。下記の生成物は「作り直す方法」で再生成する。元モデルとアプリ用GLBのUVが同じとは限らない。
+Gitで共有するのはこのREADMEと`scripts/`だけ。元モデルの`pitari.blend`は別途用意し、`inputs/tshirt/`へ置く。作業用Blenderファイル、写真、`uv_template.json`、`data/`・`masks/`・`check/`・`renders/`・`trials/`はローカル専用で、cloneには含まれない。下記の生成物は「作り直す方法」で再生成する。元モデルとアプリ用GLBのUVが同じとは限らない。
 
 | パス                                                   | 内容                                                                                         |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
@@ -283,7 +283,7 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 
 ### 実際の写真で試した結果（2026-10-12）
 
-プロジェクト直下の`表面.jpg`・`背面.jpg`（紺のTシャツ、約800×750px、A4なし、背景に小物あり）で試した。結果は`trials/real1/`（自動のまま）と`trials/real1_fixed/`（修正版、`sheet.png`・`preview.blend`あり）。
+`inputs/tshirt/`の`表面.jpg`・`背面.jpg`（紺のTシャツ、約800×750px、A4なし、背景に小物あり）で試した。結果は`trials/real1/`（自動のまま）と`trials/real1_fixed/`（修正版、`sheet.png`・`preview.blend`あり）。
 
 - 推論の点は、前面・背面ともおおむね正しい位置に付いた。背面では7番（肩先）が画像の左に出た。テンプレートの背面の仮定（画像の左を7〜15と呼ぶ）と合うが、1枚の例にすぎない。
 - 前面では、GrabCutの服の領域が右下の白い紙袋までつながり、脇の点が紙袋の輪郭に沿って置かれた（三角形が6個裏返った）。脇線（20→18→17番）より外側を領域から除いた`mask_front_fixed.png`で作り直した。
@@ -357,7 +357,7 @@ MCPでつなぐと、Claude Codeが**起動中のBlenderの開いているファ
 
 ## 作り直す方法
 
-別途用意した`pitari.blend`をリポジトリ直下に置き、PowerShellで実行する。Blender 4.3と、[推論サービスのセットアップ](../../../apps/inference/README.md)で作る仮想環境のnumpy・Pillowを使う。Blenderの場所が異なる場合は`scripts/run_all.ps1`のパスを合わせる。生成物を確認してもGitへ追加しない。
+別途用意した`pitari.blend`を`artifacts/uv/pitari/inputs/tshirt/`に置き、PowerShellで実行する。Blender 4.3と、[推論サービスのセットアップ](../../../apps/inference/README.md)で作る仮想環境のnumpy・Pillowを使う。Blenderの場所が異なる場合は`scripts/run_all.ps1`のパスを合わせる。生成物を確認してもGitへ追加しない。
 
 ```powershell
 ./artifacts/uv/pitari/scripts/run_all.ps1
@@ -411,3 +411,14 @@ MCPでつなぐと、Claude Codeが**起動中のBlenderの開いているファ
 3. 推論の点を直す手間が大きければ、点の確認・修正の手段（画面または手順）を用意する。
 4. アプリで使うなら、トップス専用の材質に分ける（パンツとの共有をやめる）。可能なら前後の切れ目を滑らかに切り直し、袖を再展開してからテンプレートを作り直す。
 5. アプリの撮影画面の`cutout`は切り詰めた別の座標なので、テクスチャに使うなら切り抜き量を保存するか、`photo_to_texture.py`のように同じ座標のマスクを作る。
+
+## 長そでと素材の配置（2026-10-17）
+
+- `inputs/tshirt/`：元のpitari.blend、バックアップ、Tシャツの表裏写真。
+- `inputs/longsleeve/`：受領した長そでのGLB・Blenderファイル・ランドマーク・mesh_info・UV展開図・確認画像。[再生成手順と検証結果](inputs/longsleeve/README.md)。
+- `inputs/trousers/`：受領したズボンの素材。
+- `inputs/df2_categories.jpg`：DeepFashion2公式のランドマーク図の参照用コピー。
+- `longsleeve/`・`trousers/`と直下の`data/`・`masks/`・`check/`：再生成できるテンプレートと検証データ。Gitには含めない。
+- `trials/`：写真ごとの試行結果。アプリから生成した結果は`apps/inference/textures/`に置く。
+
+ルート直下にあった素材は上記へ移した。Blenderの元ファイルとバックアップは内容を変更せず保持する。元ファイル内の相対画像パスは移動前のままなので、外部画像を使う場合は読み込み先を確認する。生成処理はメッシュとUVだけを読み、欠落した外部材質画像には依存しない。
