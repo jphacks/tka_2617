@@ -76,6 +76,8 @@ void test("位置があれば丸めて使い、無いか不正なら決まった
     { lat: "abc", lon: "139" },
     { lat: "91", lon: "139" },
     { lat: "35", lon: "-181" },
+    { lat: "", lon: "" },
+    { lat: " ", lon: "139" },
   ];
   for (const query of queries) {
     assert.equal(placeFromQuery(new URLSearchParams(query)).place, "fallback");

@@ -15,7 +15,8 @@ export type TodayWeather = {
   place: "current" | "fallback";
 };
 
-// 位置は自分のサーバーへ送るので、0.1度（約10km）に丸めて、住所が分からないようにする
+// 位置は0.1度（約10km）に丸めて、住所が分からないようにする。
+// クエリはホスティングのアクセスログに残るので、画面は送る前にこれで丸める
 export function roundCoordinate(value: number): number {
   return Math.round(value * 10) / 10;
 }
@@ -26,12 +27,11 @@ export function placeFromQuery(params: URLSearchParams): {
   longitude: number;
   place: TodayWeather["place"];
 } {
-  const latitude = Number(params.get("lat"));
-  const longitude = Number(params.get("lon"));
+  const latitude = coordinateFrom(params.get("lat"));
+  const longitude = coordinateFrom(params.get("lon"));
   if (
-    params.has("lat") &&
-    params.has("lon") &&
-    Number.isFinite(latitude) &&
+    latitude !== null &&
+    longitude !== null &&
     Number.isFinite(longitude) &&
     Math.abs(latitude) <= 90 &&
     Math.abs(longitude) <= 180
@@ -43,6 +43,13 @@ export function placeFromQuery(params: URLSearchParams): {
     };
   }
   return { ...fallbackPlace, place: "fallback" };
+}
+
+// Number("")は0になるので、空や空白だけの値は、数に直す前に弾く
+function coordinateFrom(value: string | null): number | null {
+  if (value === null || value.trim() === "") return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 const monthSeasons: Season[] = [
