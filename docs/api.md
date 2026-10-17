@@ -22,18 +22,19 @@ JSONはcamelCase、DBはsnake_case。エラーはHTTPステータスと`{ error:
 
 ## 実装済みの経路
 
-| メソッド | apiのパス              | 用途                                      |
-| -------- | ---------------------- | ----------------------------------------- |
-| GET      | `/health`              | 死活確認。ここだけ認証不要                |
-| GET      | `/v1/inference-status` | モデルファイルの配置・読み込み状況        |
-| POST     | `/v1/detections`       | A4縮尺・服の検出・ランドマーク・切り抜き  |
-| GET      | `/v1/measurements`     | カテゴリ別の点番号・式・採寸バージョン    |
-| POST     | `/v1/measurements`     | 修正した点から寸法を再計算                |
-| GET      | `/v1/garments`         | 一覧。任意のcategoryで絞り込み、最新100件 |
-| POST     | `/v1/garments`         | 写真・点・確定した寸法を登録              |
-| GET      | `/v1/garments/:id`     | 詳細                                      |
-| PATCH    | `/v1/garments/:id`     | 名前・寸法を変更                          |
-| DELETE   | `/v1/garments/:id`     | 写真と服を削除                            |
+| メソッド | apiのパス               | 用途                                      |
+| -------- | ----------------------- | ----------------------------------------- |
+| GET      | `/health`               | 死活確認。ここだけ認証不要                |
+| GET      | `/v1/inference-status`  | モデルファイルの配置・読み込み状況        |
+| POST     | `/v1/detections`        | A4縮尺・服の検出・ランドマーク・切り抜き  |
+| GET      | `/v1/measurements`      | カテゴリ別の点番号・式・採寸バージョン    |
+| POST     | `/v1/measurements`      | 修正した点から寸法を再計算                |
+| GET      | `/v1/garments`          | 一覧。任意のcategoryで絞り込み、最新100件 |
+| POST     | `/v1/garments`          | 写真・点・確定した寸法を登録              |
+| GET      | `/v1/garments/:id`      | 詳細                                      |
+| PATCH    | `/v1/garments/:id`      | 名前・寸法を変更                          |
+| PUT      | `/v1/garments/:id/back` | 裏面の写真を登録・差し替え                |
+| DELETE   | `/v1/garments/:id`      | 写真と服を削除                            |
 
 webは同じパス構成で中継する。例：`/api/garments`→`/v1/garments`。healthだけは`/api/health`→`/health`。
 
@@ -87,7 +88,7 @@ type Garment = {
   createdAt: string;
   images: {
     id: string;
-    role: "original" | "measurement" | "cutout";
+    role: "original" | "measurement" | "cutout" | "back" | "back_cutout";
     url: string;
     widthPx: number;
     heightPx: number;
@@ -102,6 +103,12 @@ type Garment = {
 画像URLは非公開Storageの10分間有効な署名URL。期限が切れたら一覧・詳細を再取得する。pointsとpaperCornersはそれぞれ所属する画像レコード内のピクセル座標。3D担当には主にcategory・measurements・measurementVersionを渡す。
 
 PATCHの入力は`{ name?, measurements? }`、成功は`200 { id }`。寸法オブジェクトは全体を置き換える。カテゴリ変更と保存後の点編集は初期版では非対応。DELETEは画像を先に消してから行を削除し、成功は204。途中失敗は503を返し、再試行できる。
+
+### PUT /v1/garments/:id/back
+
+裏面の写真を登録する。既にあれば差し替える。multipartの`image`（裏面のJPEG、必須）と`cutoutImage`（表示用の透過PNG、任意）を受け取り、roleは`back`と`back_cutout`。画像の条件は表の登録と同じ。cutoutImageを送らない場合、古いback_cutoutは消す。成功は`200 { id }`。
+
+裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
 ## 共通の型
 

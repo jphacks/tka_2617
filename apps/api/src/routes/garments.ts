@@ -12,6 +12,7 @@ import { listGarments } from "#src/services/list-garments";
 import { getGarment } from "#src/services/get-garment";
 import { getGarmentImage } from "#src/services/get-garment-image";
 import { updateGarment } from "#src/services/update-garment";
+import { replaceGarmentBack } from "#src/services/replace-garment-back";
 import { deleteGarment } from "#src/services/delete-garment";
 
 const idSchema = z.object({ id: z.uuid() });
@@ -120,6 +121,29 @@ export const garments = new Hono()
     ),
     async (c) =>
       c.json(await updateGarment(c.req.valid("param").id, c.req.valid("json"))),
+  )
+  .put(
+    "/:id/back",
+    zValidator("param", idSchema, (result, c) => {
+      if (!result.success)
+        return c.json({ error: "服のIDを確認してください" }, 400);
+    }),
+    zValidator(
+      "form",
+      z.object({
+        image: z.instanceof(File),
+        cutoutImage: z.instanceof(File).optional(),
+      }),
+      (result, c) => {
+        if (!result.success)
+          return c.json({ error: "裏面の画像を確認してください" }, 400);
+      },
+    ),
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const form = c.req.valid("form");
+      return c.json(await replaceGarmentBack(id, form.image, form.cutoutImage));
+    },
   )
   .delete(
     "/:id",
