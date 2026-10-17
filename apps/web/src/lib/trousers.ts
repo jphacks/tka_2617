@@ -1,9 +1,8 @@
 import { z } from "zod";
+import { BUILDS, type Build } from "@/lib/avatar-settings";
 import {
-  BUILDS,
   heightBlend,
   solveLinear,
-  type Build,
   type FitStatus,
   type Garment,
 } from "@/lib/garment";

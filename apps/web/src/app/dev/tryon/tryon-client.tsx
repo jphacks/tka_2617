@@ -20,6 +20,8 @@ import {
   BUILDS,
   HEIGHT_MAX_CM,
   HEIGHT_MIN_CM,
+} from "@/lib/avatar-settings";
+import {
   LAYER_WIDTH_CM,
   MEASUREMENT_KEYS,
   MEASUREMENT_LABELS,

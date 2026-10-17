@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BUILDS, type Build } from "@/lib/avatar-settings";
 
 /* ---------------------------------------------------------------- 服データ（チーム共通の形式・仮） */
 
@@ -67,15 +68,6 @@ export function topMeasurements(g: Garment): Measurements {
 
 /* ---------------------------------------------------------------- 体型 */
 
-/** 体型4つ。standardはBasisそのもの（キーなし）。がっしり＝筋肉、ぽっちゃり＝体重 */
-export const BUILDS = ["slim", "standard", "broad", "chubby"] as const;
-export type Build = (typeof BUILDS)[number];
-export const BUILD_LABELS: Record<Build, string> = {
-  slim: "細身",
-  standard: "標準",
-  broad: "がっしり",
-  chubby: "ぽっちゃり",
-};
 /** 体型キー名（体とTシャツで共通）。standardはキーなし */
 export function buildKey(build: Build): string | null {
   return build === "standard" ? null : `build_${build}`;
@@ -92,10 +84,6 @@ export function buildKeyValues(build: Build): Record<string, number> {
 }
 
 /* ---------------------------------------------------------------- 身長 */
-
-/** 入力できる身長（cm）。Blenderで基準寸法とキーの効き方を測った範囲 */
-export const HEIGHT_MIN_CM = 150;
-export const HEIGHT_MAX_CM = 195;
 
 const KeyMatrixSchema = z.array(z.array(z.number()).length(4)).length(4);
 

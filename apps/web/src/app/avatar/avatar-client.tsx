@@ -18,9 +18,8 @@ import {
   BUILDS,
   HEIGHT_MAX_CM,
   HEIGHT_MIN_CM,
-  MEASUREMENT_KEYS,
-  MEASUREMENT_LABELS,
-} from "@/lib/garment";
+} from "@/lib/avatar-settings";
+import { MEASUREMENT_KEYS, MEASUREMENT_LABELS } from "@/lib/garment";
 import { TROUSER_KEYS, TROUSER_LABELS } from "@/lib/trousers";
 
 // three.jsはブラウザでだけ動かす。読み込み中も同じ大きさの枠を出す

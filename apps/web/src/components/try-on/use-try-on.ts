@@ -5,12 +5,15 @@ import shirtHeightJson from "@/../public/models/shirt_male_height.json";
 import tshirtHeightJson from "@/../public/models/tshirt_male_height.json";
 import presetsJson from "@/../public/presets/presets.json";
 import {
+  HEIGHT_MAX_CM,
+  HEIGHT_MIN_CM,
+  type Build,
+} from "@/lib/avatar-settings";
+import {
   buildKeyValues,
   fitAt,
   fitStatus,
   GarmentSchema,
-  HEIGHT_MAX_CM,
-  HEIGHT_MIN_CM,
   heightKeyValues,
   HeightTableSchema,
   MEASUREMENT_KEYS,
@@ -18,7 +21,6 @@ import {
   STRETCH_RATIO,
   topMeasurements,
   WOVEN_STRETCH_RATIO,
-  type Build,
   type Measurements,
 } from "@/lib/garment";
 import { PresetsSchema } from "@/lib/presets";
