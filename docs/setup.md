@@ -121,7 +121,7 @@ PCとスマホを同じWi-Fiに接続する。PCでAPI・Python推論・Supabase
 npx --yes pnpm@10.18.0 --filter @pitari/web exec next dev --hostname 0.0.0.0
 ```
 
-PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを確認する。スマホのSafariまたはChromeから`http://PCのIPv4アドレス:3000/capture`を開く。スマホでlocalhostを使うとスマホ自身を参照するため、PCへ接続できない。
+PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを確認する。スマホのSafariまたはChromeから`http://PCのIPv4アドレス:3000/capture`を開く。スマホでlocalhostを使うとスマホ自身を参照するため、PCへ接続できない。PCのIPから開いた画面が動くよう、`apps/web/next.config.ts`の`allowedDevOrigins`でプライベートIPからの開発用の接続を許可している。ページは出るのにボタンが反応しない、読み込み中のまま止まるときは、PCのIPがこの範囲に入っているかを確かめる。
 
 「写真を選ぶ・撮影」をタップすると、対応する端末で背面カメラまたは撮影方法の選択画面が開く。撮影を確定し、「寸法を測定」を押す。推論はPCで実行するため、PCをスリープさせない。保存画像もweb経由で取得するので、スマホからStorageのポートへ接続する必要はない。
 
