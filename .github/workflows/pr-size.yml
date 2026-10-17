@@ -1,0 +1,18 @@
+name: pr-size
+
+# PRの変更行数を数え、目安の400行を超えたら警告する。jobは落とさない（scripts/pr-size.sh）
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pr-size:
+    runs-on: ubuntu-latest
+    steps:
+      # PRでは、baseにマージした形のcommitがcheckoutされる。その1つ前（HEAD^1）がbaseの先頭なので、2つだけ取る
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - run: bash scripts/pr-size.sh HEAD^1
