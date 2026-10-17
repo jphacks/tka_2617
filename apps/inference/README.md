@@ -89,7 +89,7 @@ npx --yes pnpm@10.18.0 dev
 
 ## 服ごとのテクスチャ
 
-Tシャツ・長そで・ズボンのいずれも、裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`（multipartの`garmentId`・`category`・`front`・`back`、Bearer認証）へ送る。服の詳細の「テクスチャを作る」から保存済み写真で再生成できる。推論サービスは受け付けたらすぐ202を返し、裏の作業スレッドで1件ずつ作る。画面には受付結果を表示し、生成物は次のPC内のフォルダだけに書き出す。CPUで数分かかる。
+Tシャツ・長そで・ズボンのいずれも、裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`（multipartの`garmentId`・`category`・`front`・`back`、Bearer認証）へ送る。服の詳細の「テクスチャを作る」から保存済み写真で再生成できる。推論サービスは受け付けたらすぐ202を返し、裏の作業スレッドで1件ずつ作る。生成物は次のPC内のフォルダに書き出す。CPUで1〜数分かかる。
 
 ```text
 apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/
@@ -106,6 +106,8 @@ apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/
 | `debug_photo_front.jpg`・`debug_photo_back.jpg`             | 推論の点・服の輪郭・三角形。ずれていないかをまず見る                        |
 | `debug_texture_coverage.png`・`report.json`                 | 補った所・信頼度が低い所・塗れなかった所と、警告                            |
 | `input_*.jpg`・`photo_*.jpg`・`points_*.json`・`mask_*.png` | 受け取った写真と、使った点・服の領域。手で直して作り直すときに使う          |
+
+完成したテクスチャは、apiが`GET /textures/{服ID}`（最新の作業の状態と`job.json`の`backImageId`）と`GET /textures/{服ID}/{作業フォルダ名}/texture.png`で受け取り、Storageに置いてアバターへ配る（[ADR 0033](../../docs/adr/0033-serve-texture-through-api.md)）。待ち・作業中の服は、フォルダの前の作業ではなく`queued`・`running`を返す。
 
 服IDはクローゼットの詳細画面のURL（`/garments/{服ID}`）で分かる。生成のたびに新しい日時のフォルダができ、前の結果は残る。同じ服を同じ秒に作り直した場合は末尾に`_2`などを付ける。服を削除してもこのフォルダは消えない。点や服の領域を直して作り直す手順と、3Dモデルで見る手順は[UVテンプレートのREADME](../../artifacts/uv/pitari/README.md)の「写真で試す」と同じ。
 

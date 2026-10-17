@@ -1,4 +1,4 @@
-"""服ごとのテクスチャを、UVテンプレートでPC内のフォルダへ作る。画面やAPIの応答には出さない。"""
+"""服ごとのテクスチャを、UVテンプレートでPC内のフォルダへ作る。完成したものはapiが受け取ってStorageに置く。"""
 
 import itertools
 import json
@@ -24,6 +24,8 @@ logger = logging.getLogger("pitari")
 MAX_WAITING = 5
 
 waiting = {}
+# 待ちから取り出して作っている間の服。状態を聞かれたときに、前の作業を最新として返さないために持つ
+active = {}
 waiting_lock = threading.Lock()
 worker = ThreadPoolExecutor(max_workers=1)
 
@@ -48,24 +50,66 @@ def template_ready(category):
     return photo_to_texture.template_ready(category)
 
 
-def submit(garment_id, category, front, back, models, lock, garment_created_at=None):
+def submit(garment_id, category, front, back, models, lock, garment_created_at=None, back_image_id=None):
     """待っている間に同じ服が届いたら、新しい写真で作り直すよう置き換える。"""
     with waiting_lock:
         queued = garment_id in waiting
         if not queued and len(waiting) >= MAX_WAITING:
             raise QueueFull()
-        waiting[garment_id] = (category, front, back, garment_created_at)
+        waiting[garment_id] = (category, front, back, garment_created_at, back_image_id)
     if not queued:
         worker.submit(run, garment_id, models, lock)
 
 
 def run(garment_id, models, lock):
     with waiting_lock:
-        category, front, back, garment_created_at = waiting.pop(garment_id)
+        category, front, back, garment_created_at, back_image_id = waiting.pop(garment_id)
+        active[garment_id] = back_image_id
     try:
-        make(garment_id, category, front, back, models, lock, garment_created_at=garment_created_at)
+        make(garment_id, category, front, back, models, lock, garment_created_at=garment_created_at, back_image_id=back_image_id)
     except Exception:
         logger.exception("テクスチャの作業フォルダを用意できませんでした")
+    finally:
+        with waiting_lock:
+            active.pop(garment_id, None)
+
+
+def latest(garment_id):
+    """服の最新の作業の状態。apiのGET /textures/{garmentId}が返す形で、作業が無ければNone。"""
+    with waiting_lock:
+        if garment_id in waiting:
+            return {"status": "queued", "job": None, "error": None, "backImageId": waiting[garment_id][4]}
+        if garment_id in active:
+            return {"status": "running", "job": None, "error": None, "backImageId": active[garment_id]}
+    jobs = []
+    # フォルダ名に服IDの先頭8文字が入るので、まずそれで絞ってからjob.jsonの服IDで確かめる
+    for folder in OUTPUT.glob(f"*_{garment_id[:8]}*"):
+        job = read_job(folder)
+        if job and job.get("garmentId") == garment_id:
+            jobs.append((job.get("createdAt") or "", folder.name, job))
+    if not jobs:
+        return None
+    _, name, job = max(jobs, key=lambda item: (item[0], item[1]))
+    return {"status": job.get("status"), "job": name, "error": job.get("error"), "backImageId": job.get("backImageId")}
+
+
+def texture_file(garment_id, job_name):
+    """完成した作業のテクスチャのパス。服が違う・未完成・フォルダ名が不正ならNone。"""
+    if not job_name or Path(job_name).name != job_name or job_name.startswith("."):
+        return None
+    folder = OUTPUT / job_name
+    job = read_job(folder)
+    if not job or job.get("garmentId") != garment_id or job.get("status") != "done":
+        return None
+    path = folder / "texture.png"
+    return path if path.is_file() else None
+
+
+def read_job(folder):
+    try:
+        return json.loads((folder / "job.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
 
 
 def run_name(garment_id, category, created_at):
@@ -84,11 +128,12 @@ def new_folder(name):
             continue
 
 
-def make(garment_id, category, front, back, models, lock, garment_created_at=None):
+def make(garment_id, category, front, back, models, lock, garment_created_at=None, back_image_id=None):
     started = time.perf_counter()
     created_at = datetime.now(JST)
     out = new_folder(run_name(garment_id, category, created_at))
-    job = {"garmentId": garment_id, "category": category,
+    # backImageIdは、apiが撮り直す前の裏面から作った作業を見分けるために使う
+    job = {"garmentId": garment_id, "category": category, "backImageId": back_image_id,
            "garmentCreatedAt": garment_created_at.astimezone(JST).isoformat() if garment_created_at else None,
            "createdAt": created_at.isoformat(), "status": "running"}
     (out / "job.json").write_text(json.dumps(job, ensure_ascii=False, indent=2), encoding="utf-8")
