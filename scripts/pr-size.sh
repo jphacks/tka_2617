@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 # PRの変更行数（足した行＋消した行）を数え、上限を超えたら警告する。CIは落とさない。
 # .gitattributesでlinguist-generatedにしたファイルと、バイナリは数えない。
-# 使い方：bash scripts/pr-size.sh [比べる先。省略するとorigin/main]
+# 使い方：bash scripts/pr-size.sh [比べる先]
+# 比べる先を省略すると、今のブランチのPRのマージ先と比べる。PRがまだ無いときや、ghが使えないときはorigin/main
 set -euo pipefail
 
-base="${1:-origin/main}"
+# 積み上げたPRのマージ先は、mainではなく下のPRのブランチになる。mainと比べると、下のPRの変更まで数えてしまう
+if [[ $# -ge 1 ]]; then
+  base="$1"
+elif pr_base=$(gh pr view --json baseRefName --jq .baseRefName 2>/dev/null) && [[ -n "$pr_base" ]]; then
+  base="origin/${pr_base}"
+else
+  base="origin/main"
+fi
 limit="${PR_SIZE_LIMIT:-400}"
+echo "比べる先：${base}"
 
 # 先に変数へ入れる。ループの中で直接読むと、比べる先を間違えてgit diffが失敗しても、0行として通ってしまう
 diff=$(git diff --numstat --no-renames "${base}...HEAD")
