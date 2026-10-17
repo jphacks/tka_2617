@@ -46,9 +46,11 @@ export function readOutfit(params: {
   };
 }
 
-export function loadOutfit(storage: Pick<Storage, "getItem">): Outfit {
+// サイトのデータを禁止したブラウザでは、window.localStorageを読むだけで例外になる。
+// そのため、取り出すところからtryの中で行えるよう、storageは関数で受け取る
+export function loadOutfit(storage: () => Pick<Storage, "getItem">): Outfit {
   try {
-    const value: unknown = JSON.parse(storage.getItem(storageKey) ?? "null");
+    const value: unknown = JSON.parse(storage().getItem(storageKey) ?? "null");
     if (typeof value !== "object" || value === null) return noOutfit;
     const saved = value as Record<string, unknown>;
     return { top: garmentId(saved.top), bottom: garmentId(saved.bottom) };
@@ -59,11 +61,11 @@ export function loadOutfit(storage: Pick<Storage, "getItem">): Outfit {
 }
 
 export function saveOutfit(
-  storage: Pick<Storage, "setItem">,
+  storage: () => Pick<Storage, "setItem">,
   outfit: Outfit,
 ): void {
   try {
-    storage.setItem(storageKey, JSON.stringify(outfit));
+    storage().setItem(storageKey, JSON.stringify(outfit));
   } catch {
     // 保存できなくても、URLで服を渡せば着せられる
   }

@@ -266,8 +266,9 @@ export function GarmentDetail({ id }: { id: string }) {
           type="button"
           onClick={() => {
             // localStorageはブラウザにしか無いので、表示のときではなく押したときに読む
-            const outfit = wear(loadOutfit(window.localStorage), garment);
-            saveOutfit(window.localStorage, outfit);
+            const storage = () => window.localStorage;
+            const outfit = wear(loadOutfit(storage), garment);
+            saveOutfit(storage, outfit);
             router.push(avatarUrl(outfit));
           }}
           className={`mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded bg-main text-sm font-semibold text-white transition hover:opacity-85 active:scale-[0.98] ${focusRing}`}

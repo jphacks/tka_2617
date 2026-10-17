@@ -16,10 +16,15 @@ const otherShirtId = "33333333-3333-4333-8333-333333333333";
 function memoryStorage(initial?: string) {
   const values = new Map<string, string>();
   if (initial !== undefined) values.set("pitari.outfit", initial);
-  return {
+  const storage = {
     getItem: (key: string) => values.get(key) ?? null,
     setItem: (key: string, value: string) => void values.set(key, value),
   };
+  return () => storage;
+}
+
+function deniedStorage(): never {
+  throw new Error("サイトのデータを禁止したブラウザ");
 }
 
 void test("半袖と長袖は上、ズボンは下に入る", () => {
@@ -78,10 +83,11 @@ void test("保存した値が壊れていても、何も着ていない状態で
     top: null,
     bottom: null,
   });
-  const throwing = {
-    getItem: () => {
-      throw new Error("保存を禁止しているブラウザ");
-    },
-  };
-  assert.deepEqual(loadOutfit(throwing), { top: null, bottom: null });
+});
+
+void test("localStorageを取り出せないブラウザでも、例外を出さずに着せられる", () => {
+  assert.deepEqual(loadOutfit(deniedStorage), { top: null, bottom: null });
+  assert.doesNotThrow(() => {
+    saveOutfit(deniedStorage, { top: shirtId, bottom: null });
+  });
 });
