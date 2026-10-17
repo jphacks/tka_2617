@@ -54,7 +54,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   const [definitions, setDefinitions] = useState<DefinitionResponse | null>(
     null,
   );
-  // 着せる3Dモデルを決めるため、写真より先に選んでもらう。シャツと長そでは写真から見分けない
+  // 着せる3Dモデルを決めるため、測定の前に選んでもらう。シャツと長そでは写真から見分けない
   const [chosenCategory, setChosenCategory] = useState<Category | null>(null);
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [back, setBack] = useState<BackPhoto | null>(null);
@@ -480,11 +480,11 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
         </fieldset>
         {!chosenCategory && (
           <p className="text-xs text-description">
-            服の種類を選ぶと、写真を選べます。アバターでは、選んだ種類の3Dモデルで着せます。
+            服の種類を選んでから寸法を測定します。アバターでは、選んだ種類の3Dモデルで着せます。
           </p>
         )}
         <label
-          className={`${secondary} flex cursor-pointer items-center justify-center ${chosenCategory ? "" : "pointer-events-none opacity-40"}`}
+          className={`${secondary} flex cursor-pointer items-center justify-center`}
         >
           写真を選ぶ・撮影
           <input
@@ -492,7 +492,6 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             accept="image/*"
             capture="environment"
             className="sr-only"
-            disabled={!chosenCategory}
             onChange={(event) => {
               const file = event.target.files?.[0];
               event.target.value = "";
@@ -528,6 +527,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
         {photo && !editing && (
           <button
             className={`${button} w-full`}
+            disabled={!chosenCategory}
             onClick={() => {
               void analyze();
             }}
