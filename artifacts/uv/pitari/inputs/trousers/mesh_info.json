@@ -1,0 +1,9 @@
+{
+  "object": "jeans",
+  "verts": 1462,
+  "faces": 1432,
+  "loops": 5728,
+  "uv_maps": ["UVMap"],
+  "topology_sha256": "258ec46564043006fc77115b9287468f084c32bc2268e2be085dfdfc5db1d08d",
+  "uvmap_sha256": "11d995508d0b6d88826da9ccb6934aa1b74418a6689a6c608554768ff5b26ab3"
+}

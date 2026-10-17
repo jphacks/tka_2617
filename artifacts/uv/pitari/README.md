@@ -291,6 +291,28 @@ DeepFashion2の点では袖付けが表せないため、`aux_armhole_mid_{right
 - 脇の下で背景の白が少し混ざったため、服の縁を内側へ縮める幅を2pxから4pxにした。
 - 修正版では、写真から色を取れたテクセルが97%、近くの色で補ったものが3%、塗れなかったものは0%。前の犬の絵、背中の「MEISHI INU」と「2」は反転せずに貼れた。写真が小さいため、拡大してぼやけている。前後の境目のギザギザと、脇の下のごく小さな明るい点は残る。
 
+## ズボン
+
+2026-10-15に、受領した`pitari_trousers.blend`の`jeans`（1462頂点・1432面）へ切り替えた。素材は[`inputs/trousers/`](inputs/trousers/README.md)、テンプレートは`trousers/uv_template.json`のバージョン2。生成物はGitには含めない。方式は[ADR 0025](../../../docs/adr/0025-trousers-uv-template.md)、新モデルへの切り替えは[ADR 0026](../../../docs/adr/0026-trousers-template-from-delivered-uv.md)を参照する。旧モデル用のテクスチャは新モデルへ流用しない。
+
+### UVと部位
+
+- 受領した`UVMap`をそのまま使う。島は左右の脚で1つずつ。前後中心の縫い目が島の境目で、股の縫い目が島の中の切れ目。SVGの全1432面について、モデルのUVとの誤差が0.001px未満であることを検証した。受領したGLBとも頂点座標・UVの組が一致する。
+- 各島を前半分と後ろ半分に分け、部位は`front_right`・`front_left`・`back_right`・`back_left`の4つ。外側の境目は、高さごとの断面で最も外に出ている点を裾から腰へつないだ線（平置きで折れる所）。内側の境目は股の縫い目で代用する。股の縫い目は脚の内側よりやや前にあるため、内側の細い帯には背面の写真が入る。
+- 写真側の固定点は1・2・3・6・7・9・11・12番。2番（ウエスト中心）と9番（股）は、左右の島に1つずつある固定点の両方に使う。股は推論の9番を脚の間のすき間の一番上へ動かしてから使う。
+- 推論の点の左右は、写真で左に出る番号を先に書いた組（1と3、4と14、5と13、6と12、7と11、8と10）で決め直す。実写の前面で、4〜7番が画像の左に出ることを確かめた。
+
+### 作り直す
+
+リポジトリ直下で実行する。テンプレートの生成は数十秒。
+
+```powershell
+& "C:/Program Files/Blender Foundation/Blender 4.3/blender.exe" -b artifacts/uv/pitari/inputs/trousers/pitari_trousers.blend --python artifacts/uv/pitari/scripts/export_trousers_mesh.py -- artifacts/uv/pitari/trousers/data/mesh_export.json
+./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/build_trousers_template.py
+```
+
+`trousers/check/template_parts.png`で部位と三角形を確かめる。元の`.blend`は保存しない。
+
 ## Claude CodeからBlenderを操作する（MCPの接続）
 
 この作業ではBlender MCPのツールを使えず、Blenderはバックグラウンド実行（`blender.exe -b`）で操作した。Claude Codeから起動中のBlenderを直接操作するには次のようにする。
@@ -334,6 +356,8 @@ MCPでつなぐと、Claude Codeが**起動中のBlenderの開いているファ
 | `photo_to_texture.py`       | Python           | 写真からテクスチャを作る（試行用。推論のモデルを直接呼ぶ）           |
 | `preview_texture.py`        | Blender          | 作ったテクスチャを作業用モデルのコピーに貼って描画し、preview.blendを保存する |
 | `selftest_synthetic.py`     | Python           | 合成写真でphoto_to_texture.pyの動作を確かめる                        |
+| `export_trousers_mesh.py`   | Blender          | ズボンの面・面コーナー・UV・法線を書き出す                           |
+| `build_trousers_template.py` | Python          | ズボンのテンプレート（部位・固定点・区間・三角形・マスク）を作る     |
 
 `pitari.blend`のUVやメッシュを変えたら、テンプレートを作り直して`template_version`を上げる。`source.topology_sha256`が変わったら、古いテンプレートで作ったテクスチャは使えない。
 

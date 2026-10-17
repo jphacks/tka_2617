@@ -95,7 +95,7 @@ void test("初回の裏面は画像を上げてから行を作り、消す古い
   const calls = mockBackend(t, { garment: { id } });
   const response = await putBack(true);
   assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), { id });
+  assert.equal(((await response.json()) as { id: string }).id, id);
   assert.equal(calls.uploaded.length, 2);
   assert.deepEqual(
     calls.replaced[0]?.map((image) => [

@@ -3,8 +3,23 @@
 import cv2
 import numpy as np
 
+# DeepFashion2のズボンの点を、写真の輪郭に沿う順に並べたもの。9番（股）で脚の間へ折り返す。
+TROUSERS_OUTLINE = [1, 2, 3, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4]
 
-def garment_cutout(image, bbox, paper_corners):
+
+def landmark_outline(points, category):
+    """点がそろったズボンの輪郭を返す。"""
+    outline = {"trousers": TROUSERS_OUTLINE}.get(category)
+    if outline is None:
+        return None
+    by_id = {int(p["id"]): (p["x"], p["y"]) for p in points}
+    if not all(number in by_id for number in outline):
+        return None
+    return np.array([by_id[number] for number in outline], dtype=float)
+
+
+def garment_alpha(image, bbox, paper_corners, points=(), category=None):
+    """写真と同じ大きさの服の領域（0か255）。切り詰めない。"""
     height, width = image.shape[:2]
     scale = min(1.0, 900 / max(height, width))
     small = cv2.resize(image, (round(width * scale), round(height * scale)))
@@ -17,6 +32,17 @@ def garment_cutout(image, bbox, paper_corners):
         raise ValueError("服と背景を分離できませんでした")
     mask = np.full((h, w), cv2.GC_BGD, dtype=np.uint8)
     mask[y1:y2 + 1, x1:x2 + 1] = cv2.GC_PR_FGD
+    outline = landmark_outline(points, category)
+    if outline is not None:
+        # 服の範囲が写真のほぼ全体だと背景の色を学べず、脚の間の床が残る。
+        # 点の輪郭の外側を背景の候補にし、大きく外れた所は背景と決める。点は輪郭から少しずれるので、輪郭を広げてから外側を選ぶ。
+        inside = np.zeros((h, w), np.uint8)
+        cv2.fillPoly(inside, [np.rint(outline * scale).astype(np.int32)], 1)
+        margin = max(3, round(0.02 * max(x2 - x1, y2 - y1)))
+        near = cv2.dilate(inside, np.ones((2 * margin + 1, 2 * margin + 1), np.uint8))
+        far = cv2.dilate(inside, np.ones((6 * margin + 1, 6 * margin + 1), np.uint8))
+        mask[(near == 0) & (mask == cv2.GC_PR_FGD)] = cv2.GC_PR_BGD
+        mask[far == 0] = cv2.GC_BGD
     if len(paper_corners) == 4:
         polygon = np.rint(np.array(paper_corners) * scale).astype(np.int32)
         cv2.fillConvexPoly(mask, polygon, cv2.GC_BGD)
@@ -29,7 +55,12 @@ def garment_cutout(image, bbox, paper_corners):
     alpha = (labels == largest).astype(np.uint8) * 255
     if np.count_nonzero(alpha) < 100:
         raise ValueError("服を検出できませんでした")
-    alpha = cv2.resize(alpha, (width, height), interpolation=cv2.INTER_NEAREST)
+    return cv2.resize(alpha, (width, height), interpolation=cv2.INTER_NEAREST)
+
+
+def garment_cutout(image, bbox, paper_corners, points=(), category=None):
+    alpha = garment_alpha(image, bbox, paper_corners, points, category)
+    height, width = image.shape[:2]
     ys, xs = np.where(alpha > 0)
     left, top = max(0, xs.min() - 2), max(0, ys.min() - 2)
     right, bottom = min(width, xs.max() + 3), min(height, ys.max() + 3)

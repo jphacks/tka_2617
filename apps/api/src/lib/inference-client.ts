@@ -2,7 +2,7 @@ import { env } from "#src/lib/env";
 import { HttpError } from "#src/lib/http-error";
 
 export async function requestInference(
-  path: "/status" | "/detect",
+  path: "/status" | "/detect" | "/textures",
   form?: FormData,
 ): Promise<unknown> {
   if (!env.INFERENCE_TOKEN)
@@ -15,7 +15,8 @@ export async function requestInference(
       method: form ? "POST" : "GET",
       headers: { Authorization: `Bearer ${env.INFERENCE_TOKEN}` },
       body: form,
-      signal: AbortSignal.timeout(120_000),
+      // テクスチャはキューの受付だけなので、写真保存を推論の完了時間まで待たせない。
+      signal: AbortSignal.timeout(path === "/textures" ? 15_000 : 120_000),
     });
     if (response.status === 429)
       throw new HttpError(

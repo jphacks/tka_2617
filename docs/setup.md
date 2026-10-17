@@ -82,6 +82,8 @@ Pythonのファイルは、uvがあればruffで検査して整形する（[ADR 
 3. `pnpm --filter @pitari/api db:types`で型を作り直す
 4. [docs/er.md](er.md) を更新する
 
+PRでは、CIの`db`（`.github/workflows/db.yml`）が、空のDBにmigrationと`seed.sql`を流し、`supabase db lint`でDBの関数を確かめる。`supabase/`を変えたPRだけで動く。
+
 ## webをVercelにデプロイする
 
 mainにマージすると、CIが通った後にGitHub Actionsが本番に出す（`.github/workflows/ci.yml`の`deploy`、[ADR 0004](adr/0004-deploy-web-with-vercel-cli.md)）。ふだんは何もしなくてよい。今はwebだけを出している。

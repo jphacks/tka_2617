@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  // 同じファイルの中で使っているexportは見逃す。消すべきなのは、どこでも使っていないものだけ
+  "ignoreExportsUsedInFile": true,
+  // Claude Designが書き出した資料と、migrationから作るDBの型（使わない型もまとめて出力される）
+  "ignore": [
+    "docs/design_handoff_app_shell/**",
+    "apps/api/src/lib/database.types.ts",
+  ],
+  // Supabase CLIは、npmではなく各自のPCに入れる（docs/setup.md）
+  "ignoreBinaries": ["supabase"],
+}

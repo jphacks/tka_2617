@@ -78,6 +78,8 @@ export const detectionOptionsSchema = z
       .or(z.tuple([]))
       .default([]),
     bbox: bboxSchema.optional(),
+    // 切り抜きの手がかりにだけ使う、前の工程のランドマーク
+    points: z.array(pointSchema).max(25).default([]),
     stage: z
       .enum(["all", "paper", "garment", "landmarks", "cutout"])
       .default("all"),
