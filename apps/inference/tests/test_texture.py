@@ -2,7 +2,7 @@ import io
 import json
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -26,8 +26,11 @@ class TextureTests(unittest.TestCase):
 
     def test_endpoint_accepts_jpegs_and_rejects_bad_input(self):
         with patch("pitari.app.texture.template_ready", return_value=True), patch("pitari.app.texture.submit") as submit:
-            self.assertEqual(textures(GARMENT, "short_sleeve_top", self.upload(), self.upload()), {"accepted": True})
-            self.assertEqual(submit.call_args.args[:4], (GARMENT, "short_sleeve_top", self.raw, self.raw))
+            self.assertEqual(textures(GARMENT, "long_sleeve_top", self.upload(), self.upload()), {"accepted": True})
+            self.assertEqual(submit.call_args.args[:4], (GARMENT, "long_sleeve_top", self.raw, self.raw))
+            registered_at = datetime(2026, 10, 17, 2, 12, 59, tzinfo=timezone.utc)
+            textures(GARMENT, "long_sleeve_top", self.upload(), self.upload(), registered_at)
+            self.assertEqual(submit.call_args.kwargs["garment_created_at"], registered_at)
             for garment_id, front in (("not-a-uuid", self.upload()), (GARMENT, self.upload(b"not a jpeg"))):
                 with self.assertRaises(HTTPException) as caught:
                     textures(garment_id, "short_sleeve_top", front, None)
@@ -43,18 +46,19 @@ class TextureTests(unittest.TestCase):
             texture.submit(GARMENT, "trousers", b"old", None, None, None)
             texture.submit(GARMENT, "trousers", b"new", b"back", None, None)
             self.assertEqual(start.call_count, 1)
-            self.assertEqual(texture.waiting[GARMENT], ("trousers", b"new", b"back"))
+            self.assertEqual(texture.waiting[GARMENT], ("trousers", b"new", b"back", None))
             for number in range(texture.MAX_WAITING - 1):
                 texture.submit(f"{number}", "trousers", b"x", None, None, None)
             with self.assertRaises(texture.QueueFull):
                 texture.submit("one-too-many", "trousers", b"x", None, None, None)
 
-    def test_results_are_kept_per_run_and_failures_are_recorded(self):
-        created = datetime(2026, 10, 17, 11, 0, 0, tzinfo=timezone(timedelta(hours=9)))
+    def test_results_have_registration_and_generation_dates_and_failures_have_no_texture(self):
+        registered = datetime(2026, 10, 17, 2, 12, 59, tzinfo=timezone.utc)
+        created = datetime(2026, 10, 18, 0, 30, 10, 123456, tzinfo=texture.JST)
 
         def generate(out, views, inference, **kwargs):
             self.assertEqual(sorted(views), ["back", "front"])
-            self.assertEqual(kwargs["category"], "short_sleeve_top")
+            self.assertEqual(kwargs["category"], "long_sleeve_top")
             (out / "texture.png").write_bytes(b"generated png")
             return {"coverage": {"observed": 0.9}}
 
@@ -62,17 +66,24 @@ class TextureTests(unittest.TestCase):
             with patch.object(texture, "datetime") as clock:
                 clock.now.return_value = created
                 with patch.object(texture.photo_to_texture, "make_texture", side_effect=generate):
-                    texture.make(GARMENT, "short_sleeve_top", self.raw, self.raw, None, None)
-                clock.now.return_value = created + timedelta(seconds=1)
+                    texture.make(GARMENT, "long_sleeve_top", self.raw, self.raw, None, None, registered)
+                # 同じ秒の再生成でも前のフォルダと衝突しない。
+                clock.now.return_value = created.replace(microsecond=123457)
                 with patch.object(texture.photo_to_texture, "make_texture", side_effect=SystemExit("点が足りません")):
-                    texture.make(GARMENT, "short_sleeve_top", self.raw, None, None, None)
-            runs = sorted((Path(folder) / GARMENT).iterdir())
-            expected = [(created + timedelta(seconds=s)).astimezone().strftime("%Y%m%d-%H%M%S") for s in (0, 1)]
-            self.assertEqual([run.name for run in runs], expected)
+                    texture.make(GARMENT, "long_sleeve_top", self.raw, None, None, None, registered)
+            runs = sorted(Path(folder).iterdir())
+            self.assertEqual([run.name for run in runs], ["2026-10-18_00-30-10_長そで_11111111", "2026-10-18_00-30-10_長そで_11111111_2"])
             done, failed = [json.loads((run / "job.json").read_text(encoding="utf-8")) for run in runs]
             self.assertEqual(done["status"], "done")
-            self.assertEqual(done["coverage"], {"observed": 0.9})
-            self.assertTrue((runs[0] / "texture.png").is_file())
+            self.assertEqual(done["textureFile"], "2026-10-18_00-30-10_長そで_11111111.png")
+            self.assertEqual((runs[0] / done["textureFile"]).read_bytes(), (runs[0] / "texture.png").read_bytes())
+            self.assertEqual(done["garmentCreatedAt"], "2026-10-17T11:12:59+09:00")
+            self.assertEqual(done["completedAt"], created.isoformat())
             self.assertEqual(failed["status"], "failed")
             self.assertEqual(failed["error"], "点が足りません")
+            self.assertNotIn("textureFile", failed)
             self.assertTrue((runs[1] / "input_front.jpg").is_file())
+
+    def test_run_name_is_in_japan_time(self):
+        name = texture.run_name(GARMENT, "trousers", datetime(2026, 10, 17, tzinfo=timezone.utc))
+        self.assertEqual(name, "2026-10-17_09-00-00_パンツ_11111111")
