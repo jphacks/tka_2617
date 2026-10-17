@@ -49,7 +49,7 @@
 - [0032 重ね着の「タイト」「小さすぎます」は、中の服1枚分の厚みを体の身幅に足して決める](0032-layered-fit-status.md)
 - [0033 完成したテクスチャは、apiが推論サービスから受け取ってStorageに置き、画像のAPIで配る](0033-serve-texture-through-api.md)
 - [0034 デモまではアバターを男性だけで作り、女性は時間があれば足す](0034-male-avatar-first.md)
-- [0035 テクスチャのUVは、アプリのglbのUVを正とし、変換しない](0035-app-glb-uv-is-source.md)
+- [0037 テクスチャのUVは、アプリのglbのUVを正とし、変換しない](0037-app-glb-uv-is-source.md)
 
 ## 参考文献
 

@@ -37,4 +37,4 @@ apiが聞きに行く形なら、推論サービスはapiのURLやトークン�
 
 2048pxのテクスチャはPNGで8MiBを超えることがあるため、Storageの1ファイルの上限を16MiBに上げた。利用者が上げる写真は、apiが別に8MiBまでに抑える。
 
-テクスチャのUVがアプリのglbと合うかは、[ADR 0035](0035-app-glb-uv-is-source.md)で確かめた。
+テクスチャのUVがアプリのglbと合うかは、[ADR 0037](0037-app-glb-uv-is-source.md)で確かめた。
