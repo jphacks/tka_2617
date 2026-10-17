@@ -1,18 +1,15 @@
 import type { Category, MeasurementKey, Measurements } from "@pitari/api";
 
+const topFields: { key: MeasurementKey; label: string }[] = [
+  { key: "bodyLengthCm", label: "着丈" },
+  { key: "bodyWidthCm", label: "身幅" },
+  { key: "shoulderWidthCm", label: "肩幅" },
+  { key: "sleeveLengthCm", label: "袖丈" },
+];
 const fields: Record<Category, { key: MeasurementKey; label: string }[]> = {
-  short_sleeve_top: [
-    { key: "bodyLengthCm", label: "着丈" },
-    { key: "bodyWidthCm", label: "身幅" },
-    { key: "shoulderWidthCm", label: "肩幅" },
-    { key: "sleeveLengthCm", label: "袖丈" },
-  ],
-  long_sleeve_top: [
-    { key: "bodyLengthCm", label: "着丈" },
-    { key: "bodyWidthCm", label: "身幅" },
-    { key: "shoulderWidthCm", label: "肩幅" },
-    { key: "sleeveLengthCm", label: "袖丈" },
-  ],
+  short_sleeve_top: topFields,
+  long_sleeve_top: topFields,
+  shirt: topFields,
   trousers: [
     { key: "waistCm", label: "ウエスト" },
     { key: "hipCm", label: "ヒップ" },

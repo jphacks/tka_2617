@@ -119,7 +119,7 @@ if (selected) {
 | -------------------- | ------------------------------------------------------------- |
 | `id`                 | 服を識別するUUID文字列                                        |
 | `name`               | 服の名前。空文字列の場合もある                                |
-| `category`           | `short_sleeve_top`・`long_sleeve_top`・`trousers`             |
+| `category`           | `short_sleeve_top`・`long_sleeve_top`・`shirt`・`trousers`    |
 | `measurements`       | 全10項目の確定値。各項目はnumberまたはnull                    |
 | `measurementVersion` | 採寸方式の版。現在は`df2-a4-flat-midpoint-v2`。旧v1も存在する |
 | `createdAt`          | 作成日時。更新日時ではない                                    |
@@ -268,6 +268,19 @@ await requestJson(`/api/garments/${garment.id}`, {
 measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過PNG。どちらもUV展開済みテクスチャではない。写真をそのままGLBへ貼れば柄が正しく合う、という契約にはしていない。また、少数の平置き寸法だけで実際の立体形状・厚み・着用時のしわは一意に決まらない。
 
 最初の接続確認は、手動で寸法を入れたTシャツを1着登録→APIで取得→3D画面にGLBを表示→1項目の寸法変更を反映、の順に進める。HRNetの精度検証と並行して進められる。
+
+## 服の種類と3Dモデルの対応
+
+撮影の画面では、写真を選ぶ前に服の種類を選ぶ。選んだ種類を`category`に保存し、アバターではこの表の3Dモデルで着せる。表はwebの`categoryModels`（`apps/web/src/lib/garment-category.ts`）に置いた。上の服の値は`TOPS`（`apps/web/src/components/try-on/use-try-on.ts`）のキーで、キーが無くなると型エラーになる。
+
+| 画面の表示 | `category`         | 3Dモデル              | 使う寸法                       |
+| ---------- | ------------------ | --------------------- | ------------------------------ |
+| シャツ     | `shirt`            | `shirt_male.glb`      | 着丈・身幅・肩幅・袖丈         |
+| 長そで     | `long_sleeve_top`  | `longsleeve_male.glb` | 着丈・身幅・肩幅・袖丈         |
+| Tシャツ    | `short_sleeve_top` | `tshirt_male.glb`     | 着丈・身幅・肩幅・袖丈         |
+| ズボン     | `trousers`         | `trousers_male.glb`   | ウエスト・ヒップ・わたり幅など |
+
+シャツは長そでと同じ点で採寸する。シャツのテクスチャはまだ作れない（[ADR 0033](adr/0033-choose-garment-type-first.md)）。
 
 ## 長そでの受け渡し
 
