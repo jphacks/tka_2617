@@ -13,6 +13,9 @@
 
 体（avatar_male.glb）は build_tshirt.py が書き出す。髪・靴は体と同じ原点・スケールで、
 体と同じ値の体型キー・身長キーを入れれば体に重なる。
+
+女性は -- female を付ける。女性の体（avatar_female.glb、build_tshirt_female.py）に合わせて作り、
+apps/web/public/presets/female/ の下に同じ名前で書き出す（presets.json は男性の実行だけが書く）。
 """
 import os
 import sys
@@ -21,8 +24,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import bpy  # noqa: E402
+import pitari_female as pf  # noqa: E402
 import pitari_tshirt as pt  # noqa: E402
 import pitari_presets as pp  # noqa: E402
+
+GENDER = pf.gender_from_args()
+FEMALE = GENDER == "female"
+# 女性は、男性と同じ名前のファイルを female/ の下に置く（ブラウザは性別でパスの頭を変える）
+PRESETS = os.path.join(pp.PRESETS, "female") if FEMALE else pp.PRESETS
 
 ASSETS = [("hair", pid, asset) for pid, (asset, _) in pp.HAIR.items()] + \
          [("shoes", pid, asset) for pid, (asset, _) in pp.SHOES.items()] + \
@@ -51,10 +60,10 @@ def presets_json():
 
 def main():
     pt.clear_scene()
-    shapes = pt.capture_builds(dress)
-    _, height_shapes = pt.capture_heights(dress)
+    shapes = pt.capture_builds(dress, GENDER)
+    _, height_shapes = pt.capture_heights(dress, GENDER)
 
-    body = pt.create_body(pt.macros_for("standard"))
+    body = pt.create_body(pt.macros_for("standard", GENDER))
     objs = dress(body)
     for i, ((kind, pid, asset), obj) in enumerate(zip(ASSETS, objs)):
         obj.shape_key_add(name="Basis", from_mix=False)
@@ -76,19 +85,21 @@ def main():
         pt.log(f"{kind}/{pid}（{asset}）: {len(obj.data.vertices)} 頂点")
 
     os.makedirs(pp.OUT, exist_ok=True)
-    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(pp.OUT, "build_presets.blend"), copy=True)
+    blend = "build_presets_female.blend" if FEMALE else "build_presets.blend"
+    bpy.ops.wm.save_as_mainfile(filepath=os.path.join(pp.OUT, blend), copy=True)
     face = []
     for (kind, pid, _), obj in zip(ASSETS, objs):
         if kind in pp.FACE:
             face.append(obj)
             continue
-        path = os.path.join(pp.PRESETS, kind, f"{pid}.glb")
+        path = os.path.join(PRESETS, kind, f"{pid}.glb")
         pt.export_glb(obj, path)
         pt.log(f"  {os.path.getsize(path) / 1e6:.2f}MB")
-    path = os.path.join(pp.PRESETS, "face", "face.glb")
+    path = os.path.join(PRESETS, "face", "face.glb")
     pp.export_glb_many(face, path)
     pt.log(f"  {os.path.getsize(path) / 1e6:.2f}MB")
-    pt.write_json(os.path.join(pp.PRESETS, "presets.json"), presets_json())
+    if not FEMALE:
+        pt.write_json(os.path.join(pp.PRESETS, "presets.json"), presets_json())
     pt.log("完了")
 
 

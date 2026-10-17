@@ -177,3 +177,4 @@ Blender 4.2＋MPFB2 2.0.17で、男性・女性のアバターとTシャツのgl
 - 髪の半透明は、アルファをMath:Roundに通してglTFのalphaMode MASK（alphaCutoff 0.5）にする。three.jsではalphaTestで描かれる。両面を描く
 - 靴を履いたら、体の`_shoe_<靴のid>`が1の頂点を隠す（靴の中の足が突き抜けないように）。範囲は靴のmhcloの`delete_verts`
 - 1ファイル3MB以内、テクスチャは1024px以下
+- 女性の体の髪・靴・顔のパーツは`build_presets.py -- female`で作り、`presets/female/`の下に男性と同じ名前で書き出す（`presets.json`は男性の実行だけが書く）。ブラウザは`AVATAR_MODELS`の`presetUrl`でパスの頭を性別で変える。男性のものを女性に重ねると、頭の高さが違う（標準の身長が約14cm低い）ので髪・目が浮く
