@@ -18,4 +18,3 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - `/api/*`のRoute Handlerはapiの`/v1/*`と同じパス構成で中継する。見本は`src/app/api/health/route.ts`。apiのエラー詳細をブラウザに出さない。
 - useEffectはカメラやthree.jsなど外部との同期だけに使う。それ以外はstate・propsの計算やイベントハンドラで済ませる。
 - スタイルはTailwindで書く。
-- 寸法・キー・着られるかなどの計算（`src/lib/`）を変えたら、`tests/`のテストも直すか足す（`pnpm --filter @pitari/web test`）。
