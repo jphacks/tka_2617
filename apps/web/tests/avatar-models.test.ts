@@ -126,9 +126,13 @@ void test("Blenderの身長の表は、性別ごとの入力できる身長の�
   }
 });
 
-void test("どちらの性別も、髪・靴・顔のパーツのglbがある（女性はpresets/female/の下）", () => {
+void test("どちらの性別も、髪・靴・顔のパーツのglbと髪のサムネイルがある（女性はpresets/female/の下）", () => {
   const paths = [
-    ...presetsJson.hair.map((h) => h.path),
+    ...presetsJson.hair.flatMap((h) => [
+      h.path,
+      h.thumbs.front,
+      h.thumbs.angle,
+    ]),
     ...presetsJson.shoes.map((s) => s.path),
     presetsJson.face.path,
   ];
