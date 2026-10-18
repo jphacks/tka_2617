@@ -55,6 +55,7 @@
 - [0038 シャツのテクスチャは、前後から投影したUVの外周を写真の輪郭に合わせて作る](0038-shirt-texture-from-projected-uv.md)
 - [0039 アバターの服の寸法は、基準寸法の半分から2倍までをモデルへ渡し、確かめた範囲の外は案内だけ出す](0039-garment-size-limits.md)
 - [0042 テクスチャを作るときは、同じ写真を切り抜いたときの範囲・点・服の領域を使い回す](0042-reuse-cutout-for-texture.md)
+- [0043 服の検出とランドマークは、OpenVINOに変換したモデルをCPUで動かす](0043-openvino-for-models.md)
 
 ## 参考文献
 
