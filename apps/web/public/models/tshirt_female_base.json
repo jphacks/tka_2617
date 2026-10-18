@@ -1,0 +1,26 @@
+{
+  "slim": {
+    "length": 60.57,
+    "width": 43.77,
+    "shoulder": 39.08,
+    "sleeve": 18.98
+  },
+  "standard": {
+    "length": 61.09,
+    "width": 44.87,
+    "shoulder": 39.3,
+    "sleeve": 19.61
+  },
+  "broad": {
+    "length": 61.18,
+    "width": 46.73,
+    "shoulder": 40.46,
+    "sleeve": 19.79
+  },
+  "chubby": {
+    "length": 61.98,
+    "width": 49.14,
+    "shoulder": 41.43,
+    "sleeve": 20.04
+  }
+}

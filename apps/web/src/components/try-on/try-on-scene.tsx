@@ -25,10 +25,12 @@ import {
   type Object3D,
   type Texture,
 } from "three";
+import { AVATAR_MODELS } from "@/lib/avatar-models";
 import { setMorph } from "@/lib/morph";
 import { stackHems, type FloorAt } from "@/lib/hem-stack";
 import { bodyInSleeves } from "@/lib/sleeve-drape";
 import {
+  bodyMeshes,
   buildBodyBVH,
   buildGarmentCollider,
   shirtTopology,
@@ -37,11 +39,11 @@ import {
   type PushStats,
 } from "@/lib/push-out";
 
-const AVATAR_URL = "/models/avatar_male.glb";
-const TROUSERS_URL = "/models/trousers_male.glb";
+// 本番の画面は男性なので、先に読み込んでおく
+const PRELOAD_URLS = [AVATAR_MODELS.male.avatar, AVATAR_MODELS.male.trousers];
 
 // 読み込もうとしたglb。読み込みに失敗したとき、もう一度読み込めるようにキャッシュを消す
-const requestedUrls = new Set<string>([AVATAR_URL, TROUSERS_URL]);
+const requestedUrls = new Set<string>(PRELOAD_URLS);
 
 /** 読み込もうとしたglbのキャッシュを消す（失敗した読み込みも残るので、やり直す前に消す） */
 export function clearModelCache() {
@@ -72,6 +74,10 @@ function median(values: number[]) {
 type Props = {
   /** 身長÷標準の身長。体の大きさに合わせてカメラを動かす */
   heightScale: number;
+  /** 体のglb（性別ごと、AVATAR_MODELS） */
+  avatarUrl: string;
+  /** ズボンのglb（性別ごと） */
+  trousersUrl: string;
   /** 体のmorph（体型キー） */
   bodyMorphs: Record<string, number>;
   /** 上の服（Tシャツ・長袖・シャツ）のglb */
@@ -271,6 +277,8 @@ function PresetModel({
 }
 
 function Models({
+  avatarUrl,
+  trousersUrl,
   bodyMorphs,
   shirtUrl,
   shirtMorphs,
@@ -292,11 +300,16 @@ function Models({
   benchmarkRequest,
   onBenchmark,
 }: Omit<Props, "heightScale">) {
-  const avatar = useGLTF(AVATAR_URL);
-  requestedUrls.add(shirtUrl);
+  requestedUrls.add(avatarUrl).add(shirtUrl).add(trousersUrl);
+  const avatar = useGLTF(avatarUrl);
   const shirt = useGLTF(shirtUrl);
-  const trousers = useGLTF(TROUSERS_URL);
-  const bodyMesh = useMemo(() => firstMesh(avatar.scene), [avatar.scene]);
+  const trousers = useGLTF(trousersUrl);
+  // 服は、体のglbに着せるための体があればそれに対して押し出す（描かない）
+  const {
+    body: bodyMesh,
+    collider: colliderMesh,
+    underwear,
+  } = useMemo(() => bodyMeshes(avatar.scene), [avatar.scene]);
   const shirtMesh = useMemo(() => firstMesh(shirt.scene), [shirt.scene]);
   const trouserMesh = useMemo(
     () => firstMesh(trousers.scene),
@@ -374,7 +387,7 @@ function Models({
     const timer = setTimeout(() => {
       if (!bodyBVH.current || bvhMorphs.current !== avatarMorphs) {
         bodyBVH.current?.geometry.dispose();
-        bodyBVH.current = buildBodyBVH(bodyMesh);
+        bodyBVH.current = buildBodyBVH(colliderMesh);
         bvhMorphs.current = avatarMorphs;
       }
       if (showTrousers) {
@@ -394,6 +407,9 @@ function Models({
       if (showShirt) {
         // 上の服はズボンの上に着るので、押し出したズボンの外へも押し出す
         const layers = showTrousers ? [buildGarmentCollider(trouserMesh)] : [];
+        // 女性はいつも下着を着ける。上の服（と中の服）は、シャツの中のTシャツと同じく下着の外へ押し出す
+        if (underwear)
+          layers.push(buildGarmentCollider(underwear, { wraps: true }));
         // 中の服も、体とズボンの外へ押し出してから、上の服をその外へ押し出す
         if (inner) {
           updatePush(inner.mesh, bodyBVH.current, inner.topo, { layers });
@@ -429,6 +445,8 @@ function Models({
     };
   }, [
     bodyMesh,
+    colliderMesh,
+    underwear,
     shirtMesh,
     trouserMesh,
     topo,
@@ -451,7 +469,7 @@ function Models({
     const pushMs: number[] = [];
     for (let i = 0; i < BENCHMARK_RUNS; i++) {
       const t0 = performance.now();
-      buildBodyBVH(bodyMesh).geometry.dispose();
+      buildBodyBVH(colliderMesh).geometry.dispose();
       bvhMs.push(performance.now() - t0);
       pushMs.push(updatePush(shirtMesh, bodyBVH.current, topo).ms);
     }
@@ -548,5 +566,4 @@ export default function TryOnScene({ heightScale, ...props }: Props) {
   );
 }
 
-useGLTF.preload(AVATAR_URL);
-useGLTF.preload(TROUSERS_URL);
+for (const url of PRELOAD_URLS) useGLTF.preload(url);

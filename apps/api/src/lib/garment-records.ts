@@ -5,6 +5,12 @@ import {
   measurementsSchema,
   pointSchema,
 } from "#src/lib/measurement-schema";
+import { materialRecordSchema, type GarmentMaterial } from "#src/lib/materials";
+import { colorFamilySchema, type ColorFamily } from "#src/lib/color-family";
+
+/** 服の行と一緒に読む列。素材は一覧の名前と順も読む */
+export const garmentColumns =
+  "*, garment_images(*), garment_materials(percent, materials(id, label, sort_order))";
 
 export const bucket = "garments";
 export const imageRoleSchema = z.enum([
@@ -36,8 +42,13 @@ export const garmentRecordSchema = z.object({
   measurement_version: z.string(),
   purchased_month: purchasedMonthSchema.nullable(),
   seasons: z.array(seasonSchema),
+  color_family: colorFamilySchema.nullable(),
   created_at: z.string(),
   garment_images: z.array(imageRecordSchema),
+  // 削除のように素材を読まないところでは、空になる
+  garment_materials: z
+    .array(z.object({ percent: z.number(), materials: materialRecordSchema }))
+    .default([]),
 });
 export type GarmentRecord = z.infer<typeof garmentRecordSchema>;
 export type Season = z.infer<typeof seasonSchema>;
@@ -49,6 +60,10 @@ export type GarmentView = {
   measurementVersion: string;
   purchasedMonth: string | null;
   seasons: Season[];
+  /** 前からある服と、色を決められなかった服はnull */
+  colorFamily: ColorFamily | null;
+  /** 割合の多い順。同じ割合なら素材の一覧の順 */
+  materials: GarmentMaterial[];
   createdAt: string;
   images: {
     id: string;

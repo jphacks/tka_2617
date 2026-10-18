@@ -1,7 +1,8 @@
 "use client";
 
 import { categoryChoices, categoryLabels } from "@/lib/garment-category";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import type {
   Category,
@@ -22,10 +23,19 @@ import {
   type BackPhoto,
 } from "@/lib/back-photo";
 import { MeasurementProgress } from "@/components/measurement-progress";
+import { MaterialsEditor } from "@/components/materials-editor";
+import {
+  defaultMaterialRows,
+  materialRows,
+  materialsFromRows,
+  type MaterialRow,
+} from "@/lib/garment-materials";
 import type { MeasurementProgressState } from "@/lib/measurement-progress";
 import { GarmentMeasurements } from "@/components/garment-measurements";
 import { MeasurementImage } from "@/components/measurement-image";
 import type { AdjustmentMode } from "@/components/measurement-image";
+import { SimilarGarmentsSheet } from "@/components/similar-garments-sheet";
+import { cutoutColorFamily, type AddedGarment } from "@/lib/color-family";
 
 type DefinitionResponse = {
   definitions: Record<Category, MeasurementDefinition[]>;
@@ -50,7 +60,7 @@ const button = `min-h-12 rounded bg-main px-4 py-2.5 text-sm font-semibold text-
 const secondary = `min-h-11 rounded border border-main bg-white px-3 py-2 text-sm font-semibold transition hover:bg-surface active:scale-[0.98] disabled:opacity-40 ${focusRing}`;
 const field = `rounded-md bg-surface px-3 py-2 text-sm text-main ${focusRing}`;
 
-export function MeasurementStudio() {
+export function MeasurementStudio({ editId }: { editId: string | null }) {
   const [definitions, setDefinitions] = useState<DefinitionResponse | null>(
     null,
   );
@@ -65,20 +75,97 @@ export function MeasurementStudio() {
     Partial<Record<MeasurementKey, boolean>>
   >({});
   const [name, setName] = useState("");
+  const [materialInput, setMaterialInput] =
+    useState<MaterialRow[]>(defaultMaterialRows);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<MeasurementProgressState | null>(
     null,
   );
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [garments, setGarments] = useState<GarmentView[]>([]);
+  // nullは読み込み中。失敗したら、押して読み込み直せるようにする
+  const [garments, setGarments] = useState<GarmentView[] | null>(null);
+  const [listFailed, setListFailed] = useState(false);
+  const [listAttempt, setListAttempt] = useState(0);
+  // 足したばかりの服。同じ系統の服を数えて、下から出す
+  const [added, setAdded] = useState<AddedGarment | null>(null);
+  const similarSheet = useRef<HTMLDialogElement>(null);
   const [editing, setEditing] = useState<Pick<
     GarmentView,
     "id" | "category" | "measurements"
   > | null>(null);
+  // 服の詳細から来たときは、その服を読み込んでから編集欄を開く
+  const [editLoad, setEditLoad] = useState<"loading" | "failed" | "done">(
+    editId ? "loading" : "done",
+  );
+  const [editAttempt, setEditAttempt] = useState(0);
+  // 読み込みの途中で写真や別の服を選ぶと、遅れて届いた服で上書きされるので、
+  // 頼まれた服を開けるまでは、読み込み直す以外の操作をさせない
+  const locked = busy || editLoad !== "done";
   const category = editing?.category ?? result?.category;
   const fields =
     category && definitions ? definitions.definitions[category] : [];
+
+  useEffect(() => {
+    if (!editId) return;
+    let active = true;
+    Promise.all([
+      requestJson<DefinitionResponse>("/api/measurements"),
+      requestJson<GarmentView>(`/api/garments/${encodeURIComponent(editId)}`),
+    ])
+      .then(([loadedDefinitions, garment]) => {
+        if (!active) return;
+        setDefinitions(loadedDefinitions);
+        startEditing(garment);
+        setEditLoad("done");
+      })
+      .catch((failure: unknown) => {
+        if (!active) return;
+        setError(
+          failure instanceof Error
+            ? failure.message
+            : "服を読み込めませんでした",
+        );
+        setEditLoad("failed");
+      });
+    return () => {
+      active = false;
+    };
+  }, [editId, editAttempt]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      requestJson<DefinitionResponse>("/api/measurements"),
+      requestJson<{ garments: GarmentView[] }>("/api/garments"),
+    ])
+      .then(([loadedDefinitions, data]) => {
+        if (!active) return;
+        setDefinitions(loadedDefinitions);
+        // 届く前に登録・削除で読み込み直していたら、そちらが新しいので残す
+        setGarments((current) => current ?? data.garments);
+      })
+      .catch(() => {
+        if (active) setListFailed(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, [listAttempt]);
+
+  function startEditing(garment: GarmentView) {
+    setEditing(garment);
+    setChosenCategory(garment.category);
+    setResult(null);
+    setPhoto(null);
+    setBack(null);
+    setName(garment.name);
+    setMaterialInput(materialRows(garment.materials));
+    setValues(garment.measurements);
+    setOverrides({});
+    setError("");
+    setMessage("");
+  }
 
   function showProgress(
     percent: number,
@@ -305,11 +392,18 @@ export function MeasurementStudio() {
     await work(async () => {
       let backFailed = false;
       let textureMessage = "";
+      let newlyAdded: AddedGarment | null = null;
+      const checked = materialsFromRows(materialInput);
+      if ("error" in checked) throw new Error(checked.error);
       if (editing) {
         await requestJson(`/api/garments/${editing.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, measurements: values }),
+          body: JSON.stringify({
+            name,
+            measurements: values,
+            materials: checked.materials,
+          }),
         });
         setEditing({ ...editing, measurements: { ...values } });
       } else {
@@ -319,6 +413,10 @@ export function MeasurementStudio() {
         setResult(ready);
         if (!ready.cutoutBase64)
           throw new Error("切り抜きに失敗しました。服の範囲を調整してください");
+        // 色を決められなくても登録は止めず、色の分からない服として保存する
+        const colorFamily = await cutoutColorFamily(ready.cutoutBase64).catch(
+          () => null,
+        );
         const form = new FormData();
         form.set("image", jpegFile(ready.imageBase64));
         form.set("cutoutImage", pngFile(ready.cutoutBase64));
@@ -337,6 +435,8 @@ export function MeasurementStudio() {
             measurementVersion: ready.measurementVersion,
             name,
             measurements: values,
+            materials: checked.materials,
+            colorFamily,
           }),
         );
         const saved = await requestJson<{ id: string }>("/api/garments", {
@@ -348,6 +448,7 @@ export function MeasurementStudio() {
           category: result.category,
           measurements: values,
         });
+        newlyAdded = { id: saved.id, category: result.category, colorFamily };
         if (back) {
           try {
             const backSaved = await uploadBackPhoto(saved.id, back);
@@ -361,7 +462,7 @@ export function MeasurementStudio() {
       }
       setMessage(
         (editing
-          ? "名前・寸法を更新しました"
+          ? "名前・寸法・素材を更新しました"
           : Object.values(values).some((value) => value !== null)
             ? "服と寸法をクローゼットに登録しました"
             : "服を登録しました。寸法はあとから入力できます。") +
@@ -370,6 +471,14 @@ export function MeasurementStudio() {
             : textureMessage),
       );
       await loadGarments();
+      if (newlyAdded) {
+        const shown = newlyAdded;
+        // 中身を描き終えてから開く。先に開くと、見出しが無いまま読み上げられ、フォーカスも中の操作に入らない
+        flushSync(() => {
+          setAdded(shown);
+        });
+        similarSheet.current?.showModal();
+      }
     });
   }
 
@@ -389,7 +498,24 @@ export function MeasurementStudio() {
           {message}
         </p>
       )}
-      <fieldset disabled={busy} className="min-w-0 space-y-4">
+      {editLoad === "loading" && (
+        <p role="status" className="mb-4 text-sm text-description">
+          編集する服を読み込んでいます…
+        </p>
+      )}
+      {editLoad === "failed" && (
+        <button
+          className={`${secondary} mb-4 w-full`}
+          onClick={() => {
+            setError("");
+            setEditLoad("loading");
+            setEditAttempt((previous) => previous + 1);
+          }}
+        >
+          編集する服を読み込み直す
+        </button>
+      )}
+      <fieldset disabled={locked} className="min-w-0 space-y-4">
         <fieldset disabled={editing !== null} className="min-w-0">
           <legend className="mb-2 text-sm font-semibold">服の種類</legend>
           <div className="grid grid-cols-4 gap-2">
@@ -440,6 +566,7 @@ export function MeasurementStudio() {
                   setValues({ ...emptyMeasurements });
                   setOverrides({});
                   setName("");
+                  setMaterialInput(defaultMaterialRows);
                   setMode("dimensions");
                 });
             }}
@@ -643,6 +770,7 @@ export function MeasurementStudio() {
                 }}
               />
             </label>
+            <MaterialsEditor rows={materialInput} onChange={setMaterialInput} />
             <div className="grid grid-cols-2 gap-4">
               {fields.map((definition) => (
                 <label className="block text-sm" key={definition.key}>
@@ -704,101 +832,118 @@ export function MeasurementStudio() {
                 void save();
               }}
             >
-              {editing ? "名前・寸法を更新" : "クローゼットに登録"}
+              {editing ? "名前・寸法・素材を更新" : "クローゼットに登録"}
             </button>
             {editing && (
-              <Link
-                href={`/garments/${encodeURIComponent(editing.id)}`}
-                className="flex min-h-11 items-center justify-center text-xs text-description underline"
-              >
-                服の詳細で裏面・購入時期・時期を設定する
-              </Link>
+              <div className="flex flex-wrap justify-center gap-x-4">
+                <Link
+                  href={`/garments/${encodeURIComponent(editing.id)}`}
+                  className="flex min-h-11 items-center text-xs text-description underline"
+                >
+                  服の詳細で裏面・購入時期・時期を設定する
+                </Link>
+                <Link
+                  href="/closet"
+                  className="flex min-h-11 items-center text-xs text-description underline"
+                >
+                  クローゼットに戻る
+                </Link>
+              </div>
             )}
           </section>
         )}
       </fieldset>
       <section id="saved-garments" className="mt-10 scroll-mt-16">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold">クローゼット</h2>
-          <button
-            className={secondary}
-            disabled={busy}
-            onClick={() => {
-              void work(loadGarments);
-            }}
-          >
-            一覧を読み込む
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          {garments.map((garment) => (
-            <article
-              key={garment.id}
-              className="rounded border border-line p-3"
-            >
-              <svg
-                viewBox="0 0 300 240"
-                className="w-full rounded bg-surface"
-                role="img"
-                aria-label={garment.name || "登録した服"}
+        <h2 className="mb-4 text-base font-semibold">クローゼット</h2>
+        {garments ? (
+          <div className="grid grid-cols-2 gap-3">
+            {garments.map((garment) => (
+              <article
+                key={garment.id}
+                className="rounded border border-line p-3"
               >
-                <image
-                  href={garmentPhotoUrl(garment)}
-                  width="300"
-                  height="240"
-                  preserveAspectRatio="xMidYMid meet"
+                <svg
+                  viewBox="0 0 300 240"
+                  className="w-full rounded bg-surface"
+                  role="img"
+                  aria-label={garment.name || "登録した服"}
+                >
+                  <image
+                    href={garmentPhotoUrl(garment)}
+                    width="300"
+                    height="240"
+                    preserveAspectRatio="xMidYMid meet"
+                  />
+                </svg>
+                <h3 className="mt-3 text-sm font-medium wrap-anywhere">
+                  {garment.name || categoryLabels[garment.category]}
+                </h3>
+                <GarmentMeasurements
+                  category={garment.category}
+                  measurements={garment.measurements}
                 />
-              </svg>
-              <h3 className="mt-3 text-sm font-medium wrap-anywhere">
-                {garment.name || categoryLabels[garment.category]}
-              </h3>
-              <GarmentMeasurements
-                category={garment.category}
-                measurements={garment.measurements}
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  className={secondary}
-                  disabled={busy}
-                  onClick={() => {
-                    setEditing(garment);
-                    setChosenCategory(garment.category);
-                    setResult(null);
-                    setPhoto(null);
-                    setBack(null);
-                    setName(garment.name);
-                    setValues(garment.measurements);
-                    setOverrides({});
-                    setError("");
-                    setMessage("");
-                  }}
-                >
-                  寸法を編集
-                </button>
-                <button
-                  className={secondary}
-                  disabled={busy}
-                  onClick={() => {
-                    if (window.confirm("この服と画像を削除しますか？"))
-                      void work(async () => {
-                        const response = await fetch(
-                          `/api/garments/${garment.id}`,
-                          { method: "DELETE" },
-                        );
-                        if (!response.ok)
-                          throw new Error("削除できませんでした");
-                        if (editing?.id === garment.id) setEditing(null);
-                        await loadGarments();
-                      });
-                  }}
-                >
-                  削除
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    className={secondary}
+                    disabled={locked}
+                    onClick={() => {
+                      startEditing(garment);
+                    }}
+                  >
+                    寸法を編集
+                  </button>
+                  <button
+                    className={secondary}
+                    disabled={locked}
+                    onClick={() => {
+                      if (window.confirm("この服と画像を削除しますか？"))
+                        void work(async () => {
+                          const response = await fetch(
+                            `/api/garments/${garment.id}`,
+                            { method: "DELETE" },
+                          );
+                          if (!response.ok)
+                            throw new Error("削除できませんでした");
+                          if (editing?.id === garment.id) setEditing(null);
+                          await loadGarments();
+                        });
+                    }}
+                  >
+                    削除
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : listFailed ? (
+          <div role="alert" className="text-sm">
+            <p>
+              クローゼットを読み込めませんでした。APIとDBの起動を確認してください。
+            </p>
+            <button
+              className={`${secondary} mt-3`}
+              onClick={() => {
+                setListFailed(false);
+                setListAttempt((previous) => previous + 1);
+              }}
+            >
+              再読み込み
+            </button>
+          </div>
+        ) : (
+          <p role="status" className="text-sm text-description">
+            読み込み中…
+          </p>
+        )}
       </section>
+      <SimilarGarmentsSheet
+        ref={similarSheet}
+        added={added}
+        garments={garments ?? []}
+        onColorChange={(colorFamily) => {
+          setAdded((current) => current && { ...current, colorFamily });
+        }}
+      />
     </main>
   );
 }

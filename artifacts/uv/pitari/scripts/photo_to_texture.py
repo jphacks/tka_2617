@@ -378,7 +378,7 @@ def warp_view(view, photo, garment, points, estimated, template, part_id, part_v
             targets.append(target)
             low_flags.append(bool(estimated.intersection(triangle)))
     if sources:
-        # 三角形ごとのPythonのループが遅いため、Rust拡張があれば使う（ADR 0044）。
+        # 三角形ごとのPythonのループが遅いため、Rust拡張があれば使う（ADR 0050）。
         rasterize = pitari_fast.warp_maps if pitari_fast else warp_maps
         map_x, map_y, written, low = rasterize(np.ascontiguousarray(part_id, np.uint8), parts, np.array(sources), np.array(targets), low_flags)
     else:

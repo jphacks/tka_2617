@@ -95,7 +95,7 @@ class Models:
         if not status["weightsPresent"] or not status["sourcePresent"]:
             raise FileNotFoundError("自動採寸モデルが未準備です。寸法を入力してください")
         started = time.perf_counter()
-        # prepare_models.py --openvinoで変換してあれば、そちらを使う（ADR 0043）。
+        # prepare_models.py --openvinoで変換してあれば、そちらを使う（ADR 0049）。
         self.pose = openvino_models.Pose() if openvino_models.POSE_IR.is_file() else TorchPose(build_pose())
         self.load_ms = round((time.perf_counter() - started) * 1000)
 
