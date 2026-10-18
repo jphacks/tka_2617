@@ -17,17 +17,39 @@ const path = `/v1/garments/${id}`;
 const headers = { Authorization: `Bearer ${process.env.INTERNAL_API_TOKEN}` };
 const registeredAt = "2026-10-17T02:12:59.163258+00:00";
 const backImageId = "22222222-2222-4222-8222-222222222222";
+const savedPoints = [{ id: 1, x: 120.5, y: 80, score: 0.9 }];
+const savedCorners = [
+  [10, 20],
+  [300, 20],
+  [300, 420],
+  [10, 420],
+];
+const unmeasured = { points: [], paper_corners: [] };
 const photos = [
   {
     id: "33333333-3333-4333-8333-333333333333",
     role: "measurement",
     storage_key: "front.jpg",
+    width_px: 960,
+    height_px: 1280,
+    points: savedPoints,
+    paper_corners: savedCorners,
   },
-  { id: backImageId, role: "back", storage_key: "back.jpg" },
+  {
+    id: backImageId,
+    role: "back",
+    storage_key: "back.jpg",
+    width_px: 960,
+    height_px: 1280,
+    ...unmeasured,
+  },
   {
     id: "44444444-4444-4444-8444-444444444444",
     role: "cutout",
     storage_key: "cutout.png",
+    width_px: 600,
+    height_px: 900,
+    ...unmeasured,
   },
 ];
 
@@ -72,6 +94,12 @@ void test("Tシャツ・長そで・シャツ・ズボンは保存済みのカ�
           assert.equal(form.get("category"), category);
           assert.equal(form.get("garmentCreatedAt"), registeredAt);
           assert.equal(form.get("backImageId"), backImageId);
+          assert.deepEqual(JSON.parse(form.get("frontSaved") as string), {
+            widthPx: 960,
+            heightPx: 1280,
+            points: savedPoints,
+            paperCorners: savedCorners,
+          });
           assert.equal(await (form.get("front") as File).text(), "front bytes");
           assert.equal(await (form.get("back") as File).text(), "back bytes");
           submitted = true;
@@ -88,6 +116,42 @@ void test("Tシャツ・長そで・シャツ・ズボンは保存済みのカ�
       assert.equal(submitted, true);
     });
   }
+});
+
+void test("点もA4の四隅も保存していない服は、推論サービスに推論させる", async (t) => {
+  let form: FormData | undefined;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (url.pathname === "/rest/v1/garments")
+        return Promise.resolve(
+          Response.json({
+            category: "short_sleeve_top",
+            created_at: registeredAt,
+            garment_images: photos.map((photo) => ({
+              ...photo,
+              ...unmeasured,
+            })),
+          }),
+        );
+      if (url.pathname.startsWith("/storage/v1/object/"))
+        return Promise.resolve(
+          new Response("jpeg", { headers: { "Content-Type": "image/jpeg" } }),
+        );
+      form = init?.body as FormData;
+      return Promise.resolve(
+        Response.json({ accepted: true }, { status: 202 }),
+      );
+    },
+  );
+  const response = await app.request(`${path}/texture`, {
+    method: "POST",
+    headers,
+  });
+  assert.equal(response.status, 202);
+  assert.equal(form?.has("frontSaved"), false);
 });
 
 void test("認証・ID・写真不足を確認し、勝手に推論を開始しない", async (t) => {

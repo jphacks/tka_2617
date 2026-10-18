@@ -111,3 +111,6 @@ function load(storage: () => Pick<Storage, "getItem">): WearLog | null {
     return {};
   }
 }
+
+/** 画面で使う記録。ページごとに作ると、クローゼットで記録したあとに記録の画面へ移っても、前に読んだ記録のまま残る */
+export const wearLogStore = createWearLogStore(() => window.localStorage);

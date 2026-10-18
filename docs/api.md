@@ -80,7 +80,7 @@ GETは`{ definitions, measurementVersion }`を返す。POSTの入力は`{ imageI
 
 ### POST /v1/garments
 
-multipartの`image`（測定用のJPEG）、`cutoutImage`（透過PNG、無くてもよい）、`metadata`（JSON文字列）を受け取る。画面から新しく登録するときは、切り抜きができてから、両方の画像を送る。`originalImage`も受け取れるが、今の画面では送らない。metadataは`{ name, category, imageId, widthPx, heightPx, points, pixelsPerCm, paperCorners, modelVersion, measurements, measurementVersion, materials?, colorFamily? }`。materialsは下の「素材」の形で、省くと綿100%で保存する。colorFamilyは下の「色の系統」の値で、省くとnullで保存する。apiは、画像の実際のサイズと、座標系の画像サイズが一致するかを確かめる。手で直したあとのmeasurementsを最終の値として保存し、推定し直して上書きしない。成功は`201 { id }`。
+multipartの`image`（測定用のJPEG）、`cutoutImage`（透過PNG、無くてもよい）、`metadata`（JSON文字列）を受け取る。画面から新しく登録するときは、切り抜きができれば両方の画像を送る。推論サービスにつながらないときや切り抜けなかったときは、測定用のJPEGだけを送る。推論にまったくつながらなかったときは、pointsとpaperCornersを空、pixelsPerCmとmodelVersionをnullにし、寸法は手で入れた値だけを送る（推定値は作らない）。`originalImage`も受け取れるが、今の画面では送らない。metadataは`{ name, category, imageId, widthPx, heightPx, points, pixelsPerCm, paperCorners, modelVersion, measurements, measurementVersion, materials?, colorFamily? }`。materialsは下の「素材」の形で、省くと綿100%で保存する。colorFamilyは下の「色の系統」の値で、省くとnullで保存する。apiは、画像の実際のサイズと、座標系の画像サイズが一致するかを確かめる。手で直したあとのmeasurementsを最終の値として保存し、推定し直して上書きしない。成功は`201 { id }`。
 
 ### GET /v1/garments、GET /v1/garments/:id
 
@@ -136,7 +136,7 @@ DELETEは、画像を先に消してから行を消す。成功は204。途中�
 
 画像を新しいキーで上げてから、DBの関数`replace_garment_back`で古い裏面の行の削除と新しい行の追加を1つのトランザクションで行う。服の行をロックするので、同じ服への同時の差し替えは順番に処理される。DBで失敗したら上げた画像を消して503を返し、前の裏面はそのまま残る。古い画像のファイルは行を差し替えた後に消し、その削除に失敗しても成功として返す。
 
-裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲とランドマーク（landmarks工程）→切り抜きの順に`POST /v1/detections`を呼び、ランドマークを切り抜きの手がかりに渡す。範囲が見つからなければJPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
+裏面は表示用で、ランドマーク・A4四隅・縮尺を持たない。画面ではA4→服の範囲とランドマーク（landmarks工程）→切り抜きの順に`POST /v1/detections`を呼び、ランドマークを切り抜きの手がかりに渡す。範囲が見つからないとき、推論の通信に失敗したとき、範囲は見つかったが切り抜けなかったときは、JPEGだけを送る。クローゼットの一覧は表の画像（cutout→measurement→original）だけを表示し、裏面は詳細画面で表と並べる。[ADR 0020](adr/0020-back-photo-as-separate-role.md)を参照。
 
 裏面を保存すると、apiは服のカテゴリと表のmeasurement画像・裏面を推論サービスの`POST /textures`へ送り、生成依頼の受付まで待つ。変換の完了は待たない。PUTの応答は`{ id, texture: { status: "accepted" } }`、依頼に失敗したときは`{ id, texture: { status: "failed", message: "…" } }`。写真は保存してあるので、テクスチャの依頼だけが失敗しても、PUTは200を返す。
 
@@ -165,7 +165,7 @@ Tシャツ・長そで・シャツ・ズボンでテンプレートが違い、�
 
 apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBearerトークン）：
 
-- `POST /textures`：フォームの`backImageId`を作業に記録する
+- `POST /textures`：フォームの`backImageId`を作業に記録する。表のmeasurement画像に点かA4の四隅が保存してあれば、`frontSaved`に`{ widthPx, heightPx, points, paperCorners }`のJSONを入れる。推論サービスは、写真と大きさが同じなら、その点と四隅を推論の結果より優先して使う（[ADR 0051](adr/0051-saved-points-for-texture.md)）
 - `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null, backImageId: string | null }`。作業が無ければ404。`backImageId`を返さない推論サービスでは、最新の作業を今の写真のものとみなす
 - `GET /textures/{garmentId}/{job}/texture.png`：`done`の作業のテクスチャ
 

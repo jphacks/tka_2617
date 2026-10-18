@@ -9,6 +9,7 @@ import secrets
 import threading
 import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated, Literal
 
@@ -22,11 +23,21 @@ from pydantic import BaseModel, Field, ValidationError
 from pitari.geometry import paper_candidate, paper_scale
 from pitari.cutout import garment_cutout
 from pitari.models import Models, MODEL_VERSION
-from pitari import texture
+from pitari import detections, texture
 
-app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 models = Models()
 processing = threading.Lock()
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    # 読み込みの間も/healthに答えられるよう、裏のスレッドで読む。
+    # 採寸のロックは持たない。持つと、読み込みが60秒を超えたとき採寸が429になる。読み込み中の採寸は、モデルの読み込みを待つ。
+    threading.Thread(target=models.preload, daemon=True).start()
+    yield
+
+
+app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 logger = logging.getLogger("pitari")
 MAX_BYTES = 8 * 1024 * 1024
 Image.MAX_IMAGE_PIXELS = 12_000_000
@@ -54,6 +65,15 @@ class Options(BaseModel):
     # 切り抜きの手がかりにだけ使う、前の工程のランドマーク。
     points: list[Point] = Field(default_factory=list, max_length=33)
     stage: Literal["all", "paper", "garment", "landmarks", "cutout"] = "all"
+
+
+class SavedView(BaseModel):
+    """採寸画面で確かめてDBに保存した、写真の上の点とA4の四隅。"""
+
+    widthPx: int = Field(gt=0)
+    heightPx: int = Field(gt=0)
+    paperCorners: list[tuple[float, float]] = Field(default_factory=list, max_length=4)
+    points: list[Point] = Field(default_factory=list, max_length=33)
 
 
 def read_jpeg(upload):
@@ -139,12 +159,15 @@ def detect(image: UploadFile = File(...), options: str = Form(...)):
             else:
                 try:
                     hints = points or [point.model_dump() for point in settings.points]
-                    cutout = garment_cutout(source, bbox, corners, hints, category)
+                    cutout, alpha = garment_cutout(source, bbox, corners, hints, category)
                     ok, encoded = cv2.imencode(".png", cutout)
                     if not ok or encoded.nbytes > MAX_BYTES:
                         raise ValueError("切り抜き画像を作成できませんでした")
                     cutout_base64 = base64.b64encode(encoded).decode("ascii")
                     cutout_height, cutout_width = cutout.shape[:2]
+                    # 保存される写真と同じなので、テクスチャを作るときに推論と切り抜きを省ける。
+                    if hints and category:
+                        detections.remember(raw, width, height, category, bbox, corners, hints, alpha, MODEL_VERSION)
                 except (ValueError, cv2.error):
                     warnings.append("切り抜きに失敗しました。服の範囲を調整してください")
         return {"imageId": str(uuid.uuid4()), "imageBase64": base64.b64encode(raw).decode("ascii"), "widthPx": width, "heightPx": height, "category": category, "bbox": bbox, "points": points, "paperCorners": corners, "pixelsPerCm": pixels_per_cm, "modelVersion": model_version, "cutoutBase64": cutout_base64, "cutoutWidthPx": cutout_width, "cutoutHeightPx": cutout_height, "warnings": warnings, "elapsedMs": round((time.perf_counter() - started) * 1000)}
@@ -161,8 +184,13 @@ def textures(
     back: UploadFile | None = File(None),
     garmentCreatedAt: Annotated[datetime | None, Form()] = None,
     backImageId: Annotated[str | None, Form()] = None,
+    frontSaved: Annotated[str | None, Form()] = None,
 ):
     garment_id = garment_uuid(garmentId)
+    try:
+        front_saved = SavedView.model_validate_json(frontSaved).model_dump() if frontSaved else None
+    except ValidationError:
+        raise HTTPException(400, "保存した点とA4の四隅を確認してください") from None
     try:
         back_image_id = str(uuid.UUID(backImageId)) if backImageId else None
     except ValueError:
@@ -180,7 +208,7 @@ def textures(
             back.file.close()
     try:
         texture.submit(garment_id, category, front_raw, back_raw, models, processing,
-                       garment_created_at=garmentCreatedAt, back_image_id=back_image_id)
+                       garment_created_at=garmentCreatedAt, back_image_id=back_image_id, front_saved=front_saved)
     except texture.QueueFull:
         raise HTTPException(429, "テクスチャの作成待ちが多すぎます。少し待って再試行してください") from None
     return {"accepted": True}

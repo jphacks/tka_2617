@@ -36,24 +36,13 @@ import { MeasurementImage } from "@/components/measurement-image";
 import type { AdjustmentMode } from "@/components/measurement-image";
 import { SimilarGarmentsSheet } from "@/components/similar-garments-sheet";
 import { cutoutColorFamily, type AddedGarment } from "@/lib/color-family";
+import { emptyMeasurements, manualResult } from "@/lib/manual-measurement";
 
 type DefinitionResponse = {
   definitions: Record<Category, MeasurementDefinition[]>;
   measurementVersion: DetectionResult["measurementVersion"];
 };
 type Photo = Awaited<ReturnType<typeof preparePhoto>>;
-const emptyMeasurements: Measurements = {
-  shoulderWidthCm: null,
-  sleeveLengthCm: null,
-  bodyWidthCm: null,
-  bodyLengthCm: null,
-  waistCm: null,
-  hipCm: null,
-  thighWidthCm: null,
-  riseCm: null,
-  inseamCm: null,
-  hemWidthCm: null,
-};
 const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main";
 const button = `min-h-12 rounded bg-main px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-85 active:scale-[0.98] disabled:opacity-40 ${focusRing}`;
@@ -69,6 +58,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [back, setBack] = useState<BackPhoto | null>(null);
   const [result, setResult] = useState<DetectionResult | null>(null);
+  // 推論を使わずに作った結果か。A4や服の範囲を直す操作は推論が要るので出さない
+  const [manual, setManual] = useState(false);
   const [mode, setMode] = useState<AdjustmentMode | "dimensions">("dimensions");
   const [values, setValues] = useState<Measurements>({ ...emptyMeasurements });
   const [overrides, setOverrides] = useState<
@@ -157,6 +148,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     setEditing(garment);
     setChosenCategory(garment.category);
     setResult(null);
+    setManual(false);
     setPhoto(null);
     setBack(null);
     setName(garment.name);
@@ -284,43 +276,61 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   async function analyze() {
     await work(async () => {
       showProgress(0, 25, "写真を確認しています", 5000);
-      await loadDefinitions();
+      const loaded = await loadDefinitions();
       setOverrides({});
       setEditing(null);
       setValues({ ...emptyMeasurements });
-      let next = await detect("paper");
-      setResult(next);
-      showProgress(25, 50, "服を見つけています", 20000);
-      const garment = await detect("garment", next, chosenCategory ?? "auto");
-      next = {
-        ...next,
-        category: garment.category ?? chosenCategory,
-        bbox: garment.bbox,
-        warnings: [...next.warnings, ...garment.warnings],
-      };
-      setResult(next);
-      if (!next.category || !next.bbox) {
-        setMode("bbox");
-        return;
+      setManual(false);
+      try {
+        await detectAll();
+      } catch {
+        // 推論サービスが未設定・停止中でも、写真と手入力の寸法で登録できるようにする。寸法は推定しない
+        if (!photo || !chosenCategory)
+          throw new Error("写真と服の種類を選んでください");
+        setResult(
+          manualResult(photo, chosenCategory, loaded.measurementVersion),
+        );
+        setManual(true);
+        setMode("dimensions");
       }
-      showProgress(50, 75, "サイズを測っています", 15000);
-      const landmarks = await detect("landmarks", next);
-      next = {
-        ...next,
-        points: landmarks.points,
-        modelVersion: landmarks.modelVersion,
-        measurements: landmarks.measurements,
-        warnings: [...new Set([...next.warnings, ...landmarks.warnings])],
-      };
-      setResult(next);
-      applyValues(next.measurements, false);
-      showProgress(75, 100, "仕上げています", 5000);
-      next = await cutout(next);
-      setResult(next);
-      setMode("dimensions");
-      showProgress(100, 100, "測定できました");
-      await new Promise((resolve) => setTimeout(resolve, 300));
     });
+  }
+
+  /** 推論でA4・服の範囲・点・切り抜きを順に求める。途中で失敗したら例外を投げる */
+  async function detectAll() {
+    let next = await detect("paper");
+    setResult(next);
+    showProgress(25, 50, "服を見つけています", 20000);
+    const garment = await detect("garment", next, chosenCategory ?? "auto");
+    next = {
+      ...next,
+      category: garment.category ?? chosenCategory,
+      bbox: garment.bbox,
+      warnings: [...next.warnings, ...garment.warnings],
+    };
+    setResult(next);
+    if (!next.category || !next.bbox) {
+      setMode("bbox");
+      return;
+    }
+    showProgress(50, 75, "サイズを測っています", 15000);
+    const landmarks = await detect("landmarks", next);
+    next = {
+      ...next,
+      points: landmarks.points,
+      modelVersion: landmarks.modelVersion,
+      measurements: landmarks.measurements,
+      warnings: [...new Set([...next.warnings, ...landmarks.warnings])],
+    };
+    setResult(next);
+    applyValues(next.measurements, false);
+    showProgress(75, 100, "仕上げています", 5000);
+    // 切り抜きだけに失敗したときは、測った点と寸法を残し、写真のまま登録へ進む
+    next = await cutout(next).catch(() => next);
+    setResult(next);
+    setMode("dimensions");
+    showProgress(100, 100, "測定できました");
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
 
   function geometryChanged(next: DetectionResult) {
@@ -359,7 +369,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
       setResult(updated);
       if (updated.bbox && updated.category) {
         showProgress(50, 100, "仕上げています", 5000);
-        updated = await cutout(updated);
+        updated = await cutout(updated).catch(() => updated);
       }
       setResult(updated);
     });
@@ -377,6 +387,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     setOverrides({});
     setValues({ ...emptyMeasurements });
     setResult(next);
+    // 手入力の状態は推論につながらないので、種類と空の寸法だけを変え、推論は呼ばない
+    if (manual) return;
     await adjust(next, "bbox", false);
   }
 
@@ -391,6 +403,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   async function save() {
     await work(async () => {
       let backFailed = false;
+      let withoutCutout = false;
       let textureMessage = "";
       let newlyAdded: AddedGarment | null = null;
       const checked = materialsFromRows(materialInput);
@@ -407,19 +420,22 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
         });
         setEditing({ ...editing, measurements: { ...values } });
       } else {
-        if (!result?.category || !result.bbox)
-          throw new Error("服の種類と範囲を指定してください");
-        const ready = result.cutoutBase64 ? result : await cutout(result);
+        if (!result?.category) throw new Error("服の種類を選んでください");
+        // 切り抜きに失敗しても登録は止めず、写真のまま保存する。クローゼットには写真を出す
+        const ready =
+          result.cutoutBase64 || !result.bbox
+            ? result
+            : await cutout(result).catch(() => result);
         setResult(ready);
-        if (!ready.cutoutBase64)
-          throw new Error("切り抜きに失敗しました。服の範囲を調整してください");
-        // 色を決められなくても登録は止めず、色の分からない服として保存する
-        const colorFamily = await cutoutColorFamily(ready.cutoutBase64).catch(
-          () => null,
-        );
+        withoutCutout = !ready.cutoutBase64;
+        // 色を決められなくても登録は止めず、色の分からない服として保存する。切り抜きが無ければ決めない
+        const colorFamily = ready.cutoutBase64
+          ? await cutoutColorFamily(ready.cutoutBase64).catch(() => null)
+          : null;
         const form = new FormData();
         form.set("image", jpegFile(ready.imageBase64));
-        form.set("cutoutImage", pngFile(ready.cutoutBase64));
+        if (ready.cutoutBase64)
+          form.set("cutoutImage", pngFile(ready.cutoutBase64));
         form.set(
           "metadata",
           JSON.stringify({
@@ -466,6 +482,9 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
           : Object.values(values).some((value) => value !== null)
             ? "服と寸法をクローゼットに登録しました"
             : "服を登録しました。寸法はあとから入力できます。") +
+          (withoutCutout
+            ? "切り抜けなかったので、クローゼットには写真をそのまま出します。"
+            : "") +
           (backFailed
             ? "裏面は保存できなかったため、服の詳細から撮り直してください。"
             : textureMessage),
@@ -568,11 +587,12 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                   setName("");
                   setMaterialInput(defaultMaterialRows);
                   setMode("dimensions");
+                  setManual(false);
                 });
             }}
           />
         </label>
-        {photo && !result && (
+        {photo && (!result || manual) && (
           <svg
             viewBox={`0 0 ${String(photo.widthPx)} ${String(photo.heightPx)}`}
             className="w-full rounded bg-surface"
@@ -597,7 +617,12 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             {result ? "最初から測定" : "寸法を測定"}
           </button>
         )}
-        {result && !editing && (
+        {result && !editing && manual && (
+          <p role="status" className="rounded bg-surface p-3 text-sm">
+            推論サービスにつながらないため、自動で採寸していません。寸法を測って手で入れてください。空欄のままでも登録でき、寸法はあとから入れられます。
+          </p>
+        )}
+        {result && !editing && !manual && (
           <>
             <p className="text-sm text-description">
               {mode === "dimensions" ? "測定結果" : "ドラッグで調整"}
@@ -679,83 +704,86 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                 </svg>
               </div>
             )}
-            <section className="space-y-3 rounded border border-line p-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-sm font-semibold">
-                  裏面
-                  <span className="ml-1 text-xs font-normal text-description">
-                    任意
-                  </span>
-                </h2>
-                {back && (
-                  <button
-                    className="min-h-8 text-xs text-description underline"
-                    onClick={() => {
-                      setBack(null);
-                    }}
-                  >
-                    外す
-                  </button>
-                )}
-              </div>
-              {back ? (
-                <div className="rounded bg-surface p-4">
-                  <svg
-                    viewBox={`0 0 ${String(back.previewWidthPx)} ${String(back.previewHeightPx)}`}
-                    className="mx-auto h-48 w-full"
-                    role="img"
-                    aria-label="登録する裏面の画像"
-                  >
-                    <image
-                      href={back.previewUrl}
-                      width={back.previewWidthPx}
-                      height={back.previewHeightPx}
-                    />
-                  </svg>
-                </div>
-              ) : (
-                <p className="text-xs leading-[1.7] text-description">
-                  表と裏を登録すると、テクスチャを生成してPC内に保存します。
-                  {result.category === "trousers"
-                    ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
-                    : result.category === "long_sleeve_top" ||
-                        result.category === "shirt"
-                      ? "袖と身頃が重ならないように広げ、両方の袖口と裾まで写してください。"
-                      : "表と同じように平置きして撮ってください。"}
-                </p>
-              )}
-              <label
-                className={`${secondary} flex cursor-pointer items-center justify-center ${result.category ? "" : "pointer-events-none opacity-40"}`}
-              >
-                {back ? "裏面を撮り直す" : "裏面を撮影"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="sr-only"
-                  disabled={!result.category}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    const chosen = result.category;
-                    event.target.value = "";
-                    if (file && chosen)
-                      void work(async () => {
-                        const prepared = await prepareBackPhoto(
-                          file,
-                          chosen,
-                          showProgress,
-                        );
-                        setBack(prepared);
-                        if (!prepared.cutoutImage)
-                          setMessage(
-                            "裏面の服を切り抜けなかったため、写真のまま登録します",
-                          );
-                      });
-                  }}
-                />
-              </label>
-            </section>
           </>
+        )}
+        {/* 裏面は推論が無くてもJPEGだけで登録できるので、手入力のときも出す */}
+        {result && !editing && (
+          <section className="space-y-3 rounded border border-line p-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-semibold">
+                裏面
+                <span className="ml-1 text-xs font-normal text-description">
+                  任意
+                </span>
+              </h2>
+              {back && (
+                <button
+                  className="min-h-8 text-xs text-description underline"
+                  onClick={() => {
+                    setBack(null);
+                  }}
+                >
+                  外す
+                </button>
+              )}
+            </div>
+            {back ? (
+              <div className="rounded bg-surface p-4">
+                <svg
+                  viewBox={`0 0 ${String(back.previewWidthPx)} ${String(back.previewHeightPx)}`}
+                  className="mx-auto h-48 w-full"
+                  role="img"
+                  aria-label="登録する裏面の画像"
+                >
+                  <image
+                    href={back.previewUrl}
+                    width={back.previewWidthPx}
+                    height={back.previewHeightPx}
+                  />
+                </svg>
+              </div>
+            ) : (
+              <p className="text-xs leading-[1.7] text-description">
+                表と裏を登録すると、テクスチャを生成してPC内に保存します。
+                {result.category === "trousers"
+                  ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
+                  : result.category === "long_sleeve_top" ||
+                      result.category === "shirt"
+                    ? "袖と身頃が重ならないように広げ、両方の袖口と裾まで写してください。"
+                    : "表と同じように平置きして撮ってください。"}
+              </p>
+            )}
+            <label
+              className={`${secondary} flex cursor-pointer items-center justify-center ${result.category ? "" : "pointer-events-none opacity-40"}`}
+            >
+              {back ? "裏面を撮り直す" : "裏面を撮影"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                disabled={!result.category}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  const chosen = result.category;
+                  event.target.value = "";
+                  if (file && chosen)
+                    void work(async () => {
+                      const prepared = await prepareBackPhoto(
+                        file,
+                        chosen,
+                        showProgress,
+                      );
+                      setBack(prepared);
+                      if (!prepared.cutoutImage)
+                        setMessage(
+                          "裏面の服を切り抜けなかったため、写真のまま登録します",
+                        );
+                    });
+                }}
+              />
+            </label>
+          </section>
         )}
         {(result || editing) && (
           <section className="space-y-4 rounded border border-line p-4">
@@ -797,7 +825,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                       }));
                     }}
                   />
-                  {overrides[definition.key] && (
+                  {/* 手入力の状態では推定値が無く、戻すと入れた値が消えるので出さない */}
+                  {overrides[definition.key] && !manual && (
                     <span className="text-xs text-description">
                       手入力{" "}
                       <button
@@ -825,9 +854,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             </div>
             <button
               className={`${button} w-full`}
-              disabled={
-                !category || !definitions || (!editing && !result?.bbox)
-              }
+              disabled={!category || !definitions || (!editing && !result)}
               onClick={() => {
                 void save();
               }}
