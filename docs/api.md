@@ -165,7 +165,7 @@ Tシャツ・長そで・シャツ・ズボンでテンプレートが違い、�
 
 apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBearerトークン）：
 
-- `POST /textures`：フォームの`backImageId`を作業に記録する
+- `POST /textures`：フォームの`backImageId`を作業に記録する。表のmeasurement画像に点かA4の四隅が保存してあれば、`frontSaved`に`{ widthPx, heightPx, points, paperCorners }`のJSONを入れる。推論サービスは、写真と大きさが同じなら、その点と四隅を推論の結果より優先して使う（[ADR 0051](adr/0051-saved-points-for-texture.md)）
 - `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null, backImageId: string | null }`。作業が無ければ404。`backImageId`を返さない推論サービスでは、最新の作業を今の写真のものとみなす
 - `GET /textures/{garmentId}/{job}/texture.png`：`done`の作業のテクスチャ
 
