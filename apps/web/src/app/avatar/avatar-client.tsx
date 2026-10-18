@@ -22,7 +22,7 @@ import {
   BODY_FRAMES,
   BUILD_LABELS,
   BUILDS,
-  createAvatarSettingsStore,
+  avatarSettingsStore,
   defaultAvatarSettings,
   GENDER_LABELS,
   GENDERS,
@@ -40,10 +40,6 @@ const TryOnScene = dynamic(() => import("@/components/try-on/try-on-scene"), {
   ssr: false,
   loading: () => <AvatarFrame loading />,
 });
-
-const avatarSettingsStore = createAvatarSettingsStore(
-  () => window.localStorage,
-);
 
 /** 選択肢を横に並べたラジオボタン。選んでいるものを塗る */
 function Segmented<T extends string>({
