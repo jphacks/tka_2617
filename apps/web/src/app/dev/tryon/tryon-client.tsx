@@ -14,14 +14,13 @@ import {
   toTrouserInputs,
   useTryOn,
 } from "@/components/try-on/use-try-on";
-import { BUILD_LABELS, BUILDS } from "@/lib/avatar-settings";
+import { BUILD_LABELS, BUILDS, type ModelGender } from "@/lib/avatar-settings";
 import {
   LAYER_WIDTH_CM,
   MEASUREMENT_KEYS,
   MEASUREMENT_LABELS,
   topMeasurements,
 } from "@/lib/garment";
-import type { ModelGender } from "@/lib/avatar-models";
 import type { PushStats } from "@/lib/push-out";
 import {
   TROUSER_KEYS,

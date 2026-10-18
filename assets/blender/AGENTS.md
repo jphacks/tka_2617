@@ -129,7 +129,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性・女性のアバターとTシャツのgl
 - サイズキー：`fitAt(build, 身長, table)`で前後の身長の基準寸法とMを直線で補間し、`sizeKeyValues(実寸, fit, table)`がM（4×4）×キー＝（実寸−その体型・身長の基準寸法）を解く。同じ計算を`verify_sizes.fit_at`と`key_values`に持っている
 - 服の押し出しは`src/lib/push-out.ts`（three-mesh-bvh）。スマホでは1回0.3〜0.4秒かかるので、入力が止まってから（0.3秒後に）計算する。検証スクリプトは押し出した後の寸法のずれを出す（合否には使わない）
   - 体のglbに着せるための体（`avatar_fit`、女性だけ）があれば、それに対して押し出し、描かない（`bodyMeshes`）。`avatar_fit`は体と同じUVを持たせ、glbでも体と同じ頂点の並びにする（袖の中に隠れる腕などで、頂点番号を体にも使う）
-  - 性別ごとの3Dモデル（glbのパス・身長の表・入力できる身長）は`src/lib/avatar-models.ts`の`AVATAR_MODELS`。本番の画面は男性。女性は、ブラウザで確かめるまで確認ページ（`/dev/tryon`の「アバターの性別」）でだけ出す
+  - 性別ごとの3Dモデル（glbのパス・身長の表・入力できる身長）は`src/lib/avatar-models.ts`の`AVATAR_MODELS`。設定の性別が女性なら女性、男性と「選ばない」は男性（`modelGenderOf`、[ADR 0043](../../docs/adr/0043-show-female-avatar-by-gender.md)）。確認ページ（`/dev/tryon`）は「アバターの性別」で切り替えられる
 - アバター画面は`/avatar`（`src/app/avatar/`）。開発用の確認ページは`/dev/tryon`（`src/app/dev/tryon/`、実寸の直接入力・キーの値・計算時間を出す）。本番では404で、`next dev`のときだけ開く。スマホではPCの`next dev`にLANでつなぐ（`docs/setup.md`の「スマホで撮影する」）。どちらも状態と計算は`src/components/try-on/use-try-on.ts`、3D表示は`src/components/try-on/try-on-scene.tsx`
 
 ## UV（写真から貼る用、`pitari`）
