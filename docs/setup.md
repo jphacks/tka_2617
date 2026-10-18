@@ -124,6 +124,8 @@ supabase seed buckets
 docker exec -i supabase_db_pitari psql -U postgres < supabase/seed.sql
 ```
 
+1行目は、画像をStorageに入れる。バケットの設定を上書きするかを聞かれたら、`Y`で進める。`config.toml`の設定はmigrationと同じなので、何も変わらない。2行目は、服の行をDBに入れる。
+
 ## 服の採寸を開発するとき
 
 Pythonの推論サービスは、別に起動する。依存の分け方・モデルの置き方・画面の操作は、[推論サービスのREADME](../apps/inference/README.md)を見る。採寸画面は`http://localhost:3000/capture`。
