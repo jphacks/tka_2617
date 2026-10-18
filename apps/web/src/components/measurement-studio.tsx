@@ -2,6 +2,7 @@
 
 import { categoryChoices, categoryLabels } from "@/lib/garment-category";
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import type {
   Category,
@@ -448,7 +449,11 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
       );
       await loadGarments();
       if (newlyAdded) {
-        setAdded(newlyAdded);
+        const shown = newlyAdded;
+        // 中身を描き終えてから開く。先に開くと、見出しが無いまま読み上げられ、フォーカスも中の操作に入らない
+        flushSync(() => {
+          setAdded(shown);
+        });
         similarSheet.current?.showModal();
       }
     });
