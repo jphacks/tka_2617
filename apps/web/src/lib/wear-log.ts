@@ -5,10 +5,10 @@ import type { Outfit } from "@/lib/outfit";
 const storageKey = "pitari.wear-log";
 
 const dateKeyPattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-const WearLogSchema = z.record(
-  z.string().regex(dateKeyPattern),
-  z.object({ top: z.uuid().nullable(), bottom: z.uuid().nullable() }),
-);
+const OutfitSchema = z.object({
+  top: z.uuid().nullable(),
+  bottom: z.uuid().nullable(),
+});
 /** 日付（YYYY-MM-DD）ごとに、その日に着た上と下の服のID */
 export type WearLog = Partial<Record<string, Outfit>>;
 
@@ -51,33 +51,63 @@ export function createWearLogStore(
     for (const listener of listeners) listener();
   }
 
-  const get = (): WearLog => (log ??= load(storage));
+  const get = (): WearLog => (log ??= load(storage) ?? {});
 
   return {
     subscribe: (listener: () => void) => {
       listeners.add(listener);
+      // 別のタブで記録したら、読み直して出す
+      const onStorage = (event: StorageEvent) => {
+        if (event.key !== storageKey && event.key !== null) return;
+        log = undefined;
+        listener();
+      };
+      if (typeof window !== "undefined")
+        window.addEventListener("storage", onStorage);
       return () => {
         listeners.delete(listener);
+        if (typeof window !== "undefined")
+          window.removeEventListener("storage", onStorage);
       };
     },
     get,
-    /** その日に着た服を残す。上も下も無ければ、その日の記録を消す */
-    record: (date: string, outfit: Outfit) => {
+    /**
+     * その日に着た服を残す。上も下も無ければ、その日の記録を消す。
+     * 日付や服のIDの形が違うときは、保存せずにfalseを返す
+     */
+    record: (date: string, outfit: Outfit): boolean => {
+      if (!isEntry(date, outfit)) return false;
+      // 別のタブで足した記録を消さないよう、保存されている最新の記録に足す
+      const latest = load(storage) ?? get();
       const rest = Object.fromEntries(
-        Object.entries(get()).filter(([key]) => key !== date),
+        Object.entries(latest).filter(([key]) => key !== date),
       );
       save(outfit.top || outfit.bottom ? { ...rest, [date]: outfit } : rest);
+      return true;
     },
   };
 }
 
-function load(storage: () => Pick<Storage, "getItem">): WearLog {
+function isEntry(date: string, outfit: unknown): outfit is Outfit {
+  return dateKeyPattern.test(date) && OutfitSchema.safeParse(outfit).success;
+}
+
+/** 保存されている記録。形の違う日だけを捨て、ほかの日は残す。読めないブラウザではnull */
+function load(storage: () => Pick<Storage, "getItem">): WearLog | null {
+  let text: string | null;
   try {
-    const value: unknown = JSON.parse(storage().getItem(storageKey) ?? "{}");
-    const parsed = WearLogSchema.safeParse(value);
-    return parsed.success ? parsed.data : {};
+    text = storage().getItem(storageKey);
   } catch {
-    // 壊れた値や、保存を禁止しているブラウザでは、記録の無い状態から始める
+    return null;
+  }
+  try {
+    const value: unknown = JSON.parse(text ?? "{}");
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+      return {};
+    return Object.fromEntries(
+      Object.entries(value).filter(([date, outfit]) => isEntry(date, outfit)),
+    );
+  } catch {
     return {};
   }
 }
