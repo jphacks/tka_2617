@@ -3,14 +3,14 @@
 ## 必要なもの
 
 - Node.js 22（[.node-version](../.node-version)）
-- pnpm（バージョンは [package.json](../package.json) の`packageManager`）
+- pnpm（バージョンは[package.json](../package.json)の`packageManager`）
 - Docker（ローカルのSupabaseを動かすため）
 - [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started)
-- [uv](https://docs.astral.sh/uv/getting-started/installation/)（Pythonを書く人だけ。commit前にruffを動かすため）：Macは`brew install uv`、Windowsは`winget install --id=astral-sh.uv -e`
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)（Pythonを書く人だけ。commitの前にruffを動かすため）：Macは`brew install uv`、Windowsは`winget install --id=astral-sh.uv -e`
 
 ## 手順
 
-1. 依存を入れる。commit前のgit hook（lefthook）もここで入る
+1. 依存を入れる。commitの前に動くgit hook（lefthook）も、ここで入る
 
    ```bash
    pnpm install
@@ -44,13 +44,13 @@
    pnpm dev
    ```
 
-   webは http://localhost:3000 、apiは http://localhost:3001 で動く。http://localhost:3000/api/health が`{"ok":true}`を返せば、webからapiまでつながっている。
+   webは<http://localhost:3000>、apiは<http://localhost:3001>で動く。<http://localhost:3000/api/health>が`{"ok":true}`を返せば、webからapiまでつながっている。
 
 ## mainを取り込んだあと
 
-他の人の変更をmainから取り込んだら、画面を確かめる前に、依存・DB・推論サービスを今のmainに合わせる。どれかが古いと、画面は開いても、登録・裏面の保存・テクスチャの生成が失敗する。
+ほかの人の変更をmainから取り込んだら、画面を確かめる前に、依存・DB・推論サービスを今のmainに合わせる。どれかが古いと、画面は開いても、登録・裏面の保存・テクスチャの生成が失敗する。
 
-1. 動いている`pnpm dev`と推論サービスを止める。Windowsでは、動いているものがファイルをつかみ、次の`pnpm install`が失敗することがある
+1. 動いている`pnpm dev`と推論サービスを止める。Windowsでは、動いているプログラムがファイルを開いたままになり、次の`pnpm install`が失敗することがある
 
 2. mainの変更を取り込む
 
@@ -97,7 +97,7 @@
 
 ### ブラウザで確かめること
 
-写真は、A4の用紙と服を同じ平面に平置きし、真上から撮る（[採寸の定義](measurement.md)）。
+写真は、A4の紙と服を同じ平面に平らに置き、真上から撮る（[採寸の定義](measurement.md)）。
 
 - 撮影（http://localhost:3000/capture ）：Tシャツ・長そで・パンツを撮り、「寸法を測定」→「クローゼットに登録」。種類が違えば「服の種類」で選び直す。裏面も撮れる
 - クローゼット（http://localhost:3000/ ）から服の詳細：裏面の撮影と撮り直し、購入時期と季節の保存、「テクスチャを作る」
@@ -126,47 +126,49 @@ docker exec -i supabase_db_pitari psql -U postgres < supabase/seed.sql
 
 ## 服の採寸を開発するとき
 
-Python推論サービスは別起動。依存の隔離・モデルの配置・画面の操作は[推論サービスのREADME](../apps/inference/README.md)を参照する。採寸画面は`http://localhost:3000/capture`。
+Pythonの推論サービスは、別に起動する。依存の分け方・モデルの置き方・画面の操作は、[推論サービスのREADME](../apps/inference/README.md)を見る。採寸画面は`http://localhost:3000/capture`。
 
 mainを取り込んで新しいmigrationが入ったときは、上の「mainを取り込んだあと」の手順で当てる。
 
 ## スマホで撮影する
 
-PCとスマホを同じWi-Fiに接続する。PCでAPI・Python推論・Supabaseを起動したまま、webをLAN向けに起動する。すでに3000番でwebが動いていれば、そのwebだけ停止してから実行する。
+PCとスマホを、同じWi-Fiにつなぐ。PCでapi・Pythonの推論サービス・Supabaseを動かしたまま、webを同じネットワークから開けるように起動する。もう3000番でwebが動いていれば、そのwebだけを止めてから実行する。
 
 ```powershell
 npx --yes pnpm@10.18.0 --filter @pitari/web exec next dev --hostname 0.0.0.0
 ```
 
-PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを確認する。スマホのSafariまたはChromeから`http://PCのIPv4アドレス:3000/capture`を開く。スマホでlocalhostを使うとスマホ自身を参照するため、PCへ接続できない。PCのIPから開いた画面が動くよう、`apps/web/next.config.ts`の`allowedDevOrigins`でプライベートIPからの開発用の接続を許可している。ページは出るのにボタンが反応しない、読み込み中のまま止まるときは、PCのIPがこの範囲に入っているかを確かめる。ブランチを切り替えた後などに、画像やAPIだけが404になるときは、webの開発サーバーを起動し直す。
+PCで`ipconfig`を実行し、Wi-FiのIPv4アドレスを調べる。スマホのSafariかChromeで、`http://PCのIPv4アドレス:3000/capture`を開く。スマホでlocalhostを開くと、PCではなくスマホ自身につながってしまう。
 
-「写真を選ぶ・撮影」をタップすると、対応する端末で背面カメラまたは撮影方法の選択画面が開く。撮影を確定し、「寸法を測定」を押す。推論はPCで実行するため、PCをスリープさせない。保存画像もweb経由で取得するので、スマホからStorageのポートへ接続する必要はない。
+PCのIPから開いた画面が動くように、`apps/web/next.config.ts`の`allowedDevOrigins`で、プライベートIPからの開発用の接続を許している。ページは出るのにボタンが効かないときや、読み込み中のまま止まるときは、PCのIPがこの範囲に入っているかを確かめる。ブランチを切り替えたあとなどに、画像やAPIだけが404になるときは、webの開発サーバーを起動し直す。
 
-画面が開かない場合は、PCの同じURLでも開けるか確認する。PCだけ開ける場合はWindowsファイアウォールのTCP3000の受信許可と、Wi-Fiの端末間通信制限を確認する。ファイアウォール全体を無効化しない。受信許可は信頼できるネットワーク・ローカルサブネットに限定する。ログイン未実装のため、ルーターのポート開放やインターネット公開は行わない。
+「写真を選ぶ・撮影」をタップすると、端末によって、背面のカメラか、撮り方を選ぶ画面が開く。撮ったら「寸法を測定」を押す。推論はPCで動くので、PCをスリープさせない。保存した画像もwebを通して取得するので、スマホからStorageのポートにつなぐ必要は無い。
 
-現在は端末の撮影機能を使うfile入力方式。web画面内に動画のカメラプレビューを埋め込むgetUserMedia方式は未実装で、その方式には原則HTTPSが必要。capture属性の挙動はOS・ブラウザに依存する。
+画面が開かないときは、PCで同じURLを開けるかを確かめる。PCでだけ開けるときは、WindowsファイアウォールでTCPの3000番の受信を許しているかと、Wi-Fiが端末どうしの通信を止めていないかを確かめる。ファイアウォールを丸ごと切らない。受信を許すのは、信頼できるネットワークとローカルのサブネットだけにする。ログインがまだ無いので、ルーターのポートを開けたり、インターネットに公開したりしない。
+
+今はfile入力で端末の撮影機能を使う。web画面の中にカメラの映像を埋め込むgetUserMedia方式は、まだ作っていない。この方式には原則としてHTTPSが要る。capture属性の動きは、OSとブラウザによって違う。
 
 参考：[MDNのcapture属性](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture)、[getUserMedia](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)。
 
-## commit前の確認
+## commitの前に確かめること
 
-lefthookが、stagedのファイルをPrettierで整形し、ESLintで検査する。mdは、Prettierの前にtextlintで英語と日本語の間の空白を消す。手で`pnpm lint:md --fix`したときは、続けて`pnpm format`する。整形の結果は自動でstagedに戻る。lintエラーがあるとcommitできない。
+lefthookが、stagedのファイルをPrettierで整形し、ESLintで調べる。mdは、Prettierの前にtextlintで、英語と日本語の間の空白を消す。手で`pnpm lint:md --fix`したときは、続けて`pnpm format`する。整形した結果は、自動でstagedに戻る。lintのエラーがあると、commitできない。
 
-Pythonのファイルは、uvがあればruffで検査して整形する（[ADR 0022](adr/0022-python-lint-with-ruff.md)）。uvが無いときは飛ばすが、PRのCIで同じ検査が走る。まだruffをかけていないディレクトリは、`ruff.toml`の`extend-exclude`にある。
+Pythonのファイルは、uvがあればruffで調べて整形する（[ADR 0022](adr/0022-python-lint-with-ruff.md)）。uvが無いときは飛ばすが、PRのCIで同じことを調べる。まだruffをかけていないディレクトリは、`ruff.toml`の`extend-exclude`にある。
 
 いちばん先に、gitleaksで、stagedの変更に鍵やトークンなどの秘密が混ざっていないかを調べる（`scripts/check-secrets.sh`）。gitleaksが無ければDockerで動かし、どちらも無ければ飛ばす。PRのCIの`secrets`は、履歴をすべて調べる。
 
-- 見つかったら、その変更をstagedから外す。誤検出なら、その行の末尾に`gitleaks:allow`と書く
+- 見つかったら、その変更をstagedから外す。秘密でないものを誤って見つけたときは、その行の末尾に`gitleaks:allow`と書く
 - 秘密をpushしてしまったら、履歴から消すだけでは足りない。公開リポジトリなので、見られた前提で鍵を無効にして作り直す
 
-## DB を変えるとき
+## DBを変えるとき
 
 1. `supabase migration new <変更の名前>`でmigrationを作り、SQLを書く
    - `profiles`を作るときは、`supabase/seed.sql`にデモユーザー（`apps/api/.env.example`の`DEMO_PROFILE_ID`）の行も入れる。`supabase db reset`のたびに流れる
    - 服のテーブルを変えるときは、`supabase/seed.sql`の[ダミーの服](#ダミーの服)の行も合わせる
 2. `supabase db reset`でローカルのDBに反映する
 3. `pnpm --filter @pitari/api db:types`で型（`apps/api/src/lib/database.types.ts`）を作り直し、commitする。CLIの版で型の書き方が変わるので、手元のCLIではなく、`npx`で決まった版を使う（[ADR 0029](adr/0029-commit-db-types.md)）
-4. [docs/er.md](er.md) を更新する
+4. [docs/er.md](er.md)を更新する
 
 PRでは、CIの`db`（`.github/workflows/db.yml`）が、空のDBにmigrationと`seed.sql`を流し、`supabase db lint`でDBの関数を確かめる。作り直した型がcommitした型と違えば落ちる。`supabase/`かDBの型を変えたPRだけで動く。
 
