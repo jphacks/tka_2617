@@ -8,7 +8,7 @@
 - [ ] 画面やAPIを手で触って確かめた
 - [ ] `bash scripts/pr-size.sh`で400行くらいまで（超えるなら、上に理由を書いた）
 
-## docs を更新したか
+## docsを更新したか
 
 - [ ] APIを変えた → `docs/api.md`
 - [ ] DBを変えた → `docs/er.md`とmigration

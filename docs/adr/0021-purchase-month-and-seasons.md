@@ -10,7 +10,7 @@
 
 `garments`に`purchased_month`（`YYYY-MM`の文字列、null可）と`seasons`（`spring`・`summer`・`autumn`・`winter`の配列）を足す。APIでは`purchasedMonth`と`seasons`で、既存の`PATCH /v1/garments/:id`で変える。seasonsは重複を除き、春夏秋冬の順に並べて保存する。
 
-詳細画面では、購入時期をブラウザの年月入力で、時期を春夏秋冬の丸ボタンで選ぶ。変えたらすぐ保存し、失敗したら表示を戻す。
+詳細画面では、購入時期をブラウザの年月入力で選ぶ。着る時期は、春夏秋冬の丸ボタンで選ぶ。変えたらすぐ保存し、失敗したら表示を戻す。
 
 ## 理由
 

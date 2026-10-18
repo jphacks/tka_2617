@@ -9,7 +9,7 @@ AIがAPIの型を画面ごとに書くと、同じ形の型が何か所にもで
 調べると、今のPitariでは、APIの型はすでに機械的に作られていた。
 
 - apiのzodスキーマから`z.infer`で型を作り、`apps/api/src/app.ts`からexportする
-  - ただし、`GarmentView`、`BackPhotoResponse`、`MeasurementDefinition`は、zodを使わずにapiで手で書いた型をexportしている（`GarmentView`の`category`など、一部の項目はzodの型を使っている）。どれもapiの1か所にあるので、webとずれることは無い。ただ、routeが返す値をzodで検証していないので、型と実際に返す値がずれる可能性は残る
+  - ただし、`GarmentView`、`BackPhotoResponse`、`MeasurementDefinition`は、zodを使わずにapiで手で書いた型をexportしている（`GarmentView`の`category`など、一部の項目はzodの型を使っている）。どれもapiの1か所にあるので、webと型がずれることは無い。ただ、routeの応答はzodで検証していない。型と実際に返す値がずれる可能性は残る
 - webは`import type { GarmentView } from "@pitari/api"`のように受け取る
 - webからapiは`src/server/api.ts`の`hc<AppType>`（Hono RPC）で呼び、入力と出力の型はapiのrouteから推論される
 

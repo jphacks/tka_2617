@@ -13,10 +13,10 @@
 ## 決定
 
 - web（`apps/web`）はVercelのHobbyプランに置く
-- GitHubとはつながず、VercelのCLIで出す。mainにマージすると、CIのほかのjobがすべて通った後に、GitHub Actions（`.github/workflows/ci.yml`の`deploy`）が`vercel deploy --prod`で本番に出す。急ぐときは手元のMacからも出せる。手順は[setup.md](../setup.md#webをvercelにデプロイする)
+- VercelをGitHubに直接つながず、CLIで出す。mainへのマージ後、CIのほかのjobがすべて通ると、GitHub Actions（`.github/workflows/ci.yml`の`deploy`）が`vercel deploy --prod`で本番に出す。急ぐときは手元のMacからも出せる。手順は[setup.md](../setup.md#webをvercelにデプロイする)
 - Actionsで使うVercelの鍵（`VERCEL_TOKEN`）と、プロジェクトのID（`VERCEL_ORG_ID`、`VERCEL_PROJECT_ID`）は、リポジトリのsecretに置く。鍵はpitariのプロジェクトだけに絞り、有効期限を付ける
 - リポジトリのルートに`.vercelignore`を置き、`.env`などの秘密のファイルを送らない
-- Vercelでは、インストールのときにスクリプトを動かさない（`apps/web/vercel.json`の`installCommand`に`--ignore-scripts`）。CLIで送ったファイルには`.git`が無く、ルートの`prepare`（`lefthook install`）が失敗するため。依存のインストールスクリプトは、手元とCIでも`pnpm-workspace.yaml`で止めているので、動きは変わらない。インストールスクリプトが要る依存を足したら、この設定を見直す
+- Vercelでは、インストールのときにスクリプトを動かさない（`apps/web/vercel.json`の`installCommand`に`--ignore-scripts`）。CLIで送ったファイルには`.git`が無く、ルートの`prepare`（`lefthook install`）が失敗するため。手元とCIでも、`pnpm-workspace.yaml`で依存のインストールスクリプトを止めている。このため、動きは変わらない。インストールスクリプトが要る依存を足したら、この設定を見直す
 - apiとSupabaseの置き場所は、DBと登録のAPIができてから決める
 
 ## 理由
