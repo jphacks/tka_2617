@@ -32,7 +32,7 @@ export function TodayContents() {
 
   useEffect(() => {
     const controller = new AbortController();
-    // 位置はまだ送らず、東京の天気を出す（ADR 0040）
+    // 位置はまだ送らず、仮に東京駅の天気を出す。場所の名前は画面に出さない（ADR 0040）
     requestJson<TodayWeather>("/api/weather", { signal: controller.signal })
       .then(setWeather)
       .catch(() => {
@@ -61,13 +61,8 @@ export function TodayContents() {
 
   return (
     <main className="px-6 pb-6 motion-safe:animate-fade-in">
-      <div className="flex justify-between pt-3.5 pb-2.5 text-[13px] text-description">
+      <div className="pt-3.5 pb-2.5 text-[13px] text-description">
         <span>{date}</span>
-        <span>
-          {weather && weather !== "failed" && weather.place === "current"
-            ? "現在地"
-            : "東京"}
-        </span>
       </div>
       <dl className="grid grid-cols-3 border-y border-t-main border-b-line text-[15px] tabular-nums">
         {dayParts.map(({ part, label }) => (
