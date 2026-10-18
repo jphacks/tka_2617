@@ -36,12 +36,13 @@ class GeometryTests(unittest.TestCase):
         cv2.rectangle(image, (280, 180), (370, 450), color, -1)
         cv2.rectangle(image, (460, 180), (550, 450), color, -1)
         cv2.rectangle(image, (30, 60), (240, 357), (255, 255, 255), -1)
-        cutout = garment_cutout(image, [20, 30, 580, 480], [[30, 60], [240, 60], [240, 357], [30, 357]])
+        cutout, alpha = garment_cutout(image, [20, 30, 580, 480], [[30, 60], [240, 60], [240, 357], [30, 357]])
         self.assertEqual(cutout.shape[2], 4)
         self.assertLess(cutout.shape[1], 300)
         self.assertEqual(cutout[-20, cutout.shape[1] // 2, 3], 0)
         self.assertTrue(np.all(cutout[:, :, :3][cutout[:, :, 3] == 255] == color))
         self.assertEqual(cutout[0, 0, 3], 0)
+        self.assertEqual(alpha.shape, image.shape[:2])
 
     def test_blank_image_cannot_be_used_as_cutout(self):
         with self.assertRaises(ValueError):

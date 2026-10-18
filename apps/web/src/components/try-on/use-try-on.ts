@@ -502,6 +502,8 @@ export function useTryOn(
     /** 今の性別の確認用の服 */
     samples,
     heightRangeCm: models.heightRangeCm,
+    /** presets.jsonのパス（glb・サムネイル）を、今の性別の体に合わせたものにする */
+    presetUrl: models.presetUrl,
     build,
     setBuild,
     heightInput,

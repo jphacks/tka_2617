@@ -123,6 +123,7 @@ export type Database = {
       garments: {
         Row: {
           category: string
+          color_family: string | null
           created_at: string
           id: string
           measurement_version: string
@@ -135,6 +136,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          color_family?: string | null
           created_at?: string
           id?: string
           measurement_version?: string
@@ -147,6 +149,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          color_family?: string | null
           created_at?: string
           id?: string
           measurement_version?: string

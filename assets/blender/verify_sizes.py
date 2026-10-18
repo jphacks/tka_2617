@@ -321,6 +321,9 @@ def main():
     # 押し出しとめり込みの相手。女性は着せるための体（描かない）
     collider = bpy.data.objects[pf.FIT_NAME] if FEMALE else body
     collider.hide_render = FEMALE
+    # 下着は体型・身長を変えずに残っているので描かない（服の寸法と、着せるための体からの押し出しだけを確かめる）
+    if pf.UNDERWEAR_NAME in bpy.data.objects:
+        bpy.data.objects[pf.UNDERWEAR_NAME].hide_render = True
     with open(os.path.join(HERE, "out", pf.landmarks_file(GARMENT, GENDER)), encoding="utf-8") as fp:
         lm = json.load(fp)
     base, corr = load_json(f"{GARMENT}_{GENDER}_base.json"), load_json(f"{GARMENT}_{GENDER}_correction.json")

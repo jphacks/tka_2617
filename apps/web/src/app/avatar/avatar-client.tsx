@@ -22,7 +22,7 @@ import {
   BODY_FRAMES,
   BUILD_LABELS,
   BUILDS,
-  createAvatarSettingsStore,
+  avatarSettingsStore,
   defaultAvatarSettings,
   GENDER_LABELS,
   GENDERS,
@@ -40,10 +40,6 @@ const TryOnScene = dynamic(() => import("@/components/try-on/try-on-scene"), {
   ssr: false,
   loading: () => <AvatarFrame loading />,
 });
-
-const avatarSettingsStore = createAvatarSettingsStore(
-  () => window.localStorage,
-);
 
 /** 選択肢を横に並べたラジオボタン。選んでいるものを塗る */
 function Segmented<T extends string>({
@@ -450,6 +446,7 @@ function AvatarEditor({
     tight,
     sceneProps,
     selectTop,
+    presetUrl,
   } = useTryOn(settings, worn);
 
   function update(change: Partial<AvatarSettings>) {
@@ -535,7 +532,7 @@ function AvatarEditor({
               {h ? (
                 // eslint-disable-next-line @next/next/no-img-element -- 512pxの小さいサムネイルなので最適化しない
                 <img
-                  src={h.thumbs.front}
+                  src={presetUrl(h.thumbs.front)}
                   alt=""
                   className="aspect-square w-full"
                 />

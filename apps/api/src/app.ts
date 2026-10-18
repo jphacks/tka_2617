@@ -66,6 +66,7 @@ export type {
   Material,
   MaterialList,
 } from "#src/lib/materials";
+export type { ColorFamily } from "#src/lib/color-family";
 export type {
   TextureRequestResult,
   BackPhotoResponse,

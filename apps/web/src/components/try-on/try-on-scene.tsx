@@ -305,10 +305,11 @@ function Models({
   const shirt = useGLTF(shirtUrl);
   const trousers = useGLTF(trousersUrl);
   // 服は、体のglbに着せるための体があればそれに対して押し出す（描かない）
-  const { body: bodyMesh, collider: colliderMesh } = useMemo(
-    () => bodyMeshes(avatar.scene),
-    [avatar.scene],
-  );
+  const {
+    body: bodyMesh,
+    collider: colliderMesh,
+    underwear,
+  } = useMemo(() => bodyMeshes(avatar.scene), [avatar.scene]);
   const shirtMesh = useMemo(() => firstMesh(shirt.scene), [shirt.scene]);
   const trouserMesh = useMemo(
     () => firstMesh(trousers.scene),
@@ -406,6 +407,9 @@ function Models({
       if (showShirt) {
         // 上の服はズボンの上に着るので、押し出したズボンの外へも押し出す
         const layers = showTrousers ? [buildGarmentCollider(trouserMesh)] : [];
+        // 女性はいつも下着を着ける。上の服（と中の服）は、シャツの中のTシャツと同じく下着の外へ押し出す
+        if (underwear)
+          layers.push(buildGarmentCollider(underwear, { wraps: true }));
         // 中の服も、体とズボンの外へ押し出してから、上の服をその外へ押し出す
         if (inner) {
           updatePush(inner.mesh, bodyBVH.current, inner.topo, { layers });
@@ -442,6 +446,7 @@ function Models({
   }, [
     bodyMesh,
     colliderMesh,
+    underwear,
     shirtMesh,
     trouserMesh,
     topo,

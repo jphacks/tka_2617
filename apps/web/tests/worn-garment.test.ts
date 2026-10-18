@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { GarmentView } from "@pitari/api";
-import { wornTop, wornTrousers } from "@/lib/worn-garment";
+import { isWearable, wornTop, wornTrousers } from "@/lib/worn-garment";
 
 const noMeasurements = {
   shoulderWidthCm: null,
@@ -30,6 +30,7 @@ function garmentView(
     measurementVersion: "df2-a4-flat-midpoint-v2",
     purchasedMonth: null,
     seasons: [],
+    colorFamily: null,
     materials: [{ materialId: "cotton", label: "綿", percent: 100 }],
     createdAt: "2026-10-17T00:00:00.000Z",
     images: [],
@@ -106,4 +107,19 @@ void test("名前が無い服は、種類の名前で呼ぶ", () => {
   assert.deepEqual(wornTrousers(garmentView("shirt", topSizes, "")), {
     problem: "「シャツ」は下の服ではありません",
   });
+});
+
+void test("寸法がそろった服だけを、着せられる服とする", () => {
+  assert.equal(isWearable(garmentView("long_sleeve_top", topSizes)), true);
+  assert.equal(isWearable(garmentView("trousers", trouserSizes)), true);
+  assert.equal(
+    isWearable(
+      garmentView("short_sleeve_top", { ...topSizes, bodyWidthCm: null }),
+    ),
+    false,
+  );
+  assert.equal(
+    isWearable(garmentView("trousers", { ...trouserSizes, hipCm: null })),
+    false,
+  );
 });

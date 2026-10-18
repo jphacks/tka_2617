@@ -82,9 +82,25 @@ void test("女性の体のglbには、体と同じ頂点の並び・キー・_co
   assert.ok("_COVER" in fit.primitives[0].attributes);
 });
 
+void test("女性の体のglbには、体と同じ体型キー・身長キーを持つ下着（いつも着ける）がある", () => {
+  const { gltf } = readGltf(AVATAR_MODELS.female.avatar);
+  const keys = (name: string) => {
+    const node = gltf.nodes.find((n) => n.name === name);
+    assert.ok(node?.mesh !== undefined, `${name}がありません`);
+    return gltf.meshes[node.mesh].extras?.targetNames ?? [];
+  };
+  const underwear = keys("underwear");
+  assert.deepEqual(
+    underwear,
+    keys("avatar").filter((k) => k !== "thumb_in"),
+  );
+});
+
 void test("男性の体のglbには、着せるための体は無い（体に対して押し出す）", () => {
   const { gltf } = readGltf(AVATAR_MODELS.male.avatar);
-  assert.ok(!gltf.nodes.some((n) => n.name === "avatar_fit"));
+  assert.ok(
+    !gltf.nodes.some((n) => ["avatar_fit", "underwear"].includes(n.name)),
+  );
 });
 
 void test("Blenderの身長の表は、性別ごとの入力できる身長の両端を含み、標準の身長はその間にある", () => {
@@ -110,9 +126,13 @@ void test("Blenderの身長の表は、性別ごとの入力できる身長の�
   }
 });
 
-void test("どちらの性別も、髪・靴・顔のパーツのglbがある（女性はpresets/female/の下）", () => {
+void test("どちらの性別も、髪・靴・顔のパーツのglbと髪のサムネイルがある（女性はpresets/female/の下）", () => {
   const paths = [
-    ...presetsJson.hair.map((h) => h.path),
+    ...presetsJson.hair.flatMap((h) => [
+      h.path,
+      h.thumbs.front,
+      h.thumbs.angle,
+    ]),
     ...presetsJson.shoes.map((s) => s.path),
     presetsJson.face.path,
   ];

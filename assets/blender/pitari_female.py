@@ -11,6 +11,7 @@ mhclo の服は体の helper（helper-tights）の頂点を基準に着せるの
 import os
 import sys
 
+import bmesh
 import bpy
 import numpy as np
 
@@ -19,6 +20,10 @@ import pitari_tshirt as pt
 
 SKIN = os.path.join(pp.MH_DATA, "skins", "young_caucasian_female", "young_lightskinned_female_diffuse.png")
 FIT_NAME = "avatar_fit"     # 着せるための体のオブジェクト名（glb のメッシュ名）
+# 下着：female_sportsuit01 の上（スポーツブラの形）。いつも着ける。服はこの外へ押し出す（ブラウザの重ね着と同じ）
+UNDERWEAR_ASSET = "female_sportsuit01"
+UNDERWEAR_NAME = "underwear"
+UNDERWEAR_COLOR = (0.86, 0.84, 0.82, 1.0)
 
 FIT_STEP = 0.005            # 前面の高さ・横の位置を、この間隔の格子で調べる
 FIT_HALF_WIDTH = 0.16       # 体の中心から左右この幅まで（腕を含めない）
@@ -163,6 +168,31 @@ def fit_coords(P, topo):
     for verts, faces in topo["surfaces"]:
         out[verts, 1] += _fit_surface(P, verts, faces, zw, zb)
     return out
+
+
+def add_underwear(body):
+    """下着を本物の体に着せる。female_sportsuit01 は上（胸）と下（レギンス）がつながっていない別の塊なので、下を消す"""
+    obj = pp.add_asset(body, "underwear", UNDERWEAR_ASSET)
+    obj.name = UNDERWEAR_NAME
+    me = obj.data
+    bm = bmesh.new(); bm.from_mesh(me); bm.verts.ensure_lookup_table()
+    part = np.full(len(bm.verts), -1)
+    for v in bm.verts:
+        if part[v.index] >= 0:
+            continue
+        k, stack = part.max() + 1, [v]
+        part[v.index] = k
+        while stack:
+            for e in stack.pop().link_edges:
+                for w in e.verts:
+                    if part[w.index] < 0:
+                        part[w.index] = k
+                        stack.append(w)
+    P = pt.world_coords(obj)
+    top = max(range(part.max() + 1), key=lambda k: P[part == k, 2].mean())
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if part[v.index] != top], context="VERTS")
+    bm.to_mesh(me); bm.free(); me.update()
+    return obj
 
 
 def dress_on_fit(dress, topo):

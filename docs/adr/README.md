@@ -58,6 +58,14 @@
 - [0041 最初の画面を今日のコーデにし、クローゼットを`/closet`へ移す](0041-today-as-home.md)
 - [0042 女性の服は、胸の谷間と胸の下を埋めた「着せるための体」に着せ、身幅の判定に胸の一周も使う](0042-fit-body-for-female.md)
 - [0043 設定の性別が女性なら女性のアバターを出し、男性と「選ばない」は男性のアバターを出す](0043-show-female-avatar-by-gender.md)
+- [0044 服の色の系統は、ブラウザで切り抜きの画素ごとに分け、いちばん多い系統にする](0044-color-family-from-cutout.md)
+- [0045 今日のコーデは、気温で袖を、季節と素材で服を絞り、合わせやすい色の組み合わせを日ごとに回して選ぶ](0045-outfit-suggestion-rules.md)
+- [0046 着た服の記録は、ログインを入れるまでブラウザのlocalStorageに保存する](0046-wear-log-in-browser.md)
+- [0047 女性のアバターはいつも下着を着け、上の服は下着の外へ押し出す](0047-female-avatar-always-wears-underwear.md)
+- [0048 テクスチャを作るときは、同じ写真を切り抜いたときの範囲・点・服の領域を使い回す](0048-reuse-cutout-for-texture.md)
+- [0049 服の検出とランドマークは、OpenVINOに変換したモデルをCPUで動かす](0049-openvino-for-models.md)
+- [0050 テクスチャの三角形の貼り付けは、Rust拡張で並列に計算する](0050-rust-for-texture-warp.md)
+- [0051 テクスチャを作るときは、DBに保存した表の点とA4の四隅を推論より優先する](0051-saved-points-for-texture.md)
 
 ## 参考文献
 
