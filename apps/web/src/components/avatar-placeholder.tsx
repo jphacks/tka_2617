@@ -1,4 +1,4 @@
-// 今日の画面の仮のアバター。コーデの提案（#113）ができるまで、three.jsを読まずに人の形だけ出す。
+// 今日の画面の仮のアバター。コーデを提案できないときと、アバターを登録する前に、three.jsを読まずに人の形だけ出す。
 // 形は初回体験のモック（#108）のアバター部品から写した
 export function AvatarPlaceholder() {
   const part = { fill: "#e4e1db", stroke: "#b7b2a8", strokeWidth: 1 };

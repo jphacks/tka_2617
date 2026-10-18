@@ -30,6 +30,8 @@ export const materialRecordSchema = z.object({
   sort_order: z.number(),
 });
 export type Material = { id: string; label: string };
+/** GET /v1/materialsの応答 */
+export type MaterialList = { materials: Material[] };
 export type GarmentMaterial = {
   materialId: string;
   label: string;

@@ -145,6 +145,11 @@ export function createAvatarSettingsStore(
   };
 }
 
+/** 画面で使う設定。ページごとに作ると、マイで登録したあとに今日の画面へ戻っても、前に読んだ「未登録」のまま残る */
+export const avatarSettingsStore = createAvatarSettingsStore(
+  () => window.localStorage,
+);
+
 function load(storage: () => Pick<Storage, "getItem">): AvatarSettings | null {
   try {
     const value: unknown = JSON.parse(storage().getItem(storageKey) ?? "null");

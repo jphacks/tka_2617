@@ -41,6 +41,7 @@ function garmentView(
     measurementVersion: "df2-a4-flat-midpoint-v2",
     purchasedMonth: null,
     seasons: [],
+    colorFamily: null,
     materials: [{ materialId: "cotton", label: "綿", percent: 100 }],
     createdAt: "2026-10-17T00:00:00.000Z",
     images: [],
