@@ -72,12 +72,16 @@ export function withGender(
   };
 }
 
-/** 入力欄の文字を身長（cm）にする。空欄、数値でないもの、3Dで変えられる範囲の外はnull */
-export function heightFromInput(input: string): number | null {
+/**
+ * 入力欄の文字を身長（cm）にする。空欄、数値でないもの、3Dで変えられる範囲の外はnull。
+ * 範囲は、3Dモデルの性別ごとに違う（女性は低い側へずらしてある）
+ */
+export function heightFromInput(
+  input: string,
+  [min, max]: readonly [number, number] = [HEIGHT_MIN_CM, HEIGHT_MAX_CM],
+): number | null {
   const heightCm = Number(input);
-  return input.trim() !== "" &&
-    heightCm >= HEIGHT_MIN_CM &&
-    heightCm <= HEIGHT_MAX_CM
+  return input.trim() !== "" && heightCm >= min && heightCm <= max
     ? heightCm
     : null;
 }
