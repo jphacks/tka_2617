@@ -46,7 +46,7 @@
 
    webは<http://localhost:3000>、apiは<http://localhost:3001>で動く。<http://localhost:3000/api/health>が`{"ok":true}`を返せば、webからapiまでつながっている。
 
-ここまでで、[ダミーの服](#ダミーの服)を使ってクローゼット・アバター・今日のコーデを試せる。採寸とテクスチャ作成も試すときは、続けて「[モデルとUVテンプレートを受け取る](#モデルとuvテンプレートを受け取る)」を済ませる。
+ここまでで、[ダミーの服](#ダミーの服)を使ってクローゼット・アバター・今日のコーデを試せる。採寸とテクスチャ作成も試すときは、続けて「[モデルとUVテンプレートを受け取る](#モデルとuvテンプレートを受け取る)」と「[推論を速くする](#推論を速くする)」を済ませる。
 
 ## mainを取り込んだあと
 
@@ -150,6 +150,30 @@ docker exec -i supabase_db_pitari psql -U postgres < supabase/seed.sql
 ```
 
 置いたら、推論サービスを起動する（[推論サービスのREADME](../apps/inference/README.md)の「起動」）。<http://localhost:3000/api/inference-status>の`weightsPresent`と`detectorPresent`が`true`なら、モデルを読み込める。
+
+## 推論を速くする
+
+モデルを置いたら、次の2つで採寸とテクスチャ作成が速くなる。どちらも、しなくても今までどおり動く。時間は、テクスチャ担当のPCのCPUで測ったもの。
+
+1. 服の検出とランドマークを、OpenVINOの形式に変換する（[ADR 0049](adr/0049-openvino-for-models.md)）。服の検出が1枚約23秒から約6秒、ランドマークが約1.8秒から約0.9秒になる。変換には約10分かかり、`apps/inference/models/openvino/`に約0.8GB置く。前から仮想環境を使っている人は、先に依存を入れ直す（`openvino`を足した）
+
+   ```powershell
+   ./apps/inference/.venv/Scripts/python.exe -m pip install -r apps/inference/requirements.txt
+   ./apps/inference/.venv/Scripts/python.exe apps/inference/prepare_models.py --openvino
+   ```
+
+   モデルやOpenVINOを入れ替えたら、`models/openvino/`を消してから変換し直す
+
+2. テクスチャの三角形の貼り付けを、Rust拡張`pitari_fast`で計算する（[ADR 0050](adr/0050-rust-for-texture-warp.md)）。1面約0.6秒が約0.2秒になり、結果は今までと同じ。先にRust（[rustup](https://rustup.rs/)）と、Visual StudioのC++ビルドツールを入れる。パスに日本語があると、maturinがpipの出力を読めないので、`PYTHONUTF8`を付ける
+
+   ```powershell
+   cd apps/inference/native
+   ../.venv/Scripts/python.exe -m pip install maturin==1.15.0
+   $env:PYTHONUTF8 = "1"; $env:VIRTUAL_ENV = (Resolve-Path ../.venv).Path
+   ../.venv/Scripts/maturin.exe develop --release
+   ```
+
+推論サービスはファイルの変更を読み直さない。どちらかを済ませたら、推論サービスを起動し直す。
 
 ## 服の採寸を開発するとき
 
