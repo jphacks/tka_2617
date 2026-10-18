@@ -36,6 +36,7 @@ export type Database = {
     Tables: {
       garment_images: {
         Row: {
+          bbox: Json | null
           created_at: string
           garment_id: string
           height_px: number
@@ -50,6 +51,7 @@ export type Database = {
           width_px: number
         }
         Insert: {
+          bbox?: Json | null
           created_at?: string
           garment_id: string
           height_px: number
@@ -64,6 +66,7 @@ export type Database = {
           width_px: number
         }
         Update: {
+          bbox?: Json | null
           created_at?: string
           garment_id?: string
           height_px?: number
