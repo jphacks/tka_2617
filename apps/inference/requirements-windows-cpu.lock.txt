@@ -18,6 +18,8 @@ networkx==3.6.1
 numpy==2.4.6
 opencv-python-headless==4.14.0.94
 opentelemetry-api==1.45.1
+openvino==2026.4.1
+openvino-telemetry==2025.2.0
 packaging==26.3
 pillow==12.3.0
 pydantic==2.14.0

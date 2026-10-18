@@ -54,6 +54,12 @@ py -3.11 -m venv apps/inference/.venv
 
 未配置なら画面でカテゴリと服を囲む範囲を指定する。HRNet自体は服の範囲内のランドマークを求めるモデル。
 
+モデルをそろえたら、OpenVINOの形式に変換しておく（[ADR 0049](../../docs/adr/0049-openvino-for-models.md)）。変換に10分ほどかかり、`models/openvino/`に約0.8GB置く。変換したものがあれば推論サービスはそちらを使い、服の検出が1枚約23秒から約6秒、ランドマークが約1.8秒から約0.9秒になる（このPCのCPU）。なければ今までどおりPyTorchで動かす。モデルやOpenVINOを入れ替えたら、`models/openvino/`を消してから変換し直す。
+
+```powershell
+./apps/inference/.venv/Scripts/python.exe apps/inference/prepare_models.py --openvino
+```
+
 ## 起動
 
 通常のweb・api・ローカルSupabaseは[セットアップ](../../docs/setup.md)を参照。推論用には`apps/inference/.env.example`から`.env`を作り、32文字以上のランダムな`INFERENCE_TOKEN`を設定する。同じ値を`apps/api/.env`にも追加する。既存の環境ファイルは上書きしない。
@@ -118,7 +124,7 @@ apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/
 - 変換の本体は`artifacts/uv/pitari/scripts/photo_to_texture.py`の`make_texture`。カテゴリでテンプレートを選ぶ。Tシャツは`artifacts/uv/pitari/uv_template.json`、長そでは`artifacts/uv/pitari/longsleeve/uv_template.json`、シャツは`artifacts/uv/pitari/shirt/uv_template.json`、ズボンは`artifacts/uv/pitari/trousers/uv_template.json`（どれもGitに含まれない）。シャツは、写真の検出・点・切り抜きを長そでとして行う。ないPCでは503を返し、テクスチャは作らない。作り方は[UVテンプレートのREADME](../../artifacts/uv/pitari/README.md)。
 - ズボンの切り抜きと服の領域は、ランドマークで囲んだ輪郭の外を背景として教えて作る（`pitari/cutout.py`の`garment_alpha`、[ADR 0024](../../docs/adr/0024-trousers-cutout-with-landmarks.md)）。テクスチャを作るときも同じ関数を使う。
 - `/detect`の切り抜きの段階で点を受け取ったら、服の範囲・点・A4の角・服の領域を、写真のJPEGのハッシュで`apps/inference/.cache/detections/`に残す（新しいものから200件）。テクスチャの作業は、同じ写真・大きさ・種類の記録があれば推論と切り抜きを省く（`pitari/detections.py`、[ADR 0048](../../docs/adr/0048-reuse-cutout-for-texture.md)）。使ったときは`report.json`の`notes`に書く。
-- モデルは採寸と共有する。テクスチャ作成がモデルを使っている間は、採寸のリクエストが最大60秒待ってから処理される。
+- モデルは採寸と共有する。推論サービスを起動すると、裏でモデルを読み込む（PyTorchで約30秒、OpenVINOで約1分）。その間と、テクスチャ作成がモデルを使っている間は、採寸のリクエストが最大60秒待ってから処理される。
 - 待ちの作業は5件まで。同じ服の作業が待っている間に新しい写真が届いたら置き換える。
 
 ## 検証

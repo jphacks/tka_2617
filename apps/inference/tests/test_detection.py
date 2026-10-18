@@ -12,6 +12,7 @@ from fastapi import UploadFile
 
 from pitari import detections
 from pitari.app import detect
+from pitari.models import Models
 
 
 class DetectionTests(unittest.TestCase):
@@ -92,3 +93,9 @@ class DetectionTests(unittest.TestCase):
         self.assertGreater(record["mask"][240, 460], 0)
         for other in [(self.raw + b"x", 700, 500, "short_sleeve_top"), (self.raw, 700, 500, "trousers"), (self.raw, 350, 250, "short_sleeve_top")]:
             self.assertIsNone(detections.recall(*other))
+
+    def test_preload_skips_models_that_are_not_downloaded(self):
+        models = Models()
+        with patch.object(models, "load_pose", side_effect=FileNotFoundError("missing weights")), patch.object(models, "load_detector") as detector:
+            models.preload()
+        detector.assert_called_once()
