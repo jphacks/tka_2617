@@ -79,3 +79,41 @@ void test("壊れた値や、保存を禁止したブラウザでは、記録の
   blocked.record("2026-10-18", { top, bottom: null });
   assert.deepEqual(blocked.get(), { "2026-10-18": { top, bottom: null } });
 });
+
+void test("形の違う日だけを捨て、ほかの日の記録は残す", () => {
+  const storage = memoryStorage({
+    "pitari.wear-log": JSON.stringify({
+      "2026-10-17": { top, bottom },
+      "2026-10-18": { top: "not-a-uuid", bottom: null },
+    }),
+  });
+  assert.deepEqual(createWearLogStore(() => storage).get(), {
+    "2026-10-17": { top, bottom },
+  });
+});
+
+void test("日付や服のIDの形が違う記録は保存せず、前の記録も変えない", () => {
+  const storage = memoryStorage();
+  const store = createWearLogStore(() => storage);
+  assert.equal(store.record("2026-10-18", { top, bottom }), true);
+  assert.equal(store.record("2026-10-32", { top, bottom: null }), false);
+  assert.equal(store.record("2026-10-17", { top: "x", bottom: null }), false);
+  assert.deepEqual(createWearLogStore(() => storage).get(), {
+    "2026-10-18": { top, bottom },
+  });
+});
+
+void test("別のタブで足した記録を、あとから記録したタブが消さない", () => {
+  const storage = memoryStorage();
+  const first = createWearLogStore(() => storage);
+  const second = createWearLogStore(() => storage);
+  // どちらのタブも、記録の無いときに読んでいる
+  assert.deepEqual(first.get(), {});
+  assert.deepEqual(second.get(), {});
+  first.record("2026-10-17", { top, bottom: null });
+  second.record("2026-10-18", { top: null, bottom });
+  assert.deepEqual(createWearLogStore(() => storage).get(), {
+    "2026-10-17": { top, bottom: null },
+    "2026-10-18": { top: null, bottom },
+  });
+});
