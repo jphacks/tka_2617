@@ -46,6 +46,8 @@
 
    webは<http://localhost:3000>、apiは<http://localhost:3001>で動く。<http://localhost:3000/api/health>が`{"ok":true}`を返せば、webからapiまでつながっている。
 
+ここまでで、[ダミーの服](#ダミーの服)を使ってクローゼット・アバター・今日のコーデを試せる。採寸とテクスチャ作成も試すときは、続けて「[モデルとUVテンプレートを受け取る](#モデルとuvテンプレートを受け取る)」を済ませる。
+
 ## mainを取り込んだあと
 
 ほかの人の変更をmainから取り込んだら、画面を確かめる前に、依存・DB・推論サービスを今のmainに合わせる。どれかが古いと、画面は開いても、登録・裏面の保存・テクスチャの生成が失敗する。
@@ -104,10 +106,7 @@
 - アバター（http://localhost:3000/avatar ）：体・髪・服・靴を選んで着せる
 - テクスチャ：受け付けると`apps/inference/textures/{生成日時}_{種類}_{服IDの先頭8文字}/`ができる。数十秒〜数分で`job.json`の`status`が`done`になり、フォルダと同じ名前の`.png`ができる
 
-採寸とテクスチャには、Gitに含まれない次のものが要る。無くても、ほかの画面は確かめられる。
-
-- 推論サービスの設定（`INFERENCE_TOKEN`）とモデル：[推論サービスのREADME](../apps/inference/README.md)
-- UVテンプレート：Tシャツは`artifacts/uv/pitari/uv_template.json`、長そでは`artifacts/uv/pitari/longsleeve/uv_template.json`、ズボンは`artifacts/uv/pitari/trousers/uv_template.json`。無い種類は「テクスチャを作る」が503になる。元のモデル（`.blend`など）を持っている人から受け取って`artifacts/uv/pitari/inputs/`に置き、[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)の手順で作る
+採寸とテクスチャには、推論サービスの設定（`INFERENCE_TOKEN`、[推論サービスのREADME](../apps/inference/README.md)）と、Gitに入れていないモデルとUVテンプレートが要る。用意のしかたは、下の「[モデルとUVテンプレートを受け取る](#モデルとuvテンプレートを受け取る)」に書いた。無くても、[ダミーの服](#ダミーの服)でほかの画面は確かめられる。
 
 ## ダミーの服
 
@@ -125,6 +124,32 @@ docker exec -i supabase_db_pitari psql -U postgres < supabase/seed.sql
 ```
 
 1行目は、画像をStorageに入れる。バケットの設定を上書きするかを聞かれたら、`Y`で進める。`config.toml`の設定はmigrationと同じなので、何も変わらない。2行目は、服の行をDBに入れる。
+
+## モデルとUVテンプレートを受け取る
+
+採寸とテクスチャ作成には、次のファイルが要る。
+
+**HRNetの重みとUVテンプレートは、Gitに上げず、テクスチャ担当（GitHubの`runa64690`）が個人で渡す。** 重みは約244MBと大きく、配布元の利用条件もある。UVテンプレートは、Gitに入れていない元のモデル（`.blend`など）から作る。受け取ったら、フォルダの形を変えずに、リポジトリの次の場所に置く。
+
+| 受け取るもの            | 置く場所                                                                   |
+| ----------------------- | -------------------------------------------------------------------------- |
+| HRNetの学習済みの重み   | `apps/inference/models/pose_hrnet-w48_384x288-deepfashion2_mAP_0.7017.pth` |
+| TシャツのUVテンプレート | `artifacts/uv/pitari/uv_template.json`と`artifacts/uv/pitari/masks/`       |
+| 長そでのUVテンプレート  | `artifacts/uv/pitari/longsleeve/uv_template.json`と`longsleeve/masks/`     |
+| シャツのUVテンプレート  | `artifacts/uv/pitari/shirt/uv_template.json`と`shirt/masks/`               |
+| ズボンのUVテンプレート  | `artifacts/uv/pitari/trousers/uv_template.json`と`trousers/masks/`         |
+
+- 重みは、HRNet公式のOneDriveから自分でダウンロードしてもよい（[推論サービスのREADME](../apps/inference/README.md)の「HRNetの重みをまだ置いていないPCで、手で入れる」）
+- UVテンプレートは、種類ごとに`uv_template.json`と`masks/`を両方置く。無い種類は「テクスチャを作る」が503になる
+- どれも`.gitignore`で外してあるので、置いてもcommitされない
+
+ほかのモデルは、スクリプトで取る。先に推論サービスの仮想環境を作る（[推論サービスのREADME](../apps/inference/README.md)の「別の開発者が環境を作るとき」）。そのあと、リポジトリのルートで次を実行する。HRNetの実装（`apps/inference/models/hrnet-source/`）と、服の範囲を見つけるGrounding DINO（`apps/inference/models/grounding-dino-tiny/`、約660MB）が入る。
+
+```powershell
+./apps/inference/.venv/Scripts/python.exe apps/inference/prepare_models.py --detector
+```
+
+置いたら、推論サービスを起動する（[推論サービスのREADME](../apps/inference/README.md)の「起動」）。<http://localhost:3000/api/inference-status>の`weightsPresent`と`detectorPresent`が`true`なら、モデルを読み込める。
 
 ## 服の採寸を開発するとき
 

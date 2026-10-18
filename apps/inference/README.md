@@ -12,7 +12,7 @@ webやapiとは別の、Pythonの仮想環境で動く。DBとStorageにはつ�
 
 ## HRNetの重みをまだ置いていないPCで、手で入れる
 
-このPCには下の重みが置いてあるので、ダウンロードし直さなくてよい。
+このPCには下の重みが置いてあるので、ダウンロードし直さなくてよい。ほかのPCでは、テクスチャ担当（GitHubの`runa64690`）から個人で受け取ってもよい（[セットアップ](../../docs/setup.md)の「モデルとUVテンプレートを受け取る」）。
 
 1. [HRNet公式READMEのOneDriveのリンク](https://github.com/svip-lab/HRNet-for-Fashion-Landmark-Estimation.PyTorch#onedrive-cloud-storage)を開く。
 2. DeepFashion2用の次のファイルをダウンロードする。人の姿勢を推定する別のモデルとは、互換性が無い。
