@@ -7,6 +7,10 @@
 出力:
   apps/web/public/presets/thumbs/<kind>_<id>_{front,angle}.png   体に着けた正面と斜め45°（選択画面のサムネイル）
   assets/blender/out/presets/builds_check.png                    体型4種×プリセット（斜め45°と後ろ）
+
+女性は -- female を付ける（先に build_tshirt_female.py と build_presets.py -- female を実行しておく）。
+女性の体に女性のプリセット（presets/female/）を重ね、サムネイルは presets/female/thumbs/ に、確認画像は builds_check_female.png に書く。
+ブラウザは、女性のときはプリセットのパスの頭を /presets/female/ にする（AVATAR_MODELS の presetUrl）。
 """
 import json
 import math
@@ -20,18 +24,23 @@ import bpy  # noqa: E402
 import numpy as np  # noqa: E402
 from mathutils import Vector  # noqa: E402
 from mathutils.bvhtree import BVHTree  # noqa: E402
+import pitari_female as pf  # noqa: E402
 import pitari_tshirt as pt  # noqa: E402
 import pitari_presets as pp  # noqa: E402
 
+GENDER = pf.gender_from_args()
+FEMALE = GENDER == "female"
 MODELS = os.path.join(pp.ROOT, "apps", "web", "public", "models")
-THUMBS = os.path.join(pp.PRESETS, "thumbs")
+# 女性は、男性と同じ名前のファイルを female/ の下に置く（build_presets.py と同じ）
+PRESETS = os.path.join(pp.PRESETS, "female") if FEMALE else pp.PRESETS
+THUMBS = os.path.join(PRESETS, "thumbs")
 THUMB_PX = 512
 CHECK_PX = 320
 # サムネイルの色（ブラウザの初期値と同じにする想定）
 THUMB_HAIR = pp.HAIR_COLORS[1]
 THUMB_SKIN = pp.SKIN_COLORS[1]
 INSIDE_M = 0.002            # 体の面からこれより内側にある頂点を「めり込み」と数える
-CHECK_HEIGHTS_CM = [150.0, 195.0]
+CHECK_HEIGHTS_CM = list(pt.HEIGHT_RANGE_CM[GENDER])     # 入力できる身長の両端
 
 
 def srgb_to_linear(hex_color):
@@ -39,10 +48,15 @@ def srgb_to_linear(hex_color):
     return tuple(np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4))
 
 
-def import_glb(path, name):
+def import_glb(path, name, keep=None):
+    """glb を読み込む。keep を渡すと、その名前のメッシュだけを残す（女性の体の glb には、見えない着せるための体も入っている）"""
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     objs = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
+    if keep:
+        others = [o for o in objs if o.name != keep]
+        objs = [o for o in objs if o.name == keep]
+        pt.remove_objects(others)
     if len(objs) != 1:
         raise RuntimeError(f"{path}: メッシュが{len(objs)}個")
     obj = objs[0]
@@ -170,13 +184,22 @@ def compose(paths, cols, out):
     pt.log("確認画像:", out)
 
 
+def preset_file(path):
+    """presets.json のパス（/presets/...）を、この性別のファイルにする"""
+    rel = path.removeprefix("/presets/")
+    return os.path.join(PRESETS, *rel.split("/"))
+
+
 def main():
     pt.clear_scene()
     with open(os.path.join(pp.PRESETS, "presets.json"), encoding="utf-8") as fp:
         presets = json.load(fp)
-    with open(os.path.join(MODELS, "tshirt_male_height.json"), encoding="utf-8") as fp:
+    with open(os.path.join(MODELS, f"tshirt_{GENDER}_height.json"), encoding="utf-8") as fp:
         standard_cm = json.load(fp)["standard_cm"]
-    body = import_glb(os.path.join(MODELS, "avatar_male.glb"), "avatar")
+    body = import_glb(os.path.join(MODELS, f"avatar_{GENDER}.glb"), "avatar", keep="avatar")
+    # 女性はいつも下着を着ける（ブラウザと同じ）。体と同じ体型キー・身長キーを入れる
+    underwear = ([import_glb(os.path.join(MODELS, f"avatar_{GENDER}.glb"), pf.UNDERWEAR_NAME, keep=pf.UNDERWEAR_NAME)]
+                 if FEMALE else [])
     tint(body, THUMB_SKIN)
     masks = {e["id"]: hide_under_shoes(body, e["id"]) for e in presets["shoes"]}
     no_hidden = np.zeros(len(body.data.vertices))
@@ -187,7 +210,7 @@ def main():
             m.show_render = kind == "shoes" and pid == sid
     # 顔のパーツ（目・眉毛・まつ毛）はいつも着ける。眉毛・まつ毛（材質名が hair_）だけ髪の色を掛ける
     before = set(bpy.data.objects)
-    bpy.ops.import_scene.gltf(filepath=os.path.join(pp.ROOT, "apps", "web", "public", presets["face"]["path"].lstrip("/")))
+    bpy.ops.import_scene.gltf(filepath=preset_file(presets["face"]["path"]))
     face = [o for o in bpy.data.objects if o not in before and o.type == "MESH"]
     for o in face:
         if o.data.materials[0].name.startswith("hair"):
@@ -195,7 +218,7 @@ def main():
     items = []
     for kind in ("hair", "shoes"):
         for e in presets[kind]:
-            obj = import_glb(os.path.join(pp.ROOT, "apps", "web", "public", e["path"].lstrip("/")), f"{kind}_{e['id']}")
+            obj = import_glb(preset_file(e["path"]), f"{kind}_{e['id']}")
             if kind == "hair":
                 tint(obj, THUMB_HAIR)
             obj.hide_render = True
@@ -229,7 +252,7 @@ def main():
     paths = []
     for b in pt.BUILDS:
         vals = pt.build_values(b)
-        set_keys([body] + face + [o for *_, o in items], vals)
+        set_keys([body] + underwear + face + [o for *_, o in items], vals)
         for kind, pid, obj in items:
             obj.hide_render = False
             show_masks(kind, pid)
@@ -239,7 +262,7 @@ def main():
                 render(cam, lo, hi, view, p, CHECK_PX)
                 paths.append(p)
             obj.hide_render = True
-    compose(paths, len(items) * 2, os.path.join(pp.OUT, "builds_check.png"))
+    compose(paths, len(items) * 2, os.path.join(pp.OUT, "builds_check_female.png" if FEMALE else "builds_check.png"))
 
     # めり込み（体型4種 × 身長3つ）
     pt.log(f"めり込み（体の面から{INSIDE_M * 1000:.0f}mmより内側の頂点数／最大の深さ）")
