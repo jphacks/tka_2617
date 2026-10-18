@@ -3,7 +3,7 @@ import { supabase } from "#src/lib/supabase";
 import { env } from "#src/lib/env";
 import { bucket, imageRecordSchema } from "#src/lib/garment-records";
 import { requestInference } from "#src/lib/inference-client";
-import { categorySchema } from "#src/lib/measurement-schema";
+import { bboxSchema, categorySchema } from "#src/lib/measurement-schema";
 import { textureAcceptedSchema } from "#src/lib/garment-texture";
 import { HttpError } from "#src/lib/http-error";
 
@@ -11,15 +11,17 @@ const sourceSchema = z.object({
   category: categorySchema,
   created_at: z.iso.datetime({ offset: true }),
   garment_images: z.array(
-    imageRecordSchema.pick({
-      id: true,
-      role: true,
-      storage_key: true,
-      width_px: true,
-      height_px: true,
-      points: true,
-      paper_corners: true,
-    }),
+    imageRecordSchema
+      .pick({
+        id: true,
+        role: true,
+        storage_key: true,
+        width_px: true,
+        height_px: true,
+        points: true,
+        paper_corners: true,
+      })
+      .extend({ bbox: bboxSchema.nullable() }),
   ),
 });
 
@@ -32,7 +34,7 @@ export async function requestGarmentTexture(id: string) {
   const { data, error } = await supabase
     .from("garments")
     .select(
-      "category, created_at, garment_images(id, role, storage_key, width_px, height_px, points, paper_corners)",
+      "category, created_at, garment_images(id, role, storage_key, width_px, height_px, points, paper_corners, bbox)",
     )
     .eq("id", id)
     .eq("profile_id", env.DEMO_PROFILE_ID)
@@ -61,8 +63,8 @@ export async function requestGarmentTexture(id: string) {
   form.set("garmentCreatedAt", source.data.created_at);
   // 状態を聞くときに、裏面を撮り直す前の写真から作った作業を見分けるため
   form.set("backImageId", back.id);
-  // 採寸画面で確かめた点とA4の四隅を、推論し直して上書きさせないため
-  if (front.points.length > 0 || front.paper_corners.length > 0)
+  // 採寸画面で確かめた点・A4の四隅・服の範囲を、推論し直して上書きさせないため
+  if (front.points.length > 0 || front.paper_corners.length > 0 || front.bbox)
     form.set(
       "frontSaved",
       JSON.stringify({
@@ -70,6 +72,7 @@ export async function requestGarmentTexture(id: string) {
         heightPx: front.height_px,
         points: front.points,
         paperCorners: front.paper_corners,
+        bbox: front.bbox,
       }),
     );
   for (const [field, image] of [

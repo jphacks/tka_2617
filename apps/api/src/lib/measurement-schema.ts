@@ -79,6 +79,8 @@ export const measurementInputSchema = z
 export const metadataSchema = measurementInputSchema.safeExtend({
   name: z.string().trim().max(100).default(""),
   paperCorners: z.array(coordinateSchema).length(4).or(z.tuple([])),
+  // 採寸画面で確かめた服の範囲。テクスチャを作るときに服の検出を省く。送らなければnull
+  bbox: bboxSchema.nullable().default(null),
   modelVersion: z.string().max(100).nullable(),
   measurements: measurementsSchema,
   measurementVersion: z.literal(measurementVersion),
