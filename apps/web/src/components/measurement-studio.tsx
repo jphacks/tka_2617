@@ -22,6 +22,13 @@ import {
   type BackPhoto,
 } from "@/lib/back-photo";
 import { MeasurementProgress } from "@/components/measurement-progress";
+import { MaterialsEditor } from "@/components/materials-editor";
+import {
+  defaultMaterialRows,
+  materialRows,
+  materialsFromRows,
+  type MaterialRow,
+} from "@/lib/garment-materials";
 import type { MeasurementProgressState } from "@/lib/measurement-progress";
 import { GarmentMeasurements } from "@/components/garment-measurements";
 import { MeasurementImage } from "@/components/measurement-image";
@@ -67,6 +74,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     Partial<Record<MeasurementKey, boolean>>
   >({});
   const [name, setName] = useState("");
+  const [materialInput, setMaterialInput] =
+    useState<MaterialRow[]>(defaultMaterialRows);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<MeasurementProgressState | null>(
     null,
@@ -127,6 +136,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     setPhoto(null);
     setBack(null);
     setName(garment.name);
+    setMaterialInput(materialRows(garment.materials));
     setValues(garment.measurements);
     setOverrides({});
     setError("");
@@ -359,11 +369,17 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
       let backFailed = false;
       let textureMessage = "";
       let newlyAdded: AddedGarment | null = null;
+      const checked = materialsFromRows(materialInput);
+      if ("error" in checked) throw new Error(checked.error);
       if (editing) {
         await requestJson(`/api/garments/${editing.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, measurements: values }),
+          body: JSON.stringify({
+            name,
+            measurements: values,
+            materials: checked.materials,
+          }),
         });
         setEditing({ ...editing, measurements: { ...values } });
       } else {
@@ -395,6 +411,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             measurementVersion: ready.measurementVersion,
             name,
             measurements: values,
+            materials: checked.materials,
             colorFamily,
           }),
         );
@@ -421,7 +438,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
       }
       setMessage(
         (editing
-          ? "名前・寸法を更新しました"
+          ? "名前・寸法・素材を更新しました"
           : Object.values(values).some((value) => value !== null)
             ? "服と寸法をクローゼットに登録しました"
             : "服を登録しました。寸法はあとから入力できます。") +
@@ -521,6 +538,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                   setValues({ ...emptyMeasurements });
                   setOverrides({});
                   setName("");
+                  setMaterialInput(defaultMaterialRows);
                   setMode("dimensions");
                 });
             }}
@@ -724,6 +742,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                 }}
               />
             </label>
+            <MaterialsEditor rows={materialInput} onChange={setMaterialInput} />
             <div className="grid grid-cols-2 gap-4">
               {fields.map((definition) => (
                 <label className="block text-sm" key={definition.key}>
@@ -785,7 +804,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                 void save();
               }}
             >
-              {editing ? "名前・寸法を更新" : "クローゼットに登録"}
+              {editing ? "名前・寸法・素材を更新" : "クローゼットに登録"}
             </button>
             {editing && (
               <div className="flex flex-wrap justify-center gap-x-4">

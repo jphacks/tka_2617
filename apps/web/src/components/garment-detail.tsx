@@ -15,6 +15,7 @@ import { requestJson } from "@/lib/request";
 import { textureRequestMessage } from "@/lib/garment-texture";
 import { avatarUrl, loadOutfit, saveOutfit, wear } from "@/lib/outfit";
 import { editGarmentPath } from "@/lib/garment-edit";
+import { materialsSummary } from "@/lib/garment-materials";
 
 const seasons: { value: Season; label: string }[] = [
   { value: "spring", label: "春" },
@@ -365,6 +366,12 @@ export function GarmentDetail({ id }: { id: string }) {
             })}
           </dd>
         </div>
+        <div className="flex min-h-15 items-center justify-between gap-4 border-b border-line py-3">
+          <dt className="shrink-0 text-[13px] text-description">素材</dt>
+          <dd className="text-right text-sm wrap-anywhere">
+            {materialsSummary(garment.materials)}
+          </dd>
+        </div>
       </dl>
       <p role="status" className="mt-2 min-h-5 text-xs text-sub">
         {status}
@@ -380,7 +387,7 @@ export function GarmentDetail({ id }: { id: string }) {
           href={editGarmentPath(id)}
           className="mt-3 flex min-h-11 items-center text-xs text-description underline"
         >
-          名前・寸法を編集する
+          名前・寸法・素材を編集する
         </Link>
       </section>
 
