@@ -1,8 +1,8 @@
 import { supabase } from "#src/lib/supabase";
 import { HttpError } from "#src/lib/http-error";
-import { materialRecordSchema, type Material } from "#src/lib/materials";
+import { materialRecordSchema, type MaterialList } from "#src/lib/materials";
 
-export async function listMaterials(): Promise<{ materials: Material[] }> {
+export async function listMaterials(): Promise<MaterialList> {
   const { data, error } = await supabase
     .from("materials")
     .select("id, label, sort_order")

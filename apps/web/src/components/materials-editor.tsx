@@ -1,6 +1,6 @@
 "use client";
 
-import type { Material } from "@pitari/api";
+import type { Material, MaterialList } from "@pitari/api";
 import { useEffect, useState } from "react";
 import { totalPercent, type MaterialRow } from "@/lib/garment-materials";
 import { requestJson } from "@/lib/request";
@@ -23,7 +23,7 @@ export function MaterialsEditor({
 
   useEffect(() => {
     let active = true;
-    requestJson<{ materials: Material[] }>("/api/materials")
+    requestJson<MaterialList>("/api/materials")
       .then((data) => {
         if (active) setMaterials(data.materials);
       })
