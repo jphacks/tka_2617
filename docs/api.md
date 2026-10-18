@@ -120,7 +120,7 @@ PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons?, materials?,
 
 ### 色の系統
 
-服は色の系統を1つ持つ。値は`white`（白）・`black`（黒）・`gray`（グレー）・`navy`（紺）・`beige`（ベージュ）・`brown`（茶）・`red`（赤）・`pink`（ピンク）・`orange`（オレンジ）・`yellow`（黄）・`green`（緑）・`blue`（青）・`purple`（紫）。webが切り抜きの色から決めて登録で送り、違えばPATCHで直す。一覧に無い値は400。分け方は[ADR 0042](adr/0042-color-family-from-cutout.md)。
+服は色の系統を1つ持つ。値は`white`（白）・`black`（黒）・`gray`（グレー）・`navy`（紺）・`beige`（ベージュ）・`brown`（茶）・`red`（赤）・`pink`（ピンク）・`orange`（オレンジ）・`yellow`（黄）・`green`（緑）・`blue`（青）・`purple`（紫）。webが切り抜きの色から決めて登録で送り、違えばPATCHで直す。一覧に無い値は400。分け方は[ADR 0044](adr/0044-color-family-from-cutout.md)。
 
 ### PUT /v1/garments/:id/back
 

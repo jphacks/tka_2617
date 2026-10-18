@@ -19,7 +19,7 @@ export const colorFamilyLabels: Record<ColorFamily, string> = {
   purple: "紫",
 };
 
-// 1つの画素の色を、色の系統に分ける。r・g・bは0〜255。しきい値はADR 0042
+// 1つの画素の色を、色の系統に分ける。r・g・bは0〜255。しきい値はADR 0044
 export function colorFamilyOf(r: number, g: number, b: number): ColorFamily {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
