@@ -53,3 +53,11 @@ function measure<T>(read: () => T): T | null {
 function missingMeasurements(name: string): string {
   return `${name}は寸法が足りないため、着せられません`;
 }
+
+/** 寸法がそろっていて、アバターに着せられる服か */
+export function isWearable(garment: GarmentView): boolean {
+  return (
+    "worn" in
+    (garment.category === "trousers" ? wornTrousers(garment) : wornTop(garment))
+  );
+}

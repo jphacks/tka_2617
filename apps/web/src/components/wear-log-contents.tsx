@@ -7,13 +7,12 @@ import { garmentPhotoUrl } from "@/lib/garment-photo";
 import { outfitSlot, type Outfit, type OutfitSlot } from "@/lib/outfit";
 import { requestJson } from "@/lib/request";
 import {
-  createWearLogStore,
+  wearLogStore,
   monthCells,
   todayKey,
   type WearLog,
 } from "@/lib/wear-log";
 
-const wearLogStore = createWearLogStore(() => window.localStorage);
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const SLOT_LABELS: Record<OutfitSlot, string> = {
   top: "トップス",

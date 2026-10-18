@@ -1,6 +1,7 @@
 # 自動で作られるファイル。PRの行数（scripts/pr-size.sh）に数えない。GitHubのPRの差分でも、最初は畳まれる
 pnpm-lock.yaml linguist-generated=true
 apps/api/src/lib/database.types.ts linguist-generated=true
+apps/inference/native/Cargo.lock linguist-generated=true
 # Blenderのスクリプトが書き出すデータ
 apps/web/public/models/*.json linguist-generated=true
 apps/web/public/presets/*.json linguist-generated=true

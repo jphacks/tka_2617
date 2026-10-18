@@ -8,6 +8,7 @@ import { CameraIcon, HangerIcon } from "@/components/icons";
 import { requestJson } from "@/lib/request";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
 import { GarmentMeasurements } from "@/components/garment-measurements";
+import { ClosetDressUp } from "@/components/closet-dress-up";
 import {
   closetFilterLabel,
   closetFilters,
@@ -20,7 +21,47 @@ type Loaded = { filter: ClosetFilter; attempt: number } & (
   { garments: GarmentView[] } | { error: string }
 );
 
+const views = [
+  { id: "list", label: "一覧" },
+  { id: "dress", label: "着せ替え" },
+] as const;
+
+/** クローゼット：登録した服の一覧と、アバターに着せ替える画面を切り替える */
 export function ClosetContents() {
+  const [view, setView] = useState<(typeof views)[number]["id"]>("list");
+  return (
+    <>
+      <div
+        role="group"
+        aria-label="クローゼットの表示"
+        className="grid grid-cols-2 border-b border-line"
+      >
+        {views.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={view === id}
+            onClick={() => {
+              setView(id);
+            }}
+            className="min-h-11 border-b-3 border-transparent pt-0.5 text-sm text-description aria-pressed:border-main aria-pressed:font-semibold aria-pressed:text-main focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-main"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {view === "list" ? (
+        <ClosetList />
+      ) : (
+        <main className="motion-safe:animate-fade-in">
+          <ClosetDressUp />
+        </main>
+      )}
+    </>
+  );
+}
+
+function ClosetList() {
   const [filter, setFilter] = useState<ClosetFilter>("all");
   const [attempt, setAttempt] = useState(0);
   const [loaded, setLoaded] = useState<Loaded | null>(null);

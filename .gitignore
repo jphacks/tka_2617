@@ -27,6 +27,8 @@ __pycache__/
 apps/inference/models/*
 !apps/inference/models/.gitkeep
 apps/inference/.cache/
+# Rust拡張のビルド結果
+apps/inference/native/target/
 # 服ごとのテクスチャはPCで確かめるための出力で、服の写真を含むため共有しない
 apps/inference/textures/
 .tools/
