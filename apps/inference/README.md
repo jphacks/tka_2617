@@ -60,6 +60,15 @@ py -3.11 -m venv apps/inference/.venv
 ./apps/inference/.venv/Scripts/python.exe apps/inference/prepare_models.py --openvino
 ```
 
+テクスチャの三角形の貼り付けは、Rust拡張`pitari_fast`（`apps/inference/native/`）があれば使う（[ADR 0050](../../docs/adr/0050-rust-for-texture-warp.md)）。1面約0.6秒が約0.2秒になり、結果はPython版と同じ。なければPython版で動く。ビルドにはRust（[rustup](https://rustup.rs/)）とVisual StudioのC++ビルドツールが要る。パスに日本語があるとmaturinがpipの出力を読めないため、`PYTHONUTF8`を付ける。
+
+```powershell
+cd apps/inference/native
+../.venv/Scripts/python.exe -m pip install maturin==1.15.0
+$env:PYTHONUTF8 = "1"; $env:VIRTUAL_ENV = (Resolve-Path ../.venv).Path
+../.venv/Scripts/maturin.exe develop --release
+```
+
 ## 起動
 
 通常のweb・api・ローカルSupabaseは[セットアップ](../../docs/setup.md)を参照。推論用には`apps/inference/.env.example`から`.env`を作り、32文字以上のランダムな`INFERENCE_TOKEN`を設定する。同じ値を`apps/api/.env`にも追加する。既存の環境ファイルは上書きしない。

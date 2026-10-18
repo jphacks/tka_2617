@@ -28,6 +28,12 @@ sys.path.insert(0, str(PROJECT / "apps/inference"))
 from uv_pixels import opencv_to_pixel, pixel_to_opencv, uv_to_pixel  # noqa: E402
 from warp_support import mean_value_embedding, mean_value_weights, signed_area, triangle_mask  # noqa: E402
 
+try:
+    import pitari_fast
+except ImportError:
+    # Rust拡張（apps/inference/native）をビルドしていないPCでは、同じ結果を返すPython版を使う。
+    pitari_fast = None
+
 # 撮影画面と同じく、向きを確定してから長辺1600px以下に縮小する。
 LONG_SIDE = 1600
 # 服の縁で背景の色を拾わないよう、服の領域を少し内側へ縮めてから使う。
@@ -325,39 +331,59 @@ def photo_points(view, anchors, contour, template, notes, fraction_key):
     return points, estimated
 
 
+def warp_maps(part_id, parts, sources, targets, low_flags):
+    """三角形ごとのアフィン変換で、各テクセルが写真のどこを読むかを作る。pitari_fast.warp_mapsと同じ結果を返す。
+
+    テクセルは、part_idが三角形の部位と同じで、まだ書いていなければ、先に並んだ三角形が取る。
+    """
+    height, width = part_id.shape
+    map_x = np.full((height, width), -1.0, np.float32)
+    map_y = np.full((height, width), -1.0, np.float32)
+    written = np.zeros((height, width), bool)
+    low = np.zeros((height, width), bool)
+    for part, source, target, is_low in zip(parts, sources, targets, low_flags):
+        x0, y0 = np.floor(source.min(axis=0)).astype(int)
+        x1, y1 = np.ceil(source.max(axis=0)).astype(int)
+        x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, width - 1), min(y1, height - 1)
+        xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
+        window = (slice(y0, y1 + 1), slice(x0, x1 + 1))
+        inside = triangle_mask(source, xs, ys) & (part_id[window] == part) & ~written[window]
+        if not inside.any():
+            continue
+        affine = np.linalg.solve(np.column_stack([source, np.ones(3)]), target)
+        mapped = pixel_to_opencv(np.column_stack([xs[inside], ys[inside], np.ones(inside.sum())]) @ affine)
+        map_x[window][inside] = mapped[:, 0]
+        map_y[window][inside] = mapped[:, 1]
+        written[window] |= inside
+        if is_low:
+            low[window] |= inside
+    return map_x, map_y, written, low
+
+
 def warp_view(view, photo, garment, points, estimated, template, part_id, part_values):
     """テンプレートの三角形ごとにアフィン変換し、写真の色をテクスチャへ写す。"""
-    size = part_id.shape[0]
-    map_x = np.full((size, size), -1.0, np.float32)
-    map_y = np.full((size, size), -1.0, np.float32)
-    written = np.zeros((size, size), bool)
-    low = np.zeros((size, size), bool)
     spec = template["views"][view]
     flipped = []
+    parts, sources, targets, low_flags = [], [], [], []
     for part, part_spec in spec["parts"].items():
-        part_mask = part_id == part_values[part]
         for triangle in part_spec["triangles"]:
-            source = np.array([spec["points"][n]["pixel"] for n in triangle])
-            target = np.array([points[n] for n in triangle])
+            source = np.array([spec["points"][n]["pixel"] for n in triangle], dtype=float)
+            target = np.array([points[n] for n in triangle], dtype=float)
             # テクスチャも写真もyが下向きなので、同じ三角形は同じ向きになる。
             if signed_area(source) * signed_area(target) <= 0:
                 flipped.append(triangle)
                 continue
-            x0, y0 = np.floor(source.min(axis=0)).astype(int)
-            x1, y1 = np.ceil(source.max(axis=0)).astype(int)
-            x0, y0, x1, y1 = max(x0, 0), max(y0, 0), min(x1, size - 1), min(y1, size - 1)
-            xs, ys = np.meshgrid(np.arange(x0, x1 + 1) + 0.5, np.arange(y0, y1 + 1) + 0.5)
-            window = (slice(y0, y1 + 1), slice(x0, x1 + 1))
-            inside = triangle_mask(source, xs, ys) & part_mask[window] & ~written[window]
-            if not inside.any():
-                continue
-            affine = np.linalg.solve(np.column_stack([source, np.ones(3)]), target)
-            mapped = pixel_to_opencv(np.column_stack([xs[inside], ys[inside], np.ones(inside.sum())]) @ affine)
-            map_x[window][inside] = mapped[:, 0]
-            map_y[window][inside] = mapped[:, 1]
-            written[window] |= inside
-            if estimated.intersection(triangle):
-                low[window] |= inside
+            parts.append(part_values[part])
+            sources.append(source)
+            targets.append(target)
+            low_flags.append(bool(estimated.intersection(triangle)))
+    if sources:
+        # 三角形ごとのPythonのループが遅いため、Rust拡張があれば使う（ADR 0050）。
+        rasterize = pitari_fast.warp_maps if pitari_fast else warp_maps
+        map_x, map_y, written, low = rasterize(np.ascontiguousarray(part_id, np.uint8), parts, np.array(sources), np.array(targets), low_flags)
+    else:
+        map_x = map_y = np.full(part_id.shape, -1.0, np.float32)
+        written = low = np.zeros(part_id.shape, bool)
     eroded = cv2.erode(garment, np.ones((2 * MASK_ERODE_PX + 1,) * 2, np.uint8))
     colors = cv2.remap(photo, map_x, map_y, cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
     inside_garment = cv2.remap(eroded, map_x, map_y, cv2.INTER_NEAREST, borderMode=cv2.BORDER_CONSTANT, borderValue=0) > 0

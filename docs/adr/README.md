@@ -64,6 +64,7 @@
 - [0047 女性のアバターはいつも下着を着け、上の服は下着の外へ押し出す](0047-female-avatar-always-wears-underwear.md)
 - [0048 テクスチャを作るときは、同じ写真を切り抜いたときの範囲・点・服の領域を使い回す](0048-reuse-cutout-for-texture.md)
 - [0049 服の検出とランドマークは、OpenVINOに変換したモデルをCPUで動かす](0049-openvino-for-models.md)
+- [0050 テクスチャの三角形の貼り付けは、Rust拡張で並列に計算する](0050-rust-for-texture-warp.md)
 
 ## 参考文献
 
