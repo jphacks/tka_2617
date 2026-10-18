@@ -44,6 +44,7 @@ export default function TryOnClient() {
   const {
     gender,
     selectGender,
+    presetUrl,
     samples,
     heightRangeCm: [heightMinCm, heightMaxCm],
     build,
@@ -198,7 +199,7 @@ export default function TryOnClient() {
                 {h ? (
                   // eslint-disable-next-line @next/next/no-img-element -- 確認用ページなので最適化しない
                   <img
-                    src={h.thumbs.front}
+                    src={presetUrl(h.thumbs.front)}
                     alt=""
                     className="aspect-square w-full"
                   />
