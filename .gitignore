@@ -39,6 +39,9 @@ apps/inference/textures/
 *.[jJ][pP][eE][gG]
 # アプリが出すプリセットのサムネイル（Blenderのrender_presets.pyが描く）は共有する
 !apps/web/public/presets/**/thumbs/*.png
+# 手元で画面を試すためのダミーの服の画像（supabase/seed.sql）は共有する
+!supabase/seed/garments/**/*.png
+!supabase/seed/garments/**/*.jpg
 
 # Blenderの元モデル・作業ファイル・世代別バックアップはローカルに残す
 *.[bB][lL][eE][nN][dD]

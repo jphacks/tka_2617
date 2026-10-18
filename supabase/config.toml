@@ -118,6 +118,14 @@ file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
 
+# 服の画像のバケット。設定はmigrationと同じにする。
+# objects_pathのダミーの服の画像（seed.sqlの服）は、supabase startとdb resetで入る
+[storage.buckets.garments]
+public = false
+file_size_limit = "16MiB"
+allowed_mime_types = ["image/jpeg", "image/png"]
+objects_path = "./seed/garments"
+
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]
 enabled = true

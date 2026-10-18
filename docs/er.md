@@ -58,10 +58,10 @@ erDiagram
   }
 ```
 
-- profilesのデモ用の1行は、`supabase/seed.sql`で入れる。apiはDEMO_PROFILE_IDだけを使う。
-- categoryはshort_sleeve_top・long_sleeve_top・shirt・trousers。長そでは20261017000100_long_sleeve_top.sql、シャツは20261017000400_shirt_category.sqlで、今あるカテゴリの制約を広げる。measurementsは、[API一覧](api.md)の共通の型。
-- 画像は、服1着につき、roleごとに1枚ずつ保存できる。今のv2では、ランドマークもA4の四隅も、measurement画像に保存する。cutoutは表示用のPNGで、points・paper_cornersは空の配列、pixels_per_cmはnull。前のv1では、A4の四隅はoriginal画像にある。
-- backは裏面のJPEG、back_cutoutは裏面の表示用PNG。どちらも採寸しないので、points・paper_cornersは空の配列、pixels_per_cm・model_versionはnull。差し替えのたびに新しいキーで保存し、行の入れ替えは関数`replace_garment_back`（`20261017000200_replace_garment_back.sql`）で1つのトランザクションにする。関数はapiの`service_role`だけが実行できる（[ADR 0020](adr/0020-back-photo-as-separate-role.md)）。
+- profilesのデモ用1行と、デモユーザーのダミーの服4着を`supabase/seed.sql`で用意する。服の画像は`supabase/seed/garments/`にあり、`supabase/config.toml`の`[storage.buckets.garments]`でStorageに入る（[セットアップ](setup.md#ダミーの服)）。apiはDEMO_PROFILE_IDだけを使用する。
+- categoryはshort_sleeve_top・long_sleeve_top・shirt・trousers。長そでは20261017000100_long_sleeve_top.sql、シャツは20261017000400_shirt_category.sqlで既存のカテゴリ制約を拡張する。measurementsは[API一覧](api.md)の共通型。
+- 画像は服1着につき各roleを1枚ずつ保存できる。現在のv2ではランドマーク・A4四隅ともmeasurement画像に保存する。cutoutは表示用PNGでpoints・paper_cornersは空配列、pixels_per_cmはnull。旧v1ではA4四隅はoriginal画像にある。
+- backは裏面のJPEG、back_cutoutは裏面の表示用PNG。どちらも採寸しないため、points・paper_cornersは空配列、pixels_per_cm・model_versionはnull。差し替えのたびに新しいキーで保存し、行の入れ替えは関数`replace_garment_back`（`20261017000200_replace_garment_back.sql`）で1つのトランザクションにする。関数はapiの`service_role`だけが実行できる（[ADR 0020](adr/0020-back-photo-as-separate-role.md)）。
 - textureは推論サービスが作ったテクスチャのPNG。apiが推論サービスから受け取って保存し、作業フォルダ名を`texture_job`に持つ。差し替えは関数`save_garment_texture`で1つのトランザクションにし、同じ作業は2回保存しない。関数は服の行をロックしたまま、作業のもとになった裏面が今の裏面かを確かめ直し、違えば保存しない（`20261017000500_save_texture_checks_back.sql`）（[ADR 0033](adr/0033-serve-texture-through-api.md)）。
 - 購入時期と季節は[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。
 - 素材は混率で持ち、服1着につき1行以上（綿98%・ポリウレタン2%なら2行）。合計100%は、差し替えの関数`set_garment_materials`が確かめる。素材を入れずに登録した服と、素材を足す前の服は綿100%にする。素材の一覧`materials`はmigrationで入れ、画面からは足さない。

@@ -22,6 +22,8 @@
    supabase start
    ```
 
+   初めて起動したときは、[ダミーの服](#ダミーの服)が4着入る
+
 3. 環境変数のファイルを作る
 
    ```bash
@@ -107,6 +109,21 @@
 - 推論サービスの設定（`INFERENCE_TOKEN`）とモデル：[推論サービスのREADME](../apps/inference/README.md)
 - UVテンプレート：Tシャツは`artifacts/uv/pitari/uv_template.json`、長そでは`artifacts/uv/pitari/longsleeve/uv_template.json`、ズボンは`artifacts/uv/pitari/trousers/uv_template.json`。無い種類は「テクスチャを作る」が503になる。元のモデル（`.blend`など）を持っている人から受け取って`artifacts/uv/pitari/inputs/`に置き、[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)の手順で作る
 
+## ダミーの服
+
+クローンした直後でも、クローゼット・アバター・今日のコーデを試せるように、ダミーの服を4着入れてある（Tシャツ・パジャマ・スラックス2本）。服の行は`supabase/seed.sql`、画像は`supabase/seed/garments/`にある。`supabase start`で初めてDBを作ったときと、`supabase db reset`のときに入る。
+
+- 画像は、服だけが写る表と裏の切り抜きと、テクスチャ。人や部屋が写る元の写真は入れていない
+- 採寸の写真が無いので、ダミーの服では採寸とテクスチャを作り直せない
+- 裏面の写真は、裏面の切り抜きを白地に貼ったもの。apiは、裏面の写真が無い服のテクスチャを返さないため
+
+前から使っているローカルDBに、データを消さずに足すときは、次を実行する。同じ服がすでにあれば、何もしない。
+
+```bash
+supabase seed buckets
+docker exec -i supabase_db_pitari psql -U postgres < supabase/seed.sql
+```
+
 ## 服の採寸を開発するとき
 
 Pythonの推論サービスは、別に起動する。依存の分け方・モデルの置き方・画面の操作は、[推論サービスのREADME](../apps/inference/README.md)を見る。採寸画面は`http://localhost:3000/capture`。
@@ -148,6 +165,7 @@ Pythonのファイルは、uvがあればruffで調べて整形する（[ADR 002
 
 1. `supabase migration new <変更の名前>`でmigrationを作り、SQLを書く
    - `profiles`を作るときは、`supabase/seed.sql`にデモユーザー（`apps/api/.env.example`の`DEMO_PROFILE_ID`）の行も入れる。`supabase db reset`のたびに流れる
+   - 服のテーブルを変えるときは、`supabase/seed.sql`の[ダミーの服](#ダミーの服)の行も合わせる
 2. `supabase db reset`でローカルのDBに反映する
 3. `pnpm --filter @pitari/api db:types`で型（`apps/api/src/lib/database.types.ts`）を作り直し、commitする。CLIの版で型の書き方が変わるので、手元のCLIではなく、`npx`で決まった版を使う（[ADR 0029](adr/0029-commit-db-types.md)）
 4. [docs/er.md](er.md)を更新する
