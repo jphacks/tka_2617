@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import { WearLogContents } from "@/components/wear-log-contents";
 
 export const metadata: Metadata = {
   title: "記録 | Pitari",
 };
 
-// 着た服の記録は#114で作る。それまではメニューから行ける場所だけ置く
 export default function LogPage() {
   return (
     <>
@@ -14,12 +14,7 @@ export default function LogPage() {
         </div>
       </header>
 
-      <main className="px-6 py-10 text-center">
-        <p className="text-base font-bold">準備中</p>
-        <p className="mt-2 text-sm leading-[1.8] text-description">
-          着た服を日ごとに記録して、あとから見返せるようにします。
-        </p>
-      </main>
+      <WearLogContents />
     </>
   );
 }
