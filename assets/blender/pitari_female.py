@@ -9,6 +9,7 @@ mhclo の服は体の helper（helper-tights）の頂点を基準に着せるの
 体は変形させない（ADR 0007）。
 """
 import os
+import sys
 
 import bpy
 import numpy as np
@@ -26,6 +27,17 @@ FIT_BUST_RISE = 0.10        # 谷間を埋めるのは、乳首の高さから�
 FIT_TOP_FADE = 0.03         # その上端のこの幅で、前へ出す量を 0 へ下げる
 FIT_FRONT_TOL = 0.006       # 前面からこの距離以内の頂点を、前面の頂点として動かす
 WAIST_SEARCH = 0.01         # ウエスト（胴の一周が一番短い高さ）を、この間隔で探す
+
+
+def gender_from_args():
+    """コマンドラインの -- の後に female があれば "female"（build_longsleeve.py などの入口で使う）"""
+    args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+    return "female" if "female" in args else "male"
+
+
+def landmarks_file(name, gender):
+    """基準点の JSON のファイル名（out/ の下）。男性は前からの名前のまま"""
+    return f"{name}_landmarks.json" if gender == "male" else f"{name}_{gender}_landmarks.json"
 
 
 def group_verts(body, name):
@@ -167,9 +179,10 @@ def dress_on_fit(dress, topo):
     return dress_fit
 
 
-def add_fit_body(body, keep, topo, std, shapes, height_shapes, thumb_in):
+def add_fit_body(body, keep, topo, std, shapes, height_shapes, thumb_in=None):
     """着せるための体のメッシュ（焼き込んだ体と同じ頂点の並び）。体と同じ体型キー・身長キー・thumb_in と _cover を持つ。
-    std・shapes・height_shapes・thumb_in は helper 込みの体の形（build_tshirt と同じ）、keep は残した頂点"""
+    std・shapes・height_shapes・thumb_in は helper 込みの体の形（build_tshirt と同じ）、keep は残した頂点。
+    thumb_in は glb に書き出す体（build_tshirt_female.py）だけが渡す"""
     fit_std = fit_coords(std, topo)[keep]
     me = bpy.data.meshes.new(FIT_NAME)
     M = np.array(body.matrix_world.inverted())
@@ -193,15 +206,23 @@ def add_fit_body(body, keep, topo, std, shapes, height_shapes, thumb_in):
         pt.set_key_from_world(fit, pt.build_key(b), fit_coords(body_co, topo)[keep])
     for d, (body_co, _) in height_shapes.items():
         pt.set_key_from_world(fit, pt.height_key(d), pt.height_key_world(fit_std, fit_coords(body_co, topo)[keep]))
-    pt.set_key_from_world(fit, "thumb_in", fit_std + (thumb_in - std)[keep])
+    if thumb_in is not None:
+        pt.set_key_from_world(fit, "thumb_in", fit_std + (thumb_in - std)[keep])
     moved = np.linalg.norm(fit_std - std[keep], axis=1)
     pt.log(f"{FIT_NAME}: 前へ出した頂点 {int((moved > 1e-4).sum())}（最大 {moved.max() * 100:.2f}cm）")
     return fit
 
 
-def bust_verts(topo, keep):
-    """焼き込んだ体（helper を消した頂点の並び）での乳首の頂点番号"""
-    return np.searchsorted(np.where(keep)[0], topo["nipples"])
+def body_width_of(body, fit):
+    """build_tshirt.height_table に渡す、女性の体の身幅の測り方（キーの値, 脇の下 1cm 下の高さ → cm）。
+    body・fit は焼き込んで体型キー・身長キーを付けた体と、着せるための体"""
+    body_polys = pt.polys_of(body)
+    nipples = group_verts(body, "nippleTip")
+
+    def width(values, z):
+        P = pt.mixed_coords(body, values)
+        return body_width(P, pt.mixed_coords(fit, values), body_polys, z, float(P[nipples, 2].mean()))
+    return width
 
 
 def body_width(P, fit_P, body_polys, z, z_bust):

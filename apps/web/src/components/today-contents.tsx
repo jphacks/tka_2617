@@ -76,19 +76,11 @@ export function TodayContents() {
           </div>
         ))}
       </dl>
-      <p className="mt-1.5 text-[11px] text-sub">
-        {(weather === "failed" || (weather && !weather.temperatures)) &&
-          "気温を取得できませんでした。"}
-        {/* Open-Meteoのデータは出典の表示が要る（ADR 0040） */}
-        <a
-          href="https://open-meteo.com/"
-          target="_blank"
-          rel="noreferrer"
-          className="underline"
-        >
-          Weather data by Open-Meteo.com
-        </a>
-      </p>
+      {(weather === "failed" || (weather && !weather.temperatures)) && (
+        <p className="mt-1.5 text-[11px] text-sub">
+          気温を取得できませんでした。
+        </p>
+      )}
 
       <div className="mt-4 flex h-57.5 items-end justify-center rounded-xl bg-surface pt-4 pb-1.5">
         <AvatarPlaceholder />
@@ -144,6 +136,17 @@ export function TodayContents() {
         <CameraIcon className="size-4.5" strokeWidth={1.8} />
         服を登録する
       </Link>
+      {/* Open-Meteoのデータは出典の表示が要る（ADR 0040） */}
+      <p className="mt-6 text-center text-[11px] text-sub">
+        <a
+          href="https://open-meteo.com/"
+          target="_blank"
+          rel="noreferrer"
+          className="underline"
+        >
+          Weather data by Open-Meteo.com
+        </a>
+      </p>
     </main>
   );
 }

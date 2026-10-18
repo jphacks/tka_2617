@@ -26,9 +26,9 @@ import {
   defaultAvatarSettings,
   GENDER_LABELS,
   GENDERS,
-  HEIGHT_MAX_CM,
-  HEIGHT_MIN_CM,
   heightFromInput,
+  heightRangeOf,
+  modelGenderOf,
   withGender,
   type AvatarSettings,
 } from "@/lib/avatar-settings";
@@ -154,15 +154,18 @@ function SizeInput({
   );
 }
 
-/** 身長の入力欄。3Dで変えられる範囲の外なら、範囲を出す */
+/** 身長の入力欄。3Dで変えられる範囲（性別ごと）の外なら、範囲を出す */
 function HeightInput({
   value,
+  range,
   onChange,
 }: {
   value: string;
+  range: readonly [number, number];
   onChange: (value: string) => void;
 }) {
-  const isValid = heightFromInput(value) !== null;
+  const isValid = heightFromInput(value, range) !== null;
+  const [min, max] = range;
   return (
     <>
       <label className="flex items-center justify-between gap-3">
@@ -171,8 +174,8 @@ function HeightInput({
           <input
             type="number"
             inputMode="decimal"
-            min={HEIGHT_MIN_CM}
-            max={HEIGHT_MAX_CM}
+            min={min}
+            max={max}
             step={0.5}
             value={value}
             onChange={(e) => {
@@ -186,14 +189,14 @@ function HeightInput({
       </label>
       {!isValid && (
         <p className="text-right text-xs text-red-600">
-          {HEIGHT_MIN_CM}〜{HEIGHT_MAX_CM}cmで入力してください
+          {min}〜{max}cmで入力してください
         </p>
       )}
     </>
   );
 }
 
-/** 性別と、女性のときだけ骨格。今はどれを選んでも、男性のアバターを出す */
+/** 性別と、女性のときだけ骨格。女性は女性のアバター、男性と「選ばない」は男性のアバターを出す */
 function GenderFields({
   settings,
   onChange,
@@ -212,9 +215,14 @@ function GenderFields({
             onChange(withGender(settings, gender));
           }}
         />
+        {settings.gender === "unspecified" && (
+          <p className="text-xs leading-relaxed text-description">
+            男性のアバターで表示します。
+          </p>
+        )}
         {settings.gender === "female" && (
           <p className="text-xs leading-relaxed text-description">
-            今は男性のアバターで表示します。骨格は、女性のアバターを用意したときに使います。
+            骨格は、今はアバターの形に反映しません。
           </p>
         )}
       </Row>
@@ -289,9 +297,10 @@ function AvatarWithOutfit({
     bottom: bottom && "problem" in bottom ? bottom.problem : null,
   };
   return (
-    // 服が変わったら、試着の状態をその服の寸法で作り直す
+    // 服が変わったら、試着の状態をその服の寸法で作り直す。
+    // アバターの性別が変わったときも、その性別の3Dモデル・身長・見本の服で作り直す
     <AvatarEditor
-      key={avatarUrl(outfit)}
+      key={`${avatarUrl(outfit)} ${modelGenderOf(settings.gender)}`}
       settings={settings}
       onChange={onChange}
       worn={{
@@ -348,7 +357,8 @@ function AvatarSetup({
   const [heightInput, setHeightInput] = useState(() =>
     defaultAvatarSettings.heightCm.toFixed(1),
   );
-  const heightCm = heightFromInput(heightInput);
+  const heightRange = heightRangeOf(settings.gender);
+  const heightCm = heightFromInput(heightInput, heightRange);
 
   return (
     <main className="flex flex-col gap-5 px-4 py-5 text-[13px] motion-safe:animate-fade-in">
@@ -365,7 +375,11 @@ function AvatarSetup({
         }}
       >
         <GenderFields settings={settings} onChange={setSettings} />
-        <HeightInput value={heightInput} onChange={setHeightInput} />
+        <HeightInput
+          value={heightInput}
+          range={heightRange}
+          onChange={setHeightInput}
+        />
         <Row label="体型">
           <Segmented
             label="体型"
@@ -473,9 +487,13 @@ function AvatarEditor({
         <GenderFields settings={settings} onChange={onChange} />
         <HeightInput
           value={heightInput}
+          range={heightRangeOf(settings.gender)}
           onChange={(value) => {
             setHeightInput(value);
-            const heightCm = heightFromInput(value);
+            const heightCm = heightFromInput(
+              value,
+              heightRangeOf(settings.gender),
+            );
             if (heightCm !== null) update({ heightCm });
           }}
         />
