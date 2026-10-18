@@ -57,7 +57,7 @@ def template_ready(category):
 def submit(garment_id, category, front, back, models, lock, garment_created_at=None, back_image_id=None, front_saved=None):
     """待っている間に同じ服が届いたら、新しい写真で作り直すよう置き換える。
 
-    front_savedは、採寸画面で確かめてDBに保存した表の{"paperCorners", "points", "widthPx", "heightPx"}。
+    front_savedは、採寸画面で確かめてDBに保存した表の{"paperCorners", "points", "bbox", "widthPx", "heightPx"}。
     """
     with waiting_lock:
         queued = garment_id in waiting

@@ -81,6 +81,12 @@ class SavedPointsTests(unittest.TestCase):
         self.assertEqual([(p["id"], p["x"]) for p in record["points"]], [(1, 10.0), (2, 4.0)])
         self.assertEqual(self.models.calls, [])
 
+    def test_saved_bbox_skips_garment_detection(self):
+        saved = {"widthPx": 30, "heightPx": 40, "paperCorners": [], "points": [], "bbox": [4.0, 5.0, 26.0, 36.0]}
+        record = self.points_record(saved=saved)
+        self.assertEqual(record["bbox"], [4.0, 5.0, 26.0, 36.0])
+        self.assertEqual(self.models.calls, ["landmarks"])
+
     def test_partial_saved_corners_are_not_used(self):
         saved = {"widthPx": 30, "heightPx": 40, "paperCorners": SAVED_CORNERS[:3], "points": []}
         record = self.points_record(saved=saved)

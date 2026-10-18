@@ -40,10 +40,11 @@ class TextureTests(unittest.TestCase):
             self.assertEqual(submit.call_args.kwargs["back_image_id"], BACK)
             self.assertIsNone(submit.call_args.kwargs["front_saved"])
             saved = {"widthPx": 30, "heightPx": 40, "paperCorners": [[1, 2], [29, 2], [29, 38], [1, 38]],
-                     "points": [{"id": 1, "x": 10, "y": 8, "score": None}]}
+                     "points": [{"id": 1, "x": 10, "y": 8, "score": None}], "bbox": [2, 3, 28, 38]}
             textures(GARMENT, "shirt", self.upload(), self.upload(), None, BACK, json.dumps(saved))
             self.assertEqual(json.loads(json.dumps(submit.call_args.kwargs["front_saved"])), saved)
-            for bad in (("not-a-uuid", None), (BACK, "{}"), (BACK, json.dumps({**saved, "points": [{"id": 99, "x": 1, "y": 1}]}))):
+            for bad in (("not-a-uuid", None), (BACK, "{}"), (BACK, json.dumps({**saved, "points": [{"id": 99, "x": 1, "y": 1}]})),
+                        (BACK, json.dumps({**saved, "bbox": [28, 3, 2, 38]}))):
                 with self.assertRaises(HTTPException) as caught:
                     textures(GARMENT, "shirt", self.upload(), self.upload(), None, *bad)
                 self.assertEqual(caught.exception.status_code, 400)
