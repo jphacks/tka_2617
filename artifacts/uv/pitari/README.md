@@ -15,7 +15,7 @@
 
 ## ファイル
 
-Gitで共有するのはこのREADMEと`scripts/`だけ。元モデルの`pitari.blend`は別に用意し、`inputs/tshirt/`に置く。作業用Blenderファイル、写真、`uv_template.json`、`data/`・`masks/`・`check/`・`renders/`・`trials/`はローカル専用で、cloneには含まれない。下の生成物は、「作り直す方法」の手順で作り直す。元モデルとアプリ用GLBのUVが同じとは限らない。
+Gitで共有するのはこのREADMEと`scripts/`だけ。元モデルの`pitari.blend`は別に用意し、`inputs/tshirt/`に置く。作業用Blenderファイル、写真、`uv_template.json`、`data/`・`masks/`・`check/`・`renders/`・`trials/`はローカル専用で、cloneには含まれない。下の生成物は、「作り直す方法」の手順で作り直す。テクスチャを作るのに要る`uv_template.json`と`masks/`は、テクスチャ担当（GitHubの`runa64690`）から個人で受け取れる（[セットアップ](../../../docs/setup.md)の「モデルとUVテンプレートを受け取る」）。元モデルとアプリ用GLBのUVが同じとは限らない。
 
 | パス                                                 | 内容                                                                                     |
 | ---------------------------------------------------- | ---------------------------------------------------------------------------------------- |
