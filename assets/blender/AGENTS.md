@@ -104,6 +104,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性・女性のアバターとTシャツのgl
   - mhcloの服は体のhelper（`helper-tights`）の頂点を基準に置くので、肌と`helper-tights`の両方に同じ計算をする。着せるときは、体に着せるための体との差のキー`__fit`を値1で足し、着せたら消す（`pitari_female.dress_on_fit`）
 - 女性の体の身幅`body_width`は、脇の下1cm下の胴の一周÷2と、着せるための体で胸の一番高い所（乳首の高さ）の一周÷2の、大きい方（`pitari_female.body_width`）。胸の一周は谷間を渡って測るので、本物の体の一周より少し短い
 - 肌のテクスチャは`young_caucasian_female`（男性と同じく明暗だけの灰色）
+- いつも下着を着ける（[ADR 0047](../../docs/adr/0047-female-avatar-always-wears-underwear.md)）。`female_sportsuit01`の上（下のレギンスはつながっていない別の塊なので消す）を本物の体に着せ（`pitari_female.add_underwear`）、体と同じ体型キー・身長キーを持たせて`avatar_female.glb`に`underwear`として入れる。ブラウザは下着をいつも描き、上の服は下着の外へ押し出す（重ね着の`wraps`）。`verify_sizes.py`の画像には描かない
 
 ## 寸法の定義（`pitari_tshirt.measure`）
 
