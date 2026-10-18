@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Outfit } from "@/lib/outfit";
 
-// 着た服の記録。ログインを入れるまでは、ブラウザのlocalStorageに保存する（docs/adr/0045-wear-log-in-browser.md）
+// 着た服の記録。ログインを入れるまでは、ブラウザのlocalStorageに保存する（docs/adr/0046-wear-log-in-browser.md）
 const storageKey = "pitari.wear-log";
 
 const dateKeyPattern = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
