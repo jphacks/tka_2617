@@ -60,9 +60,10 @@ def garment_alpha(image, bbox, paper_corners, points=(), category=None):
 
 
 def garment_cutout(image, bbox, paper_corners, points=(), category=None):
+    """服の周りで切り詰めたBGRAの画像と、切り詰めない服の領域を返す。"""
     alpha = garment_alpha(image, bbox, paper_corners, points, category)
     height, width = image.shape[:2]
     ys, xs = np.where(alpha > 0)
     left, top = max(0, xs.min() - 2), max(0, ys.min() - 2)
     right, bottom = min(width, xs.max() + 3), min(height, ys.max() + 3)
-    return np.dstack([image, alpha])[top:bottom, left:right]
+    return np.dstack([image, alpha])[top:bottom, left:right], alpha

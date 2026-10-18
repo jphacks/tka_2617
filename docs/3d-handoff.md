@@ -1,14 +1,14 @@
 # 3D担当向けのデータ引き継ぎ
 
-2026-10-10時点の実装。採寸・登録機能はローカルの`integration/local-measurement-20261010`にあり、この資料の作成時点では未コミット・未push。相手がGitHubのmainを取得するだけでは、以下のAPI・型・migrationはまだ届かない。
+2026-10-10時点の実装。採寸・登録機能はローカルの`integration/local-measurement-20261010`にあり、この資料の作成時点では未コミット・未push。相手がGitHubのmainを取得しても、以下のAPI・型・migrationはまだ届かない。
 
 ## 最初に共有すること
 
-3D表示側は、既存APIから服の`category`と`measurements`を受け取る。寸法は服の寸法であり、人の体型ではない。`measurementVersion`も確認する。写真からの3Dメッシュ生成、GLBの読み込み、アバター体型の保存、テクスチャ生成はまだ実装していない。
+3D表示側は、既存APIから服の`category`と`measurements`を受け取る。寸法は服の寸法で、人の体型を表すものではない。`measurementVersion`も確認する。写真からの3Dメッシュ生成、GLBの読み込み、アバター体型の保存、テクスチャ生成はまだ実装していない。
 
-写真→A4から縮尺を算出→ランドマーク推定または手動指定→cmへの換算→ユーザーの数値修正→透過画像とともに保存、という流れ。写真全体を変形する遠近補正は廃止した。3D側は最後に保存した寸法を使う。点から再計算すると、ユーザーによる数値修正を失う場合がある。
+写真→A4から縮尺を計算→ランドマークを推定または手で指定→cmへ換算→ユーザーが数値を修正→透過画像と一緒に保存、という流れ。写真全体を変形する遠近補正は廃止した。3D側は最後に保存した寸法を使う。点から再計算すると、ユーザーによる数値修正を失う場合がある。
 
-このPCではHRNetの学習済み重みを配置し、CPUでの読み込みと合成画像への推論を確認した。実写真での精度・速度は別途検証が必要。各開発者のモデル配置は[推論README](../apps/inference/README.md)を参照する。
+このPCではHRNetの学習済み重みを置き、CPUでの読み込みと合成画像での推論を確かめた。実際の写真での精度と速度は、別に確かめる必要がある。各開発者がモデルを置く手順は、[推論README](../apps/inference/README.md)を見る。
 
 ## データの取得経路
 
@@ -20,9 +20,9 @@ flowchart LR
   api --> storage[("非公開StorageのJPEG・PNG")]
 ```
 
-ブラウザからは同じサイトの`/api/*`を呼ぶ。DBやHonoへ直接接続しない。内部トークンとSupabaseの秘密キーはサーバー側だけで扱う。
+ブラウザからは同じサイトの`/api/*`を呼ぶ。DBやHonoには直接つながない。内部トークンとSupabaseの秘密キーはサーバー側だけで扱う。
 
-スマホで画像を表示するときも、`/api/garments/{服ID}/images/{画像ID}`を使う。既存のimages[].urlは署名URLとして残しているが、ローカル開発では127.0.0.1を含むためスマホから直接アクセスできない。クローゼット用画像を選ぶ例は`apps/web/src/lib/garment-photo.ts`のgarmentPhotoUrlを参照する。
+スマホで画像を表示するときも、`/api/garments/{服ID}/images/{画像ID}`を使う。既存のimages[].urlは署名URLとして残しているが、ローカル開発では127.0.0.1を含むため、スマホから直接は開けない。クローゼット用画像を選ぶ例は`apps/web/src/lib/garment-photo.ts`のgarmentPhotoUrlを参照する。
 
 | リクエスト                                    | レスポンス                            | 用途                   |
 | --------------------------------------------- | ------------------------------------- | ---------------------- |
@@ -32,7 +32,7 @@ flowchart LR
 | `GET /api/garments/{id}`                      | `GarmentView`                         | 選んだ1着の最新データ  |
 | `GET /api/measurements`                       | `{ definitions, measurementVersion }` | 採寸項目・点番号・倍率 |
 
-`{id}`は服のUUID。画像IDやランドマーク番号とは別。ログイン前なのでapiが固定のDEMO_PROFILE_IDを使う。profile_idを画面から送らない。
+`{id}`は服のUUID。画像IDやランドマーク番号とは別のもの。ログインがまだ無いので、apiは固定のDEMO_PROFILE_IDを使う。profile_idを画面から送らない。
 
 クライアントコンポーネント内で使う例：
 
@@ -53,11 +53,11 @@ if (selected) {
 }
 ```
 
-型の共有は`import type`を使う。上の例はデータ取得部分だけで、3D表示処理は含まない。取得失敗の表示、服の選択状態、3Dエンジンの初期化・破棄は表示コンポーネント側で扱う。
+型の共有は`import type`を使う。上の例はデータ取得部分だけで、3D表示処理は含まない。取得に失敗したときの表示と、選んだ服の状態は、表示コンポーネントで扱う。3Dエンジンの初期化・破棄も同じコンポーネントで行う。
 
 ## APIで受け取るJSON
 
-実際の型は[garment-records.ts](../apps/api/src/lib/garment-records.ts)の`GarmentView`。次は**旧v1形式**の説明用データで、実測結果ではない。URL部分も説明用の文字列。旧データの読み出しは引き続き可能。現在のv2ではmeasurement画像にpaperCornersも入り、originalの代わりにcutout画像を保存する。
+実際の型は[garment-records.ts](../apps/api/src/lib/garment-records.ts)の`GarmentView`。次は**旧v1形式**の説明用データで、実測結果ではない。URL部分も説明用の文字列。旧データも引き続き読み出せる。現在のv2ではmeasurement画像にpaperCornersも入り、originalの代わりにcutout画像を保存する。
 
 ```json
 {
@@ -113,7 +113,7 @@ if (selected) {
 }
 ```
 
-この例の肩幅は675px÷15px/cmで45cm。ほかの寸法は数値の直接入力でも保存できる。全寸法が現在のpointsだけから復元できるとは限らない。
+この例の肩幅は675px÷15px/cmで45cm。ほかの寸法は数値の直接入力でも保存できる。保存したすべての寸法を、現在のpointsだけから計算し直せるとは限らない。
 
 | キー                 | 型と意味                                                      |
 | -------------------- | ------------------------------------------------------------- |
@@ -127,7 +127,7 @@ if (selected) {
 
 ## 寸法の意味
 
-全項目の単位はcm。自動計算は小数1桁に丸めるが、保存API自体は小数1桁に限定していない。保存時は0より大きく1000以下、またはnullを許す。0は未測定の意味で使わない。
+全項目の単位はcm。自動計算は小数1桁に丸めるが、保存APIでは、小数1桁に限っていない。保存時は0より大きく1000以下、またはnullを許す。0は未測定の意味で使わない。
 
 | 服      | キー              | 意味                 | 写真からの計算       |
 | ------- | ----------------- | -------------------- | -------------------- |
@@ -149,9 +149,9 @@ if (selected) {
 - `waistCm: 80`はすでに周囲80cm。さらに2倍しない。
 - `bodyWidthCm: 50`は平置き幅50cm。胸囲50cmとして扱わない。身体の胸囲でもない。
 - わたり幅・裾幅は幅で、周囲長ではない。
-- 股下は一般的な片脚の縫い目に沿う長さと異なる。モデルのパラメータ名がinseamでも、そのまま一致するとは限らない。股上と足して総丈として扱わない。
+- 股下は、一般的な片脚の縫い目に沿う長さとは違う。モデルのパラメータ名がinseamでも、そのまま一致するとは限らない。股上と足して総丈として扱わない。
 - nullは未測定・点不足・対象外など。0へ置き換えない。必要な寸法が欠けているときに入力を求めるか、モデルの初期寸法を使うかは3D側の仕様として決める。
-- APIは全10項目を持つ。通常はカテゴリに関係しない項目がnullだが、3D側はcategoryに応じて使用項目を選ぶ。
+- APIは全10項目を持つ。通常はカテゴリに関係しない項目がnullになる。3D側は、categoryに応じて使う項目を選ぶ。
 - 写真の点や縮尺がなくても、手入力された寸法は有効。3D表示にpointsの存在を必須にしない。
 
 ## 画像とランドマークの座標
@@ -163,7 +163,11 @@ if (selected) {
 - `original`：旧v1の遠近補正前JPEG。旧データではmeasurementが補正後JPEG、A4四隅はoriginalにある。
 - `back`・`back_cutout`：裏面のJPEGと表示用の透過PNG。採寸しないので点・A4四隅・縮尺を持たない。裏面がない服もある。
 
-服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。アプリからは`GET /api/garments/{服ID}/texture`で状態を聞き、`imageId`があれば`/api/garments/{服ID}/images/{imageId}`のPNGを貼る。作り直しの間も、前に作ったものがあれば`imageId`が返る。`processing`の間は数秒おきに聞き直す（[API一覧](api.md)の「テクスチャの状態を聞く」、[ADR 0033](adr/0033-serve-texture-through-api.md)）。three.jsでは`TextureLoader`で読み、`texture.flipY = false`、`texture.colorSpace = SRGBColorSpace`にしてから`map`に入れる。glTFのUVの向きに合わせるため（runa、#67）。アバターの画面では、着ている登録した服ごとに`useGarmentTexture`（`apps/web/src/components/try-on/use-garment-texture.ts`）が状態を聞き、3D側の`useTextureMap`が貼る。読み込む間とテクスチャが無いときは、材質の色のまま出す。一度貼った後に聞き直せなくても、貼ったものは残す（Storageに保存済みのため）。貼る間は材質の色を白にする（色が画像に掛かるため）。Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせている。テンプレートのUVは、3つともアプリのglbと一致することを確かめた（#67）。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
+服ごとのテクスチャは推論サービスがPC内の`apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/texture.png`に作る。アプリからは`GET /api/garments/{服ID}/texture`で状態を聞き、`imageId`があれば`/api/garments/{服ID}/images/{imageId}`のPNGを貼る。作り直しの間も、前に作ったものがあれば`imageId`が返る。`processing`の間は数秒おきに聞き直す（[API一覧](api.md)の「テクスチャの状態を聞く」、[ADR 0033](adr/0033-serve-texture-through-api.md)）。three.jsでは`TextureLoader`で読み、`texture.flipY = false`、`texture.colorSpace = SRGBColorSpace`にしてから`map`に入れる。glTFのUVの向きに合わせるため（runa、#67）。
+
+アバターの画面では、着ている登録した服ごとに`useGarmentTexture`（`apps/web/src/components/try-on/use-garment-texture.ts`）が状態を聞き、3D側の`useTextureMap`が貼る。読み込む間とテクスチャが無いときは、材質の色のまま出す。一度貼った後に聞き直せなくても、貼ったものは残す（Storageに保存済みのため）。貼る間は材質の色を白にする（色が画像に掛かるため）。
+
+Tシャツは`artifacts/uv/pitari/inputs/tshirt/pitari.blend`の半袖トップスのUV（`pitari`）を使う。長そでとズボンはそれぞれ`inputs/longsleeve/`と`inputs/trousers/`の受領モデルに合わせている。テンプレートのUVは、3つともアプリのglbと一致することを確かめた（#67）。テンプレートの再生成手順は[UVテンプレートのREADME](../artifacts/uv/pitari/README.md)を参照。
 
 現在の画面からはmeasurementとcutoutの2枚を保存し、裏面を撮った場合はbackとback_cutoutも保存する。服1着につき各roleは最大1枚。クローゼットの一覧は表だけを出し、cutout→measurement→originalの順で選ぶ（`garmentPhotoUrl`）。点を見るときは必ずmeasurementを選ぶ。
 
@@ -175,15 +179,15 @@ if (selected) {
 - Tシャツは1〜25、パンツは1〜14。全点がそろう保証はなく、空配列も許す。配列の7番目ではなく、`find((point) => point.id === 7)`で7番を取得する。
 - pointsは、その画像レコードのid・widthPx・heightPxと組にして扱う。他のroleの画像へ同じ点を重ねない。
 - 自動推定点のscoreはHRNetのヒートマップ値。確率や寸法の誤差ではなく、DeepFashion2アノテーションの可視性vでもない。手動点はnull。
-- cmの計算では、表示上のCSSピクセルではなく、保存された画像座標とpixelsPerCmを使う。
+- cmの計算には、保存された画像座標とpixelsPerCmを使う。画面に表示するときのCSSピクセルは使わない。
 - pixelsPerCmは、そのmeasurement画像上の「1cmあたり何pxか」。切り抜き画像に流用しない。
 - v2ではpaperCornersもmeasurement側に保存する。旧v1ではoriginal側に保存されている。
 
-モデル内部の切り抜き・縮小座標はPython側でmeasurement画像へ戻してから返す。3D側で再度戻す必要はない。cutoutは別の原点・画像サイズを持ち、measurementからcutoutへの座標変換は提供しない。
+モデル内部の切り抜き・縮小座標はPython側でmeasurement画像へ戻してから返す。3D側で再度戻す必要はない。cutoutは原点と画像サイズが違う。measurementからcutoutへ座標を変換する処理は用意しない。
 
 ## 永続保存の場所
 
-画像ファイルはStorage、数値と関連情報はPostgresのテーブルに分けて保存する。JSONファイルを1着ずつローカルに作る方式ではない。
+画像ファイルはStorageに、数値と関連情報はPostgresのテーブルに分けて保存する。服1着ずつのJSONファイルをローカルに作る方式ではない。
 
 | 保存先                      | 主なデータ                                                                                                              |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -194,9 +198,9 @@ if (selected) {
 
 `measurements`、`points`、`paper_corners`はjsonb。jsonbはJSONのオブジェクト・配列をDBの列に保存する型。DB列名はsnake_caseだが、measurementsの中のキーはshoulderWidthCmなどのcamelCaseのまま。
 
-Storageのキーは`{profileId}/{garmentId}/measurement.jpg`または`cutout.png`。JPEG・PNGとも1枚8MiBまで。バケットは非公開で、APIが10分間有効な署名URLを発行する。URL自体を永続IDにせず、期限切れなら服のAPIを再取得する。
+Storageのキーは`{profileId}/{garmentId}/measurement.jpg`または`cutout.png`。JPEG・PNGとも1枚8MiBまで。バケットは非公開で、APIが10分間有効な署名URLを発行する。URL自体は永続的なIDにしない。期限が切れたら、服のAPIから取得し直す。
 
-`modelVersion`はランドマーク推論モデルの版で、GLBの版ではない。`measurementVersion`は採寸式の版。両者を混同しない。手動修正の項目別フラグ・修正前の寸法・寸法ごとの信頼度はDBへ保存していない。
+`modelVersion`はランドマーク推論モデルの版で、GLBの版ではない。`measurementVersion`は採寸式の版。両者を混同しない。項目ごとに手で直したかを示すフラグ、修正前の寸法、寸法ごとの信頼度は、DBに保存していない。
 
 推論時のbbox・imageBase64・cutoutBase64・warnings・elapsedMsは、服の取得APIには含めない。bboxはDBに保存していない。画像はBase64文字列ではなくJPEG・PNGとしてStorageへ保存する。
 
@@ -213,7 +217,7 @@ Storageのキーは`{profileId}/{garmentId}/measurement.jpg`または`cutout.png
 | [apps/web/src/lib/request.ts](../apps/web/src/lib/request.ts)                                 | 既存の画面側API取得ヘルパー                                                                        |
 | [apps/web/src/components/closet-contents.tsx](../apps/web/src/components/closet-contents.tsx) | 保存済みの服を取得して表示する実装例                                                               |
 
-3Dライブラリは現時点のpackage.jsonに追加されていない。採用するものを決め、依存追加はプロジェクトルールに沿って確認する。window・canvas等を使う表示部分はクライアントコンポーネントとして実装し、共通レイアウトと下部ナビは維持する。
+3Dライブラリは現時点のpackage.jsonに追加されていない。採用するものを決め、依存追加はプロジェクトルールに沿って確認する。window・canvasなどを使う表示部分は、クライアントコンポーネントとして作る。共通レイアウトと下部ナビはそのまま使う。
 
 ### データの契約を読む場所
 
@@ -225,11 +229,11 @@ Storageのキーは`{profileId}/{garmentId}/measurement.jpg`または`cutout.png
 | [apps/api/src/lib/garment-view.ts](../apps/api/src/lib/garment-view.ts)             | DB名からAPI名への変換と画像URLの発行     |
 | [apps/api/src/app.ts](../apps/api/src/app.ts)                                       | webへ公開する型のexportとルート登録      |
 
-3D表示だけなら、これらのAPI契約を変更する必要はない。
+3D表示だけなら、これらのAPIの入出力を変える必要はない。
 
 ### 保存データを増やす場合
 
-APIを追加する順番は、docs/api.md→Zodスキーマ→Honoのroutes→webのBFF。DB変更は新しいmigrationから行い、docs/er.mdとADRも更新する。
+APIを追加する順番は、docs/api.md→Zodスキーマ→Honoのroutes→webのBFF。DBを変えるときは、新しいmigrationを作る。docs/er.mdとADRも更新する。
 
 - [apps/api/src/routes/garments.ts](../apps/api/src/routes/garments.ts)：服の入力検証。
 - [apps/api/src/services/create-garment.ts](../apps/api/src/services/create-garment.ts)：服・画像を新規保存。
@@ -239,7 +243,7 @@ APIを追加する順番は、docs/api.md→Zodスキーマ→Honoのroutes→we
 - `apps/web/src/app/api/garments/route.ts`、`apps/web/src/app/api/garments/[id]/route.ts`：ブラウザ向けの中継。
 - [現在のmigration](../supabase/migrations/20261010000100_garment_measurements.sql)：既存テーブルの構造を確認する。適用済みなので、機能追加のためにこのファイルを書き換えず、新しいmigrationを作る。
 
-服のPATCHではmeasurements全体を置き換える。1項目だけ送ると省略した寸法はnullになるため、部分編集は取得済みmeasurementsを展開してから送る。名前・寸法以外のGLB URLや体型パラメータを現在のPATCHに送っても受け付けない。
+服のPATCHではmeasurements全体を置き換える。1項目だけ送ると、省略した寸法はnullになる。一部を編集するときも、取得済みのmeasurementsを展開してから送る。名前・寸法以外のGLB URLや体型パラメータを現在のPATCHに送っても受け付けない。
 
 ```ts
 await requestJson(`/api/garments/${garment.id}`, {
@@ -253,7 +257,7 @@ await requestJson(`/api/garments/${garment.id}`, {
 
 ## これから3D担当と決めること
 
-現在はGLB・メッシュ・骨格・モーフ名・UV・テクスチャ・生地特性・アバターの身長体重・着用中の服IDを保存する欄がない。アバター用APIとテーブルも未実装。
+現在はGLB・メッシュ・骨格・モーフ名・UV・テクスチャ・生地特性・アバターの身長体重・着用中の服IDを保存する欄がない。アバター用のAPIとテーブルも、まだ作っていない。
 
 最初に、次を合意する。
 
@@ -265,7 +269,7 @@ await requestJson(`/api/garments/${garment.id}`, {
 6. GLBの版・体型・着用状態など、永続化が必要な項目。
 7. 後で導入するテクスチャのUV、前後面、画像形式。
 
-measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過PNG。どちらもUV展開済みテクスチャではない。写真をそのままGLBへ貼れば柄が正しく合う、という契約にはしていない。また、少数の平置き寸法だけで実際の立体形状・厚み・着用時のしわは一意に決まらない。
+measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過PNG。どちらもUV展開済みテクスチャではない。写真をそのままGLBへ貼れば柄が正しく合う、という契約にはしていない。また、少数の平置き寸法だけでは、実際の立体の形・厚み・着たときのしわは一つに決まらない。
 
 最初の接続確認は、手動で寸法を入れたTシャツを1着登録→APIで取得→3D画面にGLBを表示→1項目の寸法変更を反映、の順に進める。HRNetの精度検証と並行して進められる。
 
@@ -301,4 +305,4 @@ measurementは背景・A4・しわを含むJPEGで、cutoutは表示用の透過
 
 ## 長そでの受け渡し
 
-`long_sleeve_top`の登録・採寸・写真からのテクスチャ生成に対応した。寸法キーはTシャツと同じ4項目。素材は`artifacts/uv/pitari/inputs/longsleeve/`へ整理し、生成テンプレートは`artifacts/uv/pitari/longsleeve/`へ保存する。受領GLBとBlenderの頂点・UVの一致を検証済み。[再生成と制約](../artifacts/uv/pitari/inputs/longsleeve/README.md)を参照。アバター画面（`/avatar`）では、登録した長そでの実寸とテクスチャで着せる。
+`long_sleeve_top`の登録・採寸・写真からのテクスチャ生成に対応した。寸法キーはTシャツと同じ4項目。素材は`artifacts/uv/pitari/inputs/longsleeve/`へ整理し、生成テンプレートは`artifacts/uv/pitari/longsleeve/`へ保存する。受け取ったGLBとBlenderで、頂点・UVが一致することを確かめた。[再生成と制約](../artifacts/uv/pitari/inputs/longsleeve/README.md)を参照。アバター画面（`/avatar`）では、登録した長そでの実寸とテクスチャで着せる。

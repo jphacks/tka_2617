@@ -6,10 +6,10 @@
 - `shirt_male.glb`：シャツ単体。アプリの`apps/web/public/models/shirt_male.glb`と同じファイル（SHA-256が一致）
 - `uv_layout_pitari.svg`・`uv_layout_pitari.png`：2048×2048のUV展開図（UVは`pitari`）
 - `check_grid_front.png`・`check_grid_back.png`：UVの確認用の格子画像
-- `mesh_info.json`：受領したメッシュ情報。記載されたハッシュは提供元の値として保持する
+- `mesh_info.json`：受領したメッシュ情報。書かれたハッシュは、提供元の値として残す
 - `shirt_landmarks.json`：3D用の頂点番号。長そでの`longsleeve_landmarks.json`と同じ項目に、前立て（`front_edge`）・前身頃（`front_panels`）・襟（`collar_verts`）を足したもの。写真のDeepFashion2の番号とは別物
 
-Gitで共有するのは、このREADME・`mesh_info.json`・`shirt_landmarks.json`だけ。Blenderファイル・GLB・SVG・画像は`.gitignore`で除外しているため、別途このフォルダに配置する。
+Gitで共有するのは、このREADME・`mesh_info.json`・`shirt_landmarks.json`だけ。Blenderファイル・GLB・SVG・画像は、`.gitignore`で除外している。このフォルダに別に置く。
 
 ## テンプレートの再生成
 
@@ -22,7 +22,7 @@ Gitで共有するのは、このREADME・`mesh_info.json`・`shirt_landmarks.js
 ./apps/inference/.venv/Scripts/python.exe artifacts/uv/pitari/scripts/selftest_synthetic.py --category shirt
 ```
 
-出力は`artifacts/uv/pitari/shirt/`。`uv_template.json`と`masks/`を推論サービスが読み込む。部位と三角形の確認画像は`check/template_parts.png`、検証結果は`data/`、合成写真の結果は`../trials/selftest_shirt/`に保存する。テンプレートを作った後は推論サービスの再起動なしで生成に使える。
+出力は`artifacts/uv/pitari/shirt/`。`uv_template.json`と`masks/`を推論サービスが読み込む。部位と三角形の確認画像は`check/template_parts.png`、検証結果は`data/`、合成写真の結果は`../trials/selftest_shirt/`に保存する。テンプレートを作ったあとは、推論サービスを起動し直さずに生成に使える。
 
 手動で表裏写真から生成する場合：
 

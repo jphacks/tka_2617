@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from fastapi import HTTPException, UploadFile
 
-from pitari import texture
+from pitari import detections, texture
 from pitari.app import texture_image, texture_status, textures
 
 GARMENT = "11111111-1111-4111-8111-111111111111"
@@ -38,9 +38,15 @@ class TextureTests(unittest.TestCase):
             self.assertEqual(submit.call_args.args[1], "shirt")
             textures(GARMENT, "shirt", self.upload(), self.upload(), None, BACK)
             self.assertEqual(submit.call_args.kwargs["back_image_id"], BACK)
-            with self.assertRaises(HTTPException) as caught:
-                textures(GARMENT, "shirt", self.upload(), self.upload(), None, "not-a-uuid")
-            self.assertEqual(caught.exception.status_code, 400)
+            self.assertIsNone(submit.call_args.kwargs["front_saved"])
+            saved = {"widthPx": 30, "heightPx": 40, "paperCorners": [[1, 2], [29, 2], [29, 38], [1, 38]],
+                     "points": [{"id": 1, "x": 10, "y": 8, "score": None}]}
+            textures(GARMENT, "shirt", self.upload(), self.upload(), None, BACK, json.dumps(saved))
+            self.assertEqual(json.loads(json.dumps(submit.call_args.kwargs["front_saved"])), saved)
+            for bad in (("not-a-uuid", None), (BACK, "{}"), (BACK, json.dumps({**saved, "points": [{"id": 99, "x": 1, "y": 1}]}))):
+                with self.assertRaises(HTTPException) as caught:
+                    textures(GARMENT, "shirt", self.upload(), self.upload(), None, *bad)
+                self.assertEqual(caught.exception.status_code, 400)
             for garment_id, front in (("not-a-uuid", self.upload()), (GARMENT, self.upload(b"not a jpeg"))):
                 with self.assertRaises(HTTPException) as caught:
                     textures(garment_id, "short_sleeve_top", front, None)
@@ -56,7 +62,7 @@ class TextureTests(unittest.TestCase):
             texture.submit(GARMENT, "trousers", b"old", None, None, None)
             texture.submit(GARMENT, "trousers", b"new", b"back", None, None)
             self.assertEqual(start.call_count, 1)
-            self.assertEqual(texture.waiting[GARMENT], ("trousers", b"new", b"back", None, None))
+            self.assertEqual(texture.waiting[GARMENT], ("trousers", b"new", b"back", None, None, None))
             for number in range(texture.MAX_WAITING - 1):
                 texture.submit(f"{number}", "trousers", b"x", None, None, None)
             with self.assertRaises(texture.QueueFull):
@@ -94,6 +100,42 @@ class TextureTests(unittest.TestCase):
             self.assertEqual(failed["error"], "点が足りません")
             self.assertNotIn("textureFile", failed)
             self.assertTrue((runs[1] / "input_front.jpg").is_file())
+
+    def test_photos_cut_out_before_skip_the_models(self):
+        back = cv2.imencode(".jpg", np.full((40, 30, 3), 60, dtype=np.uint8))[1].tobytes()
+        mask = np.zeros((40, 30), np.uint8)
+        mask[5:35, 5:25] = 255
+        points = [{"id": 1, "x": 10.0, "y": 8.0, "score": 0.9}]
+        seen = {}
+
+        def generate(out, views, inference, **kwargs):
+            seen.update(views)
+            (out / "texture.png").write_bytes(b"generated png")
+            return {"coverage": {}}
+
+        with tempfile.TemporaryDirectory() as folder, patch.object(texture, "OUTPUT", Path(folder) / "textures"), \
+                patch.object(detections, "FOLDER", Path(folder) / "detections"):
+            # シャツは長そでとして切り抜く。
+            detections.remember(self.raw, 30, 40, "long_sleeve_top", [2, 3, 28, 38], [], points, mask, "v1")
+            with patch.object(texture.photo_to_texture, "make_texture", side_effect=generate):
+                texture.make(GARMENT, "shirt", self.raw, back, None, None)
+        self.assertEqual(seen["front"]["detection"]["points"], points)
+        self.assertTrue(np.array_equal(seen["front"]["detection"]["mask"], mask))
+        self.assertIsNone(seen["back"]["detection"])
+
+    def test_saved_front_is_handed_to_the_converter(self):
+        saved = {"widthPx": 30, "heightPx": 40, "paperCorners": [], "points": [{"id": 1, "x": 10.0, "y": 8.0, "score": None}]}
+        seen = {}
+
+        def generate(out, views, inference, **kwargs):
+            seen.update(views)
+            (out / "texture.png").write_bytes(b"generated png")
+            return {"coverage": {}}
+
+        with tempfile.TemporaryDirectory() as folder, patch.object(texture, "OUTPUT", Path(folder)),                 patch.object(texture.photo_to_texture, "make_texture", side_effect=generate):
+            texture.make(GARMENT, "shirt", self.raw, self.raw, None, None, front_saved=saved)
+        self.assertEqual(seen["front"]["saved"], saved)
+        self.assertNotIn("saved", seen["back"])
 
     def test_run_name_is_in_japan_time(self):
         name = texture.run_name(GARMENT, "trousers", datetime(2026, 10, 17, tzinfo=timezone.utc))
