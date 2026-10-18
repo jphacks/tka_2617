@@ -506,7 +506,12 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
         if saved and [saved["widthPx"], saved["heightPx"]] != [width, height]:
             notes.append("保存した点・A4の四隅と写真の大きさが違うため、使わなかった")
             saved = None
-        known = {key: saved[key] for key in ("paperCorners", "points") if saved and saved[key]}
+        known = {}
+        # 四隅がそろわないと縮尺を決められないので、4点のときだけ使い、ほかは紙を推論する
+        if saved and len(saved["paperCorners"]) == 4:
+            known["paperCorners"] = saved["paperCorners"]
+        if saved and saved["points"]:
+            known["points"] = saved["points"]
         if points_path:
             record = json.loads(Path(points_path).read_text(encoding="utf-8"))
             if [record["widthPx"], record["heightPx"]] != [width, height]:

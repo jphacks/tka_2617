@@ -81,6 +81,12 @@ class SavedPointsTests(unittest.TestCase):
         self.assertEqual([(p["id"], p["x"]) for p in record["points"]], [(1, 10.0), (2, 4.0)])
         self.assertEqual(self.models.calls, [])
 
+    def test_partial_saved_corners_are_not_used(self):
+        saved = {"widthPx": 30, "heightPx": 40, "paperCorners": SAVED_CORNERS[:3], "points": []}
+        record = self.points_record(saved=saved)
+        self.paper.assert_called_once()
+        self.assertEqual(record["paperCorners"], MODEL_CORNERS)
+
     def test_saved_values_for_another_size_are_not_used(self):
         saved = {"widthPx": 60, "heightPx": 80, "paperCorners": SAVED_CORNERS, "points": SAVED_POINTS}
         record = self.points_record(saved=saved)
