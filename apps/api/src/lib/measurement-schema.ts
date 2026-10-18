@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { garmentMaterialsSchema } from "#src/lib/materials";
+import { colorFamilySchema } from "#src/lib/color-family";
 
 // シャツは着せる3Dモデルを分けるための種類で、推論では長そでとして検出・採寸する
 export const categorySchema = z.enum([
@@ -80,6 +82,8 @@ export const metadataSchema = measurementInputSchema.safeExtend({
   modelVersion: z.string().max(100).nullable(),
   measurements: measurementsSchema,
   measurementVersion: z.literal(measurementVersion),
+  materials: garmentMaterialsSchema.optional(),
+  colorFamily: colorFamilySchema.nullable().default(null),
 });
 export const detectionOptionsSchema = z
   .object({

@@ -14,6 +14,8 @@ import type { MeasurementProgressState } from "@/lib/measurement-progress";
 import { requestJson } from "@/lib/request";
 import { textureRequestMessage } from "@/lib/garment-texture";
 import { avatarUrl, loadOutfit, saveOutfit, wear } from "@/lib/outfit";
+import { editGarmentPath } from "@/lib/garment-edit";
+import { materialsSummary } from "@/lib/garment-materials";
 
 const seasons: { value: Season; label: string }[] = [
   { value: "spring", label: "春" },
@@ -34,6 +36,8 @@ export function GarmentDetail({ id }: { id: string }) {
   const [status, setStatus] = useState("");
   const [textureStatus, setTextureStatus] = useState("");
   const [requestingTexture, setRequestingTexture] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   // 入力途中の値を消さないよう購入時期の欄は非制御にし、表示を戻すときだけ作り直す
   const [monthInputKey, setMonthInputKey] = useState(0);
   const [progress, setProgress] = useState<MeasurementProgressState | null>(
@@ -160,6 +164,22 @@ export function GarmentDetail({ id }: { id: string }) {
     }
   }
 
+  async function deleteGarment() {
+    if (!window.confirm("この服と画像を削除しますか？")) return;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const response = await fetch(`/api/garments/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error();
+      router.push("/closet");
+    } catch {
+      setDeleteError("削除できませんでした。もう一度お試しください");
+      setDeleting(false);
+    }
+  }
+
   if (loadError)
     return (
       <main role="alert" className="px-4 py-6 text-sm">
@@ -184,7 +204,7 @@ export function GarmentDetail({ id }: { id: string }) {
 
   const front = garmentPhotoUrl(garment, "front");
   const back = garmentPhotoUrl(garment, "back");
-  const busy = progress !== null || requestingTexture;
+  const busy = progress !== null || requestingTexture || deleting;
   const hasTexturePhotos = ["measurement", "back"].every((role) =>
     garment.images.some((image) => image.role === role),
   );
@@ -346,6 +366,12 @@ export function GarmentDetail({ id }: { id: string }) {
             })}
           </dd>
         </div>
+        <div className="flex min-h-15 items-center justify-between gap-4 border-b border-line py-3">
+          <dt className="shrink-0 text-[13px] text-description">素材</dt>
+          <dd className="text-right text-sm wrap-anywhere">
+            {materialsSummary(garment.materials)}
+          </dd>
+        </div>
       </dl>
       <p role="status" className="mt-2 min-h-5 text-xs text-sub">
         {status}
@@ -358,11 +384,27 @@ export function GarmentDetail({ id }: { id: string }) {
           measurements={garment.measurements}
         />
         <Link
-          href="/capture#saved-garments"
+          href={editGarmentPath(id)}
           className="mt-3 flex min-h-11 items-center text-xs text-description underline"
         >
-          寸法を編集する
+          名前・寸法・素材を編集する
         </Link>
+      </section>
+
+      <section className="mt-8 border-t border-line pt-5">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void deleteGarment()}
+          className={`min-h-11 w-full rounded border border-red-700 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-40 ${focusRing}`}
+        >
+          {deleting ? "削除しています…" : "この服を削除する"}
+        </button>
+        {deleteError && (
+          <p role="alert" className="mt-2 text-xs text-red-800">
+            {deleteError}
+          </p>
+        )}
       </section>
     </main>
   );

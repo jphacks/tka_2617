@@ -54,7 +54,15 @@
 - [0037 テクスチャのUVは、アプリのglbのUVを正とし、変換しない](0037-app-glb-uv-is-source.md)
 - [0038 シャツのテクスチャは、前後から投影したUVの外周を写真の輪郭に合わせて作る](0038-shirt-texture-from-projected-uv.md)
 - [0039 アバターの服の寸法は、基準寸法の半分から2倍までをモデルへ渡し、確かめた範囲の外は案内だけ出す](0039-garment-size-limits.md)
-- [0042 テクスチャを作るときは、同じ写真を切り抜いたときの範囲・点・服の領域を使い回す](0042-reuse-cutout-for-texture.md)
+- [0040 今日の気温と季節は、webのBFFでOpen-Meteoから取り、季節は月と平均気温で決める](0040-today-weather-and-season.md)
+- [0041 最初の画面を今日のコーデにし、クローゼットを`/closet`へ移す](0041-today-as-home.md)
+- [0042 女性の服は、胸の谷間と胸の下を埋めた「着せるための体」に着せ、身幅の判定に胸の一周も使う](0042-fit-body-for-female.md)
+- [0043 設定の性別が女性なら女性のアバターを出し、男性と「選ばない」は男性のアバターを出す](0043-show-female-avatar-by-gender.md)
+- [0044 服の色の系統は、ブラウザで切り抜きの画素ごとに分け、いちばん多い系統にする](0044-color-family-from-cutout.md)
+- [0045 今日のコーデは、気温で袖を、季節と素材で服を絞り、合わせやすい色の組み合わせを日ごとに回して選ぶ](0045-outfit-suggestion-rules.md)
+- [0046 着た服の記録は、ログインを入れるまでブラウザのlocalStorageに保存する](0046-wear-log-in-browser.md)
+- [0047 女性のアバターはいつも下着を着け、上の服は下着の外へ押し出す](0047-female-avatar-always-wears-underwear.md)
+- [0048 テクスチャを作るときは、同じ写真を切り抜いたときの範囲・点・服の領域を使い回す](0048-reuse-cutout-for-texture.md)
 
 ## 参考文献
 

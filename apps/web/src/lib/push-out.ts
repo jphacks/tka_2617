@@ -5,7 +5,8 @@ import {
   Matrix4,
   Vector3,
   type Material,
-  type Mesh,
+  Mesh,
+  type Object3D,
 } from "three";
 import { MeshBVH } from "three-mesh-bvh";
 
@@ -25,6 +26,45 @@ const RIM_SMOOTH_ITERS = 3;
 const COVERED_MIN = 0.99;
 // 体の頂点から、この距離より遠い服の面は見ない
 const TIP_SEARCH_M = 0.03;
+
+// 着せるための体（Blenderのavatar_fit）。女性の体のglbにだけある。
+// 胸の谷間と胸の下を埋めた見えない体で、服はこれに対して押し出す（ADR 0042）
+const FIT_MESH_NAME = "avatar_fit";
+// 描く体と、女性がいつも着ける下着（Blenderのunderwear。上の服はこの外へ押し出す）
+const BODY_MESH_NAME = "avatar";
+const UNDERWEAR_MESH_NAME = "underwear";
+
+function isMesh(o: Object3D): o is Mesh {
+  return (o as Partial<Mesh>).isMesh === true;
+}
+
+/**
+ * 体のglbから、描く体（body）、服を押し出す相手（collider）、下着（underwear）を選ぶ。
+ * 着せるための体があればcolliderはそれで（描かないようにする）、無ければ（男性）描く体と同じ。
+ * 下着は女性の体のglbにだけある（無ければnull）
+ */
+export function bodyMeshes(root: Object3D): {
+  body: Mesh;
+  collider: Mesh;
+  underwear: Mesh | null;
+} {
+  const meshes: Mesh[] = [];
+  root.traverse((o) => {
+    if (isMesh(o)) meshes.push(o);
+  });
+  const named = (name: string) => meshes.find((m) => m.name === name);
+  const fit = named(FIT_MESH_NAME);
+  const body =
+    named(BODY_MESH_NAME) ??
+    meshes.find((m) => m !== fit && m.name !== UNDERWEAR_MESH_NAME);
+  if (!body) throw new Error("体のメッシュがありません");
+  if (fit) fit.visible = false;
+  return {
+    body,
+    collider: fit ?? body,
+    underwear: named(UNDERWEAR_MESH_NAME) ?? null,
+  };
+}
 
 export type BodyCollider = {
   bvh: MeshBVH;
