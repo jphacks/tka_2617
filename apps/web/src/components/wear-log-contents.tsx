@@ -174,13 +174,14 @@ function WearLogCalendar({
               >
                 {day}
               </span>
-              {photos.map((photo) => (
+              {photos.map((photo, index) => (
                 // eslint-disable-next-line @next/next/no-img-element -- 小さな切り抜きなので最適化しない
                 <img
                   key={photo}
                   src={photo}
                   alt=""
-                  className="min-h-0 w-full flex-1 object-contain"
+                  // 上下がそろったときは、上の服を下端へ、下の服を上端へ寄せ、間を空けない
+                  className={`min-h-0 w-full flex-1 object-contain ${photos.length === 2 ? (index === 0 ? "object-bottom" : "object-top") : ""}`}
                 />
               ))}
               {worn && photos.length === 0 && (
