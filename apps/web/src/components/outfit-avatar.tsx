@@ -20,7 +20,7 @@ const TryOnScene = dynamic(() => import("@/components/try-on/try-on-scene"), {
 });
 
 /** 提案した服を着せたアバター。アバターをまだ登録していなければ、仮の絵と登録への案内を出す */
-export function TodayAvatar({
+export function OutfitAvatar({
   top,
   bottom,
 }: {

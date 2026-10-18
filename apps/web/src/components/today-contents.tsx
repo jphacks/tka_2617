@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { GarmentView } from "@pitari/api";
 import { AvatarPlaceholder } from "@/components/avatar-placeholder";
 import { CameraIcon } from "@/components/icons";
-import { TodayAvatar } from "@/components/today-avatar";
+import { OutfitAvatar } from "@/components/outfit-avatar";
 import { categoryLabels } from "@/lib/garment-category";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
 import { avatarUrl } from "@/lib/outfit";
@@ -117,7 +117,7 @@ export function TodayContents() {
       <div className="mt-4">
         {outfit ? (
           // 別の服を提案したら、試着の状態をその服の寸法で作り直す
-          <TodayAvatar
+          <OutfitAvatar
             key={`${outfit.top.id} ${outfit.bottom.id}`}
             top={outfit.top}
             bottom={outfit.bottom}
