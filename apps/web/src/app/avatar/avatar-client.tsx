@@ -446,6 +446,7 @@ function AvatarEditor({
     tight,
     sceneProps,
     selectTop,
+    presetUrl,
   } = useTryOn(settings, worn);
 
   function update(change: Partial<AvatarSettings>) {
@@ -531,7 +532,7 @@ function AvatarEditor({
               {h ? (
                 // eslint-disable-next-line @next/next/no-img-element -- 512pxの小さいサムネイルなので最適化しない
                 <img
-                  src={h.thumbs.front}
+                  src={presetUrl(h.thumbs.front)}
                   alt=""
                   className="aspect-square w-full"
                 />
