@@ -8,11 +8,11 @@
 
 ## 決定
 
-アプリが`GET /v1/garments/:id/texture`で状態を聞くと、apiが推論サービスの`GET /textures/{garmentId}`に問い合わせる。完成していれば`GET /textures/{garmentId}/{job}/texture.png`で画像を受け取り、Storageの`garments`バケットに置いて、`garment_images`のrole`texture`として記録する。画像は、服の写真と同じ`GET /v1/garments/:id/images/:imageId`で配る。服の一覧と詳細の`images`には入れず、画像のIDは`GET /v1/garments/:id/texture`だけで返す。
+アプリが`GET /v1/garments/:id/texture`で状態を聞くと、apiが推論サービスの`GET /textures/{garmentId}`に問い合わせる。完成していれば、`GET /textures/{garmentId}/{job}/texture.png`で画像を受け取る。Storageの`garments`バケットに置き、`garment_images`のrole`texture`として記録する。画像は、服の写真と同じ`GET /v1/garments/:id/images/:imageId`で配る。服の一覧と詳細の`images`には入れず、画像のIDは`GET /v1/garments/:id/texture`だけで返す。
 
 作成中・失敗の状態は推論サービスだけが持ち、DBには完成したテクスチャだけを記録する。どの作業から作ったか（作業フォルダ名）を`texture_job`に持ち、同じ作業を2回保存しない。差し替えはDBの関数`save_garment_texture`で1つのトランザクションにする。関数は服の行をロックしたまま、作業のもとになった裏面が今の裏面かを確かめ直し、違えば保存しない。apiが状態を確かめてから保存するまでの間に、裏面が撮り直されることがあるため。
 
-裏面を撮り直す前の写真から作ったテクスチャは使わない。apiは依頼のときに裏面の画像のID（`backImageId`）を推論サービスへ送り、推論サービスはそれを作業に記録して、状態と一緒に返す。今の裏面と違う作業は、無い扱いにする。保存済みのテクスチャも、裏面の行より前に保存したものは使わない。新しいテクスチャができるまで古い行は残るので、古いかどうかを確かめる状態のAPIだけが画像のIDを渡す。
+裏面を撮り直す前の写真から作ったテクスチャは使わない。apiは依頼のときに裏面の画像のID（`backImageId`）を推論サービスへ送り、推論サービスはそれを作業に記録して、状態と一緒に返す。今の裏面と違う作業は、無い扱いにする。保存済みのテクスチャも、裏面の行より前に保存したものは使わない。新しいテクスチャができるまで、古い行は残る。状態のAPIで古いかどうかを確かめ、このAPIだけが画像のIDを渡す。
 
 作り直しの間や、作り直しに失敗したときも、今の写真から前に作ったテクスチャがあれば、`processing`や`failed`と一緒にそのIDを返す。推論サービスにつながらないときは、保存済みのテクスチャがあれば返す。失敗の理由は画面に出さず、apiのログに残す。
 

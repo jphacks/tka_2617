@@ -15,7 +15,7 @@
 
 ## 一覧
 
-- [0001 web と api を分け、ブラウザに DB のキーを渡さない](0001-separate-web-and-api.md)
+- [0001 webとapiを分け、ブラウザにDBのキーを渡さない](0001-separate-web-and-api.md)
 - [0002 ログインはまだ作らず、デモ用の1ユーザーで進める](0002-no-login-yet.md)
 - [0003 スマホ向けのアプリはPWAで作る](0003-pwa.md)
 - [0004 webはVercelに、VercelのCLIでデプロイする](0004-deploy-web-with-vercel-cli.md)
@@ -33,7 +33,7 @@
 - [0016 採寸中は細かな進捗の目安と経過時間を表示する](0016-measurement-progress-estimate.md)
 - [0017 髪・靴のプリセットは、骨格ではなく体と同じシェイプキーで体に合わせる](0017-presets-follow-body-with-shape-keys.md)
 - [0018 長袖は、Tシャツの袖を手首まで伸ばして作る](0018-longsleeve-from-tshirt.md)
-- [0019 長袖のシャツは、male_casualsuit03 のシャツを使い、前の開け閉めはキーで作る](0019-shirt-from-casualsuit03.md)
+- [0019 長袖のシャツは、male_casualsuit03のシャツを使い、前の開け閉めはキーで作る](0019-shirt-from-casualsuit03.md)
 - [0020 服の裏面の写真を別のroleで保存し、詳細画面で表と並べる](0020-back-photo-as-separate-role.md)
 - [0021 購入時期は年月、着る時期は春夏秋冬の複数選択で服に持つ](0021-purchase-month-and-seasons.md)
 - [0022 Pythonのlintと整形にruffを使い、ディレクトリごとに入れていく](0022-python-lint-with-ruff.md)

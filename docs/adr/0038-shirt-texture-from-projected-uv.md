@@ -18,7 +18,7 @@
 - 前の襟元は、写真では襟の内側が見えて輪郭に出ない。襟の付け根（2・6番）から襟元のV字の一番下（4番）までを直線で結び、それより上の襟の先は近くの色で補う
 - 写真の検出・点・切り抜きは長そでとして行い、テンプレートだけをシャツ用にする（`photo_to_texture.MODEL_CATEGORIES`）。DeepFashion2の番号の対応も長そでと同じにする
 - 受領したメッシュの面とUVのSHA-256をスクリプトに持ち、違う書き出しからは作らない（ズボンと同じ）
-- アプリの`shirt_male.glb`のUVを正とし（[ADR 0037](0037-app-glb-uv-is-source.md)）、そのUVのSHA-256を型紙に記録する。照合のスクリプト（`verify_shirt_assets.py`）は、アプリのglbの頂点とUVがBlenderのBasisと一致することと、ハッシュが変わっていないことを確かめる
+- アプリの`shirt_male.glb`のUVを正とし（[ADR 0037](0037-app-glb-uv-is-source.md)）、そのUVのSHA-256を型紙に記録する。照合のスクリプト（`verify_shirt_assets.py`）で、アプリのglbの頂点とUVがBlenderのBasisと一致するかを確かめる。ハッシュが変わっていないことも確かめる
 
 ## 理由
 

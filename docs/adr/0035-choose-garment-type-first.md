@@ -4,7 +4,7 @@
 
 ## 背景
 
-アバターには、Tシャツ・長そで・シャツ・ズボンの4つの3Dモデルがある（[ADR 0018](0018-longsleeve-from-tshirt.md)、[ADR 0019](0019-shirt-from-casualsuit03.md)）。一方、登録できる服の種類は`short_sleeve_top`・`long_sleeve_top`・`trousers`の3つで、シャツと長そでを見分けられなかった。種類は写真から自動で分類していたが、DeepFashion2にシャツのカテゴリはなく、襟付きのシャツも長そでになる。
+アバターには、Tシャツ・長そで・シャツ・ズボンの4つの3Dモデルがある（[ADR 0018](0018-longsleeve-from-tshirt.md)、[ADR 0019](0019-shirt-from-casualsuit03.md)）。一方、登録できる服の種類は`short_sleeve_top`・`long_sleeve_top`・`trousers`の3つで、シャツと長そでを見分けられなかった。種類は写真から自動で分類していた。ただ、DeepFashion2にはシャツのカテゴリがなく、襟付きのシャツも長そでになる。
 
 ## 決定
 
