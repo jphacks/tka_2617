@@ -148,6 +148,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     setEditing(garment);
     setChosenCategory(garment.category);
     setResult(null);
+    setManual(false);
     setPhoto(null);
     setBack(null);
     setName(garment.name);
@@ -324,7 +325,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     setResult(next);
     applyValues(next.measurements, false);
     showProgress(75, 100, "仕上げています", 5000);
-    next = await cutout(next);
+    // 切り抜きだけに失敗したときは、測った点と寸法を残し、写真のまま登録へ進む
+    next = await cutout(next).catch(() => next);
     setResult(next);
     setMode("dimensions");
     showProgress(100, 100, "測定できました");
@@ -367,7 +369,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
       setResult(updated);
       if (updated.bbox && updated.category) {
         showProgress(50, 100, "仕上げています", 5000);
-        updated = await cutout(updated);
+        updated = await cutout(updated).catch(() => updated);
       }
       setResult(updated);
     });
@@ -385,6 +387,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     setOverrides({});
     setValues({ ...emptyMeasurements });
     setResult(next);
+    // 手入力の状態は推論につながらないので、種類と空の寸法だけを変え、推論は呼ばない
+    if (manual) return;
     await adjust(next, "bbox", false);
   }
 
@@ -700,83 +704,86 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                 </svg>
               </div>
             )}
-            <section className="space-y-3 rounded border border-line p-4">
-              <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-sm font-semibold">
-                  裏面
-                  <span className="ml-1 text-xs font-normal text-description">
-                    任意
-                  </span>
-                </h2>
-                {back && (
-                  <button
-                    className="min-h-8 text-xs text-description underline"
-                    onClick={() => {
-                      setBack(null);
-                    }}
-                  >
-                    外す
-                  </button>
-                )}
-              </div>
-              {back ? (
-                <div className="rounded bg-surface p-4">
-                  <svg
-                    viewBox={`0 0 ${String(back.previewWidthPx)} ${String(back.previewHeightPx)}`}
-                    className="mx-auto h-48 w-full"
-                    role="img"
-                    aria-label="登録する裏面の画像"
-                  >
-                    <image
-                      href={back.previewUrl}
-                      width={back.previewWidthPx}
-                      height={back.previewHeightPx}
-                    />
-                  </svg>
-                </div>
-              ) : (
-                <p className="text-xs leading-[1.7] text-description">
-                  表と裏を登録すると、テクスチャを生成してPC内に保存します。
-                  {result.category === "trousers"
-                    ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
-                    : result.category === "long_sleeve_top" ||
-                        result.category === "shirt"
-                      ? "袖と身頃が重ならないように広げ、両方の袖口と裾まで写してください。"
-                      : "表と同じように平置きして撮ってください。"}
-                </p>
-              )}
-              <label
-                className={`${secondary} flex cursor-pointer items-center justify-center ${result.category ? "" : "pointer-events-none opacity-40"}`}
-              >
-                {back ? "裏面を撮り直す" : "裏面を撮影"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  className="sr-only"
-                  disabled={!result.category}
-                  onChange={(event) => {
-                    const file = event.target.files?.[0];
-                    const chosen = result.category;
-                    event.target.value = "";
-                    if (file && chosen)
-                      void work(async () => {
-                        const prepared = await prepareBackPhoto(
-                          file,
-                          chosen,
-                          showProgress,
-                        );
-                        setBack(prepared);
-                        if (!prepared.cutoutImage)
-                          setMessage(
-                            "裏面の服を切り抜けなかったため、写真のまま登録します",
-                          );
-                      });
-                  }}
-                />
-              </label>
-            </section>
           </>
+        )}
+        {/* 裏面は推論が無くてもJPEGだけで登録できるので、手入力のときも出す */}
+        {result && !editing && (
+          <section className="space-y-3 rounded border border-line p-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-semibold">
+                裏面
+                <span className="ml-1 text-xs font-normal text-description">
+                  任意
+                </span>
+              </h2>
+              {back && (
+                <button
+                  className="min-h-8 text-xs text-description underline"
+                  onClick={() => {
+                    setBack(null);
+                  }}
+                >
+                  外す
+                </button>
+              )}
+            </div>
+            {back ? (
+              <div className="rounded bg-surface p-4">
+                <svg
+                  viewBox={`0 0 ${String(back.previewWidthPx)} ${String(back.previewHeightPx)}`}
+                  className="mx-auto h-48 w-full"
+                  role="img"
+                  aria-label="登録する裏面の画像"
+                >
+                  <image
+                    href={back.previewUrl}
+                    width={back.previewWidthPx}
+                    height={back.previewHeightPx}
+                  />
+                </svg>
+              </div>
+            ) : (
+              <p className="text-xs leading-[1.7] text-description">
+                表と裏を登録すると、テクスチャを生成してPC内に保存します。
+                {result.category === "trousers"
+                  ? "ズボンは脚を重ねずに平置きし、ウエストから裾まで写してください。"
+                  : result.category === "long_sleeve_top" ||
+                      result.category === "shirt"
+                    ? "袖と身頃が重ならないように広げ、両方の袖口と裾まで写してください。"
+                    : "表と同じように平置きして撮ってください。"}
+              </p>
+            )}
+            <label
+              className={`${secondary} flex cursor-pointer items-center justify-center ${result.category ? "" : "pointer-events-none opacity-40"}`}
+            >
+              {back ? "裏面を撮り直す" : "裏面を撮影"}
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="sr-only"
+                disabled={!result.category}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  const chosen = result.category;
+                  event.target.value = "";
+                  if (file && chosen)
+                    void work(async () => {
+                      const prepared = await prepareBackPhoto(
+                        file,
+                        chosen,
+                        showProgress,
+                      );
+                      setBack(prepared);
+                      if (!prepared.cutoutImage)
+                        setMessage(
+                          "裏面の服を切り抜けなかったため、写真のまま登録します",
+                        );
+                    });
+                }}
+              />
+            </label>
+          </section>
         )}
         {(result || editing) && (
           <section className="space-y-4 rounded border border-line p-4">
@@ -818,7 +825,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                       }));
                     }}
                   />
-                  {overrides[definition.key] && (
+                  {/* 手入力の状態では推定値が無く、戻すと入れた値が消えるので出さない */}
+                  {overrides[definition.key] && !manual && (
                     <span className="text-xs text-description">
                       手入力{" "}
                       <button
