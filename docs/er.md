@@ -68,6 +68,7 @@ erDiagram
 - 色の系統は、webが切り抜きの色から決める。前からある服と、色を決められなかった服はnull（[ADR 0044](adr/0044-color-family-from-cutout.md)）。
 - 元画像は、ブラウザで向き・縮小・EXIFの除去を済ませた画像で、カメラの元のファイルとは違う。
 - すべてのテーブルでRLSを有効にし、公開のポリシーは作らない。DBを操作するのは、apiのsecret keyだけ。
+- apiのsecret key（`service_role`）には、`public`のすべてのテーブルを読み書きする権限を付ける（`20261018000300_grant_tables_to_service_role.sql`）。新しいSupabase CLIで作ったDBは、この権限を自動で付けないため。`anon`・`authenticated`には付けない。
 - Storageは非公開のgarmentsバケット。JPEG・PNGを許可し、1枚16MiBまで（テクスチャのために上げた。実際のテクスチャは約0.5MB。利用者が上げる写真は、apiが8MiBまでに抑える）。期限付きのURLは、apiが出す。
 - Storageの画像は、DBの外部キーで行を消しても消えない。削除サービスでDBの行とStorageの画像を両方消す。
 
