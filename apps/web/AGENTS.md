@@ -11,8 +11,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # apps/webのルール
 
 - DB・Supabaseに触れない。
-- api呼び出しは`src/server/api.ts`のみ。型は`@pitari/api`から`import type`で受け取る（Hono RPC）。APIと同じ形の型をwebで書かない。足りなければapiのzodスキーマに足してexportする（[ADR 0030](../../docs/adr/0030-api-types-from-zod-not-orval.md)）。
-- `src/server/`の全ファイルに`import "server-only"`を書く。
+- apiは`src/server/api.ts`からだけ呼ぶ。型は`@pitari/api`から`import type`で受け取る（Hono RPC）。APIと同じ形の型をwebで書かない。足りなければapiのzodスキーマに足してexportする（[ADR 0030](../../docs/adr/0030-api-types-from-zod-not-orval.md)）。
+- `src/server/`のすべてのファイルに`import "server-only"`を書く。
 - 画面から呼ぶのは自分の`/api/*`だけ。外部URLのfetchと`hono/client`のimportは`src/server/`内だけ。
 - 秘密の値を`NEXT_PUBLIC_`の環境変数にしない。
 - `/api/*`のRoute Handlerはapiの`/v1/*`と同じパス構成で中継する。見本は`src/app/api/health/route.ts`。apiのエラー詳細をブラウザに出さない。

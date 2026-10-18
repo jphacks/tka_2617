@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { GarmentView } from "@pitari/api";
 import { AvatarPlaceholder } from "@/components/avatar-placeholder";
 import { CameraIcon } from "@/components/icons";
-import { TodayAvatar } from "@/components/today-avatar";
+import { OutfitAvatar } from "@/components/outfit-avatar";
 import { categoryLabels } from "@/lib/garment-category";
 import { garmentPhotoUrl } from "@/lib/garment-photo";
 import { avatarUrl } from "@/lib/outfit";
@@ -13,7 +13,7 @@ import { suggestOutfit } from "@/lib/outfit-suggestion";
 import { requestJson } from "@/lib/request";
 import { dayNumberOf, todayLabel, wardrobeNeeds } from "@/lib/today";
 import type { DayPart, TodayWeather } from "@/lib/weather";
-import { wornTop, wornTrousers } from "@/lib/worn-garment";
+import { isWearable } from "@/lib/worn-garment";
 
 const dayParts: { part: DayPart; label: string }[] = [
   { part: "morning", label: "朝" },
@@ -22,14 +22,6 @@ const dayParts: { part: DayPart; label: string }[] = [
 ];
 
 const noSubscription = () => () => undefined;
-
-// 寸法が足りずアバターに着せられない服は、提案に使わない
-function isWearable(garment: GarmentView) {
-  return (
-    "worn" in
-    (garment.category === "trousers" ? wornTrousers(garment) : wornTop(garment))
-  );
-}
 
 export function TodayContents() {
   // 天気と服は別々に読み、片方が失敗しても、もう片方は出す
@@ -117,7 +109,7 @@ export function TodayContents() {
       <div className="mt-4">
         {outfit ? (
           // 別の服を提案したら、試着の状態をその服の寸法で作り直す
-          <TodayAvatar
+          <OutfitAvatar
             key={`${outfit.top.id} ${outfit.bottom.id}`}
             top={outfit.top}
             bottom={outfit.bottom}
