@@ -99,3 +99,24 @@ class DetectionTests(unittest.TestCase):
         with patch.object(models, "load_pose", side_effect=FileNotFoundError("missing weights")), patch.object(models, "load_detector") as detector:
             models.preload()
         detector.assert_called_once()
+
+    def test_requests_during_preload_wait_for_the_model_instead_of_loading_it_again(self):
+        import threading
+        import time
+
+        models = Models()
+        loads = []
+
+        def slow_load():
+            loads.append(1)
+            time.sleep(0.2)
+            return "pose"
+
+        with patch("pitari.models.openvino_models.POSE_IR") as ir, patch("pitari.models.openvino_models.Pose", side_effect=slow_load),                 patch.object(models, "status", return_value={"weightsPresent": True, "sourcePresent": True}):
+            ir.is_file.return_value = True
+            threads = [threading.Thread(target=models.load_pose) for _ in range(3)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+        self.assertEqual((models.pose, len(loads)), ("pose", 1))

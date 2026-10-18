@@ -29,15 +29,11 @@ models = Models()
 processing = threading.Lock()
 
 
-def preload():
-    with processing:
-        models.preload()
-
-
 @asynccontextmanager
 async def lifespan(_app):
-    # 読み込みの間も/healthに答えられるよう、裏のスレッドで読む。採寸はロックを待つ。
-    threading.Thread(target=preload, daemon=True).start()
+    # 読み込みの間も/healthに答えられるよう、裏のスレッドで読む。
+    # 採寸のロックは持たない。持つと、読み込みが60秒を超えたとき採寸が429になる。読み込み中の採寸は、モデルの読み込みを待つ。
+    threading.Thread(target=models.preload, daemon=True).start()
     yield
 
 

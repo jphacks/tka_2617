@@ -2,6 +2,7 @@
 
 import importlib.util
 import os
+import threading
 from pathlib import Path
 import time
 
@@ -84,20 +85,23 @@ class Models:
         self.detector = None
         self.processor = None
         self.load_ms = None
+        # 起動時の読み込みと、その間に届いた採寸が、同じモデルを二重に読まないようにする。
+        self.loading = threading.Lock()
 
     def status(self):
         return {"device": "cpu", "weightsPresent": (ROOT / "models" / WEIGHT_NAME).is_file(), "sourcePresent": (SOURCE / "lib/models/pose_hrnet.py").is_file(), "modelLoaded": self.pose is not None, "detectorPresent": (DETECTOR / "config.json").is_file(), "modelLoadMs": self.load_ms}
 
     def load_pose(self):
-        if self.pose is not None:
-            return
-        status = self.status()
-        if not status["weightsPresent"] or not status["sourcePresent"]:
-            raise FileNotFoundError("自動採寸モデルが未準備です。寸法を入力してください")
-        started = time.perf_counter()
-        # prepare_models.py --openvinoで変換してあれば、そちらを使う（ADR 0043）。
-        self.pose = openvino_models.Pose() if openvino_models.POSE_IR.is_file() else TorchPose(build_pose())
-        self.load_ms = round((time.perf_counter() - started) * 1000)
+        with self.loading:
+            if self.pose is not None:
+                return
+            status = self.status()
+            if not status["weightsPresent"] or not status["sourcePresent"]:
+                raise FileNotFoundError("自動採寸モデルが未準備です。寸法を入力してください")
+            started = time.perf_counter()
+            # prepare_models.py --openvinoで変換してあれば、そちらを使う（ADR 0043）。
+            self.pose = openvino_models.Pose() if openvino_models.POSE_IR.is_file() else TorchPose(build_pose())
+            self.load_ms = round((time.perf_counter() - started) * 1000)
 
     def landmarks(self, image, category, bbox):
         self.load_pose()
@@ -109,13 +113,16 @@ class Models:
         return decode_heatmaps(heatmaps, inverse, category, image.shape[1], image.shape[0])
 
     def load_detector(self):
-        if self.detector is not None:
-            return
-        if not (DETECTOR / "config.json").is_file():
-            raise FileNotFoundError("服の自動検出モデルが未配置です。カテゴリと服を囲む範囲を指定してください")
-        from transformers import AutoProcessor
-        self.processor = AutoProcessor.from_pretrained(DETECTOR, local_files_only=True)
-        self.detector = openvino_models.Detector(self.processor) if all(path.is_file() for path in openvino_models.DETECTOR_IRS.values()) else TorchDetector(self.processor)
+        with self.loading:
+            if self.detector is not None:
+                return
+            if not (DETECTOR / "config.json").is_file():
+                raise FileNotFoundError("服の自動検出モデルが未配置です。カテゴリと服を囲む範囲を指定してください")
+            from transformers import AutoProcessor
+            processor = AutoProcessor.from_pretrained(DETECTOR, local_files_only=True)
+            converted = all(path.is_file() for path in openvino_models.DETECTOR_IRS.values())
+            self.detector = openvino_models.Detector(processor) if converted else TorchDetector(processor)
+            self.processor = processor
 
     def preload(self):
         """最初の採寸でモデルの読み込み（PyTorchで約30秒、OpenVINOで約1分）を待たせないよう、起動時に読む。未配置のモデルは飛ばす。"""
