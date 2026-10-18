@@ -18,8 +18,8 @@
 - 処理（apiの`src/services`・`src/lib`、webの`src/lib`）を足す・変えるときは、同じPRでそのアプリの`tests/`にテストも足す。書かないなら、PR本文に理由を書く。CIの`pr-tests`が警告する。
 - 書き直したら、使わなくなったファイル・export・依存を消す。`pnpm knip`で見つかり、CIでも止まる。「あとで使う」exportは、使うときに足す。
 - importはwebで`@/`、apiで`#src/`を使う。
-- deprecatedな書き方を避ける。Next.jsで書く前に、`apps/web/node_modules/next/dist/docs`のそのガイドを読む。
-- docs・コメントは日本語。PR本文やレビューを含め、英語と日本語の間に半角スペースを入れない。コード・コマンド・URLの空白は維持する。mdは`pnpm lint`のtextlintで確かめる。
+- deprecatedな書き方を避ける。Next.jsで書く前に、`apps/web/node_modules/next/dist/docs`で実装する機能のガイドを読む。
+- docs・コメントは日本語。PR本文やレビューを含め、英語と日本語の間に半角スペースを入れない。コード・コマンド・URLの空白は維持する。mdは`pnpm lint`のtextlintで確かめる。書き方は[yomiyasu](.claude/skills/yomiyasu/SKILL.md)に沿う。
 - API追加は`docs/api.md`→zodスキーマ→apiのroute→webのBFFの順。
 - DBは`supabase/migrations`だけで変える。新しいテーブルはRLSを有効にし、`docs/er.md`を更新する。DBの型は`db:types`で作り直してcommitする（手で書き換えない）。
 - 設計上の決定は`docs/adr/`に1件ずつ残す。候補要件は`docs/requirements-candidates.md`へ。

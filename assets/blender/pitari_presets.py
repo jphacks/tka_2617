@@ -56,6 +56,7 @@ BROW_ALPHA_GAIN = 3.0
 KINDS = {
     "hair": ("hair", "Hair"),
     "shoes": ("clothes", "Clothes"),
+    "underwear": ("clothes", "Clothes"),      # 女性の下着（pitari_female.add_underwear）
     "eyes": ("eyes", "Eyes"),
     "eyebrows": ("eyebrows", "Eyebrows"),
     "eyelashes": ("eyelashes", "Eyelashes"),

@@ -38,7 +38,7 @@ void test("体のglbに着せるための体（avatar_fit）があれば、そ�
   body.name = "avatar";
   // Blenderの書き出しでは、着せるための体が先に並ぶ
   root.add(fit, body);
-  assert.deepEqual(bodyMeshes(root), { body, collider: fit });
+  assert.deepEqual(bodyMeshes(root), { body, collider: fit, underwear: null });
   // 着せるための体は描かない
   assert.equal(fit.visible, false);
   assert.equal(body.visible, true);
@@ -48,5 +48,19 @@ void test("着せるための体が無ければ（男性）、描く体に対し
   const root = new Group();
   const body = new Mesh();
   root.add(body);
-  assert.deepEqual(bodyMeshes(root), { body, collider: body });
+  assert.deepEqual(bodyMeshes(root), { body, collider: body, underwear: null });
+});
+
+void test("女性の体のglbでは、下着（underwear）も選び、下着より後ろに並ぶ体を描く体にする", () => {
+  const root = new Group();
+  const fit = new Mesh();
+  fit.name = "avatar_fit";
+  const underwear = new Mesh();
+  underwear.name = "underwear";
+  const body = new Mesh();
+  body.name = "avatar";
+  root.add(fit, underwear, body);
+  assert.deepEqual(bodyMeshes(root), { body, collider: fit, underwear });
+  // 下着は描く
+  assert.equal(underwear.visible, true);
 });

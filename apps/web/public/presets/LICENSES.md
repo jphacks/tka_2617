@@ -23,6 +23,7 @@
 | 靴：革靴（黒）（`shoes/leather.glb`）                                                                            | `clothes/shoes04`（uuid 0d753f2e-55f9-4d60-9a78-261f42b494fc）                                                                                         | MakeHuman system assets  | CC0 1.0    |
 | Tシャツ・長袖・ジーンズ（`/models/tshirt_male.glb`、`/models/longsleeve_male.glb`、`/models/trousers_male.glb`） | `clothes/male_casualsuit06`（uuid be449715-fd7d-49d1-bca1-7fdd4264bc2d）                                                                               | MakeHuman system assets  | CC0 1.0    |
 | 長袖のシャツ（`/models/shirt_male.glb`）                                                                         | `clothes/male_casualsuit03`（uuid 39864dca-8d5c-4d7c-84ce-c00982e93cb7）のシャツの部分                                                                 | MakeHuman system assets  | CC0 1.0    |
+| 女性の下着（`/models/avatar_female.glb`の`underwear`）                                                           | `clothes/female_sportsuit01`（uuid e38d3a5b-718f-41d5-8404-299def30b43f）の上の部分                                                                    | MakeHuman system assets  | CC0 1.0    |
 
 長袖は、Tシャツの袖をスクリプトで手首まで伸ばしたもの。シャツは、元のストライプのテクスチャを使わず無地にしている。髪・眉毛・まつ毛の色は、元のテクスチャを灰色にしてブラウザで色を掛けている。スニーカーは元のテクスチャを白一色にし、革靴は元の色のまま使っている。どちらも靴下を別の材質に分けている。
 

@@ -61,6 +61,7 @@
 - [0044 服の色の系統は、ブラウザで切り抜きの画素ごとに分け、いちばん多い系統にする](0044-color-family-from-cutout.md)
 - [0045 今日のコーデは、気温で袖を、季節と素材で服を絞り、合わせやすい色の組み合わせを日ごとに回して選ぶ](0045-outfit-suggestion-rules.md)
 - [0046 着た服の記録は、ログインを入れるまでブラウザのlocalStorageに保存する](0046-wear-log-in-browser.md)
+- [0047 女性のアバターはいつも下着を着け、上の服は下着の外へ押し出す](0047-female-avatar-always-wears-underwear.md)
 
 ## 参考文献
 
