@@ -104,7 +104,7 @@ npx --yes pnpm@10.18.0 dev
 
 ## 服ごとのテクスチャ
 
-Tシャツ・長そで・ズボンのいずれも、裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`（multipartの`garmentId`・`category`・`front`・`back`、Bearer認証）へ送る。服の詳細の「テクスチャを作る」から保存済み写真で再生成できる。推論サービスは受け付けたらすぐ202を返し、裏の作業スレッドで1件ずつ作る。生成物は次のPC内のフォルダに書き出す。採寸・裏面の登録で切り抜いた写真なら数秒、推論し直す写真ならCPUで約1分かかる。
+Tシャツ・長そで・ズボンのいずれも、裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`（multipartの`garmentId`・`category`・`front`・`back`・`frontSaved`、Bearer認証）へ送る。`frontSaved`は採寸画面で保存した表の点とA4の四隅で、推論し直さずに使う（[ADR 0051](../../docs/adr/0051-saved-points-for-texture.md)）。服の詳細の「テクスチャを作る」から保存済み写真で再生成できる。推論サービスは受け付けたらすぐ202を返し、裏の作業スレッドで1件ずつ作る。生成物は次のPC内のフォルダに書き出す。採寸・裏面の登録で切り抜いた写真なら数秒、推論し直す写真ならCPUで約1分かかる。
 
 ```text
 apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/
@@ -284,7 +284,7 @@ npx --yes pnpm@10.18.0 dev
 
 ## 服ごとのテクスチャ
 
-Tシャツ・長そで・ズボンのどれでも、裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`へ送る（multipartの`garmentId`・`category`・`front`・`back`、Bearer認証）。服の詳細の「テクスチャを作る」から、保存した写真で作り直せる。推論サービスは受け付けたらすぐ202を返し、裏のスレッドで1件ずつ作る。できたものは、次のPCの中のフォルダに書き出す。CPUで1〜数分かかる。
+Tシャツ・長そで・ズボンのどれでも、裏面を保存すると、apiが表のmeasurement画像と裏面を`POST /textures`へ送る（multipartの`garmentId`・`category`・`front`・`back`・`frontSaved`、Bearer認証）。`frontSaved`は、採寸画面で保存した表の点とA4の四隅で、推論し直さずに使う。服の詳細の「テクスチャを作る」から、保存した写真で作り直せる。推論サービスは受け付けたらすぐ202を返し、裏のスレッドで1件ずつ作る。できたものは、次のPCの中のフォルダに書き出す。CPUで1〜数分かかる。
 
 ```text
 apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/
