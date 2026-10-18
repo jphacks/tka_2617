@@ -36,6 +36,7 @@ export async function garmentView(row: GarmentRecord): Promise<GarmentView> {
     measurementVersion: row.measurement_version,
     purchasedMonth: row.purchased_month,
     seasons: row.seasons,
+    colorFamily: row.color_family,
     materials: [...row.garment_materials]
       .sort(
         (a, b) =>

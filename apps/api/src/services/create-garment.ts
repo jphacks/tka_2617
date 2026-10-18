@@ -75,6 +75,7 @@ export async function createGarment(
       category: metadata.category,
       measurements: metadata.measurements,
       measurement_version: metadata.measurementVersion,
+      color_family: metadata.colorFamily,
     });
     if (garment.error) throw garment.error;
     inserted = true;

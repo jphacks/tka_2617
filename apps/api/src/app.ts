@@ -62,6 +62,7 @@ export type {
 export type { MeasurementDefinition } from "#src/lib/measurements";
 export type { GarmentView, Season } from "#src/lib/garment-records";
 export type { GarmentMaterial, Material } from "#src/lib/materials";
+export type { ColorFamily } from "#src/lib/color-family";
 export type {
   TextureRequestResult,
   BackPhotoResponse,

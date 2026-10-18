@@ -78,7 +78,7 @@ GETは`{ definitions, measurementVersion }`を返す。POSTの入力は`{ imageI
 
 `GET /v1/garments/:id/images/:imageId`はデモユーザーの服に所属する画像のみをJPEGまたはPNGのバイナリとして返す。webの`/api/garments/:id/images/:imageId`が同じ経路で中継する。画像IDはUUID。別の服の画像・存在しない画像は404。ブラウザからStorageへ直接接続せず、スマホからもwebのポートだけで保存画像を表示できる。既存のimages[].url（署名URL）は互換性のため残すが、画面表示にはこの中継経路を使う。
 
-POSTはmultipartの`image`（測定用JPEG）、`cutoutImage`（任意の透過PNG）、`metadata`（JSON文字列）を受け取る。画面からの新規登録では切り抜き成功後に両画像を送る。`originalImage`も任意で受け取れるが、現在の画面では送らない。metadataは`{ name, category, imageId, widthPx, heightPx, points, pixelsPerCm, paperCorners, modelVersion, measurements, measurementVersion, materials? }`。materialsは下の「素材」の形で、省略すると綿100%で保存する。画像の実サイズと座標系のサイズが一致するか確認する。手入力後のmeasurementsを最終値として保存し、再推定で上書きしない。成功は`201 { id }`。
+POSTはmultipartの`image`（測定用JPEG）、`cutoutImage`（任意の透過PNG）、`metadata`（JSON文字列）を受け取る。画面からの新規登録では切り抜き成功後に両画像を送る。`originalImage`も任意で受け取れるが、現在の画面では送らない。metadataは`{ name, category, imageId, widthPx, heightPx, points, pixelsPerCm, paperCorners, modelVersion, measurements, measurementVersion, materials?, colorFamily? }`。materialsは下の「素材」の形で、省略すると綿100%で保存する。colorFamilyは下の「色の系統」の値で、省略するとnullで保存する。画像の実サイズと座標系のサイズが一致するか確認する。手入力後のmeasurementsを最終値として保存し、再推定で上書きしない。成功は`201 { id }`。
 
 一覧は`{ garments: Garment[] }`、詳細はGarmentを返す。共通の形は次のとおり。
 
@@ -92,6 +92,7 @@ type Garment = {
   purchasedMonth: string | null; // "2026-04"のような年月
   seasons: ("spring" | "summer" | "autumn" | "winter")[];
   materials: { materialId: string; label: string; percent: number }[]; // 割合の多い順
+  colorFamily: ColorFamily | null; // 前からある服と、色を決められなかった服はnull
   createdAt: string;
   images: {
     id: string;
@@ -109,13 +110,17 @@ type Garment = {
 
 画像URLは非公開Storageの10分間有効な署名URL。期限が切れたら一覧・詳細を再取得する。pointsとpaperCornersはそれぞれ所属する画像レコード内のピクセル座標。3D担当には主にcategory・measurements・measurementVersionを渡す。
 
-PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons?, materials? }`、成功は`200 { id }`。寸法オブジェクト・季節・素材の配列は全体を置き換える。purchasedMonthは`YYYY-MM`、nullで未設定に戻す。seasonsは春夏秋冬の重複しない0〜4件で、季節の順に並べて保存する。カテゴリ変更と保存後の点編集は初期版では非対応。DELETEは画像を先に消してから行を削除し、成功は204。途中失敗は503を返し、再試行できる。
+PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons?, materials?, colorFamily? }`、成功は`200 { id }`。寸法オブジェクト・季節・素材の配列は全体を置き換える。purchasedMonthは`YYYY-MM`、colorFamilyとともに、nullで未設定に戻す。seasonsは春夏秋冬の重複しない0〜4件で、季節の順に並べて保存する。カテゴリ変更と保存後の点編集は初期版では非対応。DELETEは画像を先に消してから行を削除し、成功は204。途中失敗は503を返し、再試行できる。
 
 ### 素材
 
 服は素材を混率で持つ（例：綿98%・ポリウレタン2%）。`GET /v1/materials`は`{ materials: { id: string; label: string }[] }`を、画面に並べる順で返す。素材は綿（`cotton`）・ポリエステル・ウール・麻・ナイロン・レーヨン・アクリル・ポリウレタン・シルク・カシミヤ・その他（`other`）。
 
 登録とPATCHの`materials`は`{ materialId: string; percent: number }[]`。1〜10件で、素材は重複せず、percentは1〜100の整数、合計は100。一覧に無い素材は400。PATCHは服の素材をまとめて差し替え、DBの関数`set_garment_materials`で1つのトランザクションにする。素材とほかの項目を一緒に送ったときは素材を先に保存するので、素材の誤りで400になったときは、ほかの項目も変わらない。Garmentの`materials`は割合の多い順で、同じ割合なら一覧の順。素材を入れずに登録した服と、素材を足す前に登録した服は、綿100%になる。
+
+### 色の系統
+
+服は色の系統を1つ持つ。値は`white`（白）・`black`（黒）・`gray`（グレー）・`navy`（紺）・`beige`（ベージュ）・`brown`（茶）・`red`（赤）・`pink`（ピンク）・`orange`（オレンジ）・`yellow`（黄）・`green`（緑）・`blue`（青）・`purple`（紫）。webが切り抜きの色から決めて登録で送り、違えばPATCHで直す。一覧に無い値は400。分け方は[ADR 0042](adr/0042-color-family-from-cutout.md)。
 
 ### PUT /v1/garments/:id/back
 
