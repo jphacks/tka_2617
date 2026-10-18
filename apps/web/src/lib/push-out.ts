@@ -5,7 +5,8 @@ import {
   Matrix4,
   Vector3,
   type Material,
-  type Mesh,
+  Mesh,
+  type Object3D,
 } from "three";
 import { MeshBVH } from "three-mesh-bvh";
 
@@ -25,6 +26,27 @@ const RIM_SMOOTH_ITERS = 3;
 const COVERED_MIN = 0.99;
 // 体の頂点から、この距離より遠い服の面は見ない
 const TIP_SEARCH_M = 0.03;
+
+// 着せるための体（Blenderのavatar_fit）。女性の体のglbにだけある。
+// 胸の谷間と胸の下を埋めた見えない体で、服はこれに対して押し出す（ADR 0042）
+const FIT_MESH_NAME = "avatar_fit";
+
+/**
+ * 体のglbから、描く体（body）と、服を押し出す相手（collider）を選ぶ。
+ * 着せるための体があればcolliderはそれで（描かないようにする）、無ければ（男性）描く体と同じ
+ */
+export function bodyMeshes(root: Object3D): { body: Mesh; collider: Mesh } {
+  let body: Mesh | undefined;
+  let fit: Mesh | undefined;
+  root.traverse((o) => {
+    if (!(o instanceof Mesh)) return;
+    if (o.name === FIT_MESH_NAME) fit ??= o;
+    else body ??= o;
+  });
+  if (!body) throw new Error("体のメッシュがありません");
+  if (fit) fit.visible = false;
+  return { body, collider: fit ?? body };
+}
 
 export type BodyCollider = {
   bvh: MeshBVH;

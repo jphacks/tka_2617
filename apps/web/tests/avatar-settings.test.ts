@@ -4,6 +4,8 @@ import {
   createAvatarSettingsStore,
   defaultAvatarSettings,
   heightFromInput,
+  heightRangeOf,
+  modelGenderOf,
   withGender,
   type AvatarSettings,
 } from "@/lib/avatar-settings";
@@ -38,14 +40,37 @@ void test("骨格は女性のときだけ持ち、初めて女性を選んだと
   assert.equal(withGender(registered, "unspecified").bodyFrame, null);
 });
 
-void test("身長は、3Dで変えられる150〜195cmだけを受け付ける", () => {
-  assert.equal(heightFromInput("150"), 150);
-  assert.equal(heightFromInput("172.5"), 172.5);
-  assert.equal(heightFromInput("195"), 195);
-  assert.equal(heightFromInput("149.5"), null);
-  assert.equal(heightFromInput("196"), null);
-  assert.equal(heightFromInput(""), null);
-  assert.equal(heightFromInput("abc"), null);
+void test("身長は、3Dで変えられる範囲だけを受け付ける（男性と「選ばない」は150〜195cm、女性は140〜185cm）", () => {
+  const male = heightRangeOf("male");
+  assert.deepEqual(heightRangeOf("unspecified"), male);
+  assert.equal(heightFromInput("150", male), 150);
+  assert.equal(heightFromInput("172.5", male), 172.5);
+  assert.equal(heightFromInput("195", male), 195);
+  assert.equal(heightFromInput("149.5", male), null);
+  assert.equal(heightFromInput("196", male), null);
+  assert.equal(heightFromInput("", male), null);
+  assert.equal(heightFromInput("abc", male), null);
+  const female = heightRangeOf("female");
+  assert.equal(heightFromInput("140", female), 140);
+  assert.equal(heightFromInput("185", female), 185);
+  assert.equal(heightFromInput("139.5", female), null);
+  assert.equal(heightFromInput("190", female), null);
+});
+
+void test("女性は女性の3Dモデル、男性と「選ばない」は男性の3Dモデルを使う", () => {
+  assert.equal(modelGenderOf("female"), "female");
+  assert.equal(modelGenderOf("male"), "male");
+  assert.equal(modelGenderOf("unspecified"), "male");
+});
+
+void test("性別を変えたら、身長をその性別で入力できる範囲に収める", () => {
+  const tall = { ...registered, gender: "male" as const, heightCm: 192 };
+  assert.equal(withGender(tall, "female").heightCm, 185);
+  assert.equal(withGender(registered, "male").heightCm, 160);
+  assert.equal(
+    withGender({ ...registered, heightCm: 142 }, "male").heightCm,
+    150,
+  );
 });
 
 void test("まだ登録していなければnull、保存すると次に開いたときも読める", () => {

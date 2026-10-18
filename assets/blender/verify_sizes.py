@@ -321,8 +321,7 @@ def main():
     # 押し出しとめり込みの相手。女性は着せるための体（描かない）
     collider = bpy.data.objects[pf.FIT_NAME] if FEMALE else body
     collider.hide_render = FEMALE
-    lm_name = f"{GARMENT}_female_landmarks.json" if FEMALE else f"{GARMENT}_landmarks.json"
-    with open(os.path.join(HERE, "out", lm_name), encoding="utf-8") as fp:
+    with open(os.path.join(HERE, "out", pf.landmarks_file(GARMENT, GENDER)), encoding="utf-8") as fp:
         lm = json.load(fp)
     base, corr = load_json(f"{GARMENT}_{GENDER}_base.json"), load_json(f"{GARMENT}_{GENDER}_correction.json")
     height = load_json(f"{GARMENT}_{GENDER}_height.json")

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { GarmentView } from "@pitari/api";
-import { TOPS, trouserTable } from "@/components/try-on/use-try-on";
+import { AVATAR_MODELS } from "@/lib/avatar-models";
 import {
   fitAt,
   MEASUREMENT_KEYS,
@@ -66,7 +66,7 @@ void test("上の服は、APIの寸法の4項目が着丈・身幅・肩幅・�
 
 void test("上の服のサイズキーで作り直した寸法が、APIの寸法と一致する（Tシャツ・長袖・シャツ）", () => {
   const target = topMeasurements(longSleeveTop);
-  for (const { table } of Object.values(TOPS)) {
+  for (const { table } of Object.values(AVATAR_MODELS.male.tops)) {
     const fit = fitAt("standard", table.standard_cm, table);
     const keys = sizeKeyValues(target, fit, table);
     for (const p of MEASUREMENT_KEYS) {
@@ -97,6 +97,7 @@ void test("ズボンは、APIの寸法の6項目からサイズキーの値が�
     inseam: 78,
     hem: 20,
   });
+  const { trouserTable } = AVATAR_MODELS.male;
   const fit = trouserFitAt("standard", trouserTable.standard_cm, trouserTable);
   const keys = trouserKeyValues(target, fit, trouserTable);
   assert.deepEqual(
