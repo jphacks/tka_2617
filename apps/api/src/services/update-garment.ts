@@ -4,6 +4,7 @@ import { HttpError } from "#src/lib/http-error";
 import type { Measurements } from "#src/lib/measurement-schema";
 import type { Season } from "#src/lib/garment-records";
 import type { GarmentMaterialInput } from "#src/lib/materials";
+import type { ColorFamily } from "#src/lib/color-family";
 import { setGarmentMaterials } from "#src/lib/garment-materials";
 
 export async function updateGarment(
@@ -14,6 +15,7 @@ export async function updateGarment(
     purchasedMonth?: string | null;
     seasons?: Season[];
     materials?: GarmentMaterialInput;
+    colorFamily?: ColorFamily | null;
   },
 ) {
   // 素材を先に保存する。一覧に無い素材や合計の誤りで止まったとき、名前などだけが変わらないように
@@ -25,6 +27,7 @@ export async function updateGarment(
       measurements: values.measurements,
       purchased_month: values.purchasedMonth,
       seasons: values.seasons,
+      color_family: values.colorFamily,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

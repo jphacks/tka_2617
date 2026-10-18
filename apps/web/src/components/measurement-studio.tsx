@@ -1,7 +1,8 @@
 "use client";
 
 import { categoryChoices, categoryLabels } from "@/lib/garment-category";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import type {
   Category,
@@ -33,6 +34,8 @@ import type { MeasurementProgressState } from "@/lib/measurement-progress";
 import { GarmentMeasurements } from "@/components/garment-measurements";
 import { MeasurementImage } from "@/components/measurement-image";
 import type { AdjustmentMode } from "@/components/measurement-image";
+import { SimilarGarmentsSheet } from "@/components/similar-garments-sheet";
+import { cutoutColorFamily, type AddedGarment } from "@/lib/color-family";
 
 type DefinitionResponse = {
   definitions: Record<Category, MeasurementDefinition[]>;
@@ -81,6 +84,9 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [garments, setGarments] = useState<GarmentView[]>([]);
+  // 足したばかりの服。同じ系統の服を数えて、下から出す
+  const [added, setAdded] = useState<AddedGarment | null>(null);
+  const similarSheet = useRef<HTMLDialogElement>(null);
   const [editing, setEditing] = useState<Pick<
     GarmentView,
     "id" | "category" | "measurements"
@@ -363,6 +369,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
     await work(async () => {
       let backFailed = false;
       let textureMessage = "";
+      let newlyAdded: AddedGarment | null = null;
       const checked = materialsFromRows(materialInput);
       if ("error" in checked) throw new Error(checked.error);
       if (editing) {
@@ -383,6 +390,10 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
         setResult(ready);
         if (!ready.cutoutBase64)
           throw new Error("切り抜きに失敗しました。服の範囲を調整してください");
+        // 色を決められなくても登録は止めず、色の分からない服として保存する
+        const colorFamily = await cutoutColorFamily(ready.cutoutBase64).catch(
+          () => null,
+        );
         const form = new FormData();
         form.set("image", jpegFile(ready.imageBase64));
         form.set("cutoutImage", pngFile(ready.cutoutBase64));
@@ -402,6 +413,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             name,
             measurements: values,
             materials: checked.materials,
+            colorFamily,
           }),
         );
         const saved = await requestJson<{ id: string }>("/api/garments", {
@@ -413,6 +425,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
           category: result.category,
           measurements: values,
         });
+        newlyAdded = { id: saved.id, category: result.category, colorFamily };
         if (back) {
           try {
             const backSaved = await uploadBackPhoto(saved.id, back);
@@ -435,6 +448,14 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             : textureMessage),
       );
       await loadGarments();
+      if (newlyAdded) {
+        const shown = newlyAdded;
+        // 中身を描き終えてから開く。先に開くと、見出しが無いまま読み上げられ、フォーカスも中の操作に入らない
+        flushSync(() => {
+          setAdded(shown);
+        });
+        similarSheet.current?.showModal();
+      }
     });
   }
 
@@ -882,6 +903,14 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
           ))}
         </div>
       </section>
+      <SimilarGarmentsSheet
+        ref={similarSheet}
+        added={added}
+        garments={garments}
+        onColorChange={(colorFamily) => {
+          setAdded((current) => current && { ...current, colorFamily });
+        }}
+      />
     </main>
   );
 }
