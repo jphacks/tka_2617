@@ -22,7 +22,7 @@ from pydantic import BaseModel, Field, ValidationError
 from pitari.geometry import paper_candidate, paper_scale
 from pitari.cutout import garment_cutout
 from pitari.models import Models, MODEL_VERSION
-from pitari import texture
+from pitari import detections, texture
 
 app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 models = Models()
@@ -139,12 +139,15 @@ def detect(image: UploadFile = File(...), options: str = Form(...)):
             else:
                 try:
                     hints = points or [point.model_dump() for point in settings.points]
-                    cutout = garment_cutout(source, bbox, corners, hints, category)
+                    cutout, alpha = garment_cutout(source, bbox, corners, hints, category)
                     ok, encoded = cv2.imencode(".png", cutout)
                     if not ok or encoded.nbytes > MAX_BYTES:
                         raise ValueError("切り抜き画像を作成できませんでした")
                     cutout_base64 = base64.b64encode(encoded).decode("ascii")
                     cutout_height, cutout_width = cutout.shape[:2]
+                    # 保存される写真と同じなので、テクスチャを作るときに推論と切り抜きを省ける。
+                    if hints and category:
+                        detections.remember(raw, width, height, category, bbox, corners, hints, alpha, MODEL_VERSION)
                 except (ValueError, cv2.error):
                     warnings.append("切り抜きに失敗しました。服の範囲を調整してください")
         return {"imageId": str(uuid.uuid4()), "imageBase64": base64.b64encode(raw).decode("ascii"), "widthPx": width, "heightPx": height, "category": category, "bbox": bbox, "points": points, "paperCorners": corners, "pixelsPerCm": pixels_per_cm, "modelVersion": model_version, "cutoutBase64": cutout_base64, "cutoutWidthPx": cutout_width, "cutoutHeightPx": cutout_height, "warnings": warnings, "elapsedMs": round((time.perf_counter() - started) * 1000)}

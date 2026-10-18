@@ -62,6 +62,7 @@
 - [0045 今日のコーデは、気温で袖を、季節と素材で服を絞り、合わせやすい色の組み合わせを日ごとに回して選ぶ](0045-outfit-suggestion-rules.md)
 - [0046 着た服の記録は、ログインを入れるまでブラウザのlocalStorageに保存する](0046-wear-log-in-browser.md)
 - [0047 女性のアバターはいつも下着を着け、上の服は下着の外へ押し出す](0047-female-avatar-always-wears-underwear.md)
+- [0048 テクスチャを作るときは、同じ写真を切り抜いたときの範囲・点・服の領域を使い回す](0048-reuse-cutout-for-texture.md)
 
 ## 参考文献
 
