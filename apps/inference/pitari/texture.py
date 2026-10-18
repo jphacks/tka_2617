@@ -26,10 +26,14 @@ from pitari import detections  # noqa: E402
 logger = logging.getLogger("pitari")
 # 公開された/api/*から裏面を何度も送られても、CPUの作業が際限なく積まれないようにする。
 MAX_WAITING = 5
+# 作り直すたびにフォルダが増えるので、服ごとに新しいものから残す数を決めておく（ADR 0053）。
+KEEP_JOBS = 3
 
 waiting = {}
 # 待ちから取り出して作っている間の服。状態を聞かれたときに、前の作業を最新として返さないために持つ
 active = {}
+# 作っている間に消された服。書きかけのフォルダを消さないよう、作業が終わってから片付ける
+deleted = set()
 waiting_lock = threading.Lock()
 worker = ThreadPoolExecutor(max_workers=1)
 
@@ -70,6 +74,9 @@ def submit(garment_id, category, front, back, models, lock, garment_created_at=N
 
 def run(garment_id, models, lock):
     with waiting_lock:
+        # 待っている間に服が消されたら、作らない
+        if garment_id not in waiting:
+            return
         category, front, back, garment_created_at, back_image_id, front_saved = waiting.pop(garment_id)
         active[garment_id] = back_image_id
     try:
@@ -80,6 +87,53 @@ def run(garment_id, models, lock):
     finally:
         with waiting_lock:
             active.pop(garment_id, None)
+            removed = garment_id in deleted
+            deleted.discard(garment_id)
+        try:
+            if removed:
+                remove_folders(garment_id)
+            else:
+                remove_folders(garment_id, keep=KEEP_JOBS)
+        except OSError:
+            logger.exception("テクスチャの作業フォルダを片付けられませんでした")
+
+
+def forget(garment_id):
+    """服を消したときに呼ぶ。待ちの作業を取り消し、その服の作業フォルダと、写真の切り抜きの記録を消す。
+
+    作っている最中なら、書きかけのフォルダを消さず、作業が終わってから消す。
+    """
+    with waiting_lock:
+        waiting.pop(garment_id, None)
+        running = garment_id in active
+        if running:
+            deleted.add(garment_id)
+    return {"removed": 0 if running else remove_folders(garment_id), "running": running}
+
+
+def garment_folders(garment_id):
+    """服の作業フォルダを、新しい順に返す。"""
+    jobs = []
+    # フォルダ名に服IDの先頭8文字が入るので、まずそれで絞ってからjob.jsonの服IDで確かめる
+    for folder in OUTPUT.glob(f"*_{garment_id[:8]}*"):
+        job = read_job(folder)
+        if job and job.get("garmentId") == garment_id:
+            jobs.append((job.get("createdAt") or "", folder.name, folder, job))
+    return [(folder, job) for _, _, folder, job in sorted(jobs, key=lambda item: (item[0], item[1]), reverse=True)]
+
+
+def remove_folders(garment_id, keep=0):
+    """新しいものからkeep件を残し、ほかの作業フォルダを消す。keepが0なら、写真の切り抜きの記録も消す。"""
+    removed = 0
+    for folder, _ in garment_folders(garment_id)[keep:]:
+        if not keep:
+            for view in ("front", "back"):
+                photo = folder / f"input_{view}.jpg"
+                if photo.is_file():
+                    detections.forget(photo.read_bytes())
+        shutil.rmtree(folder)
+        removed += 1
+    return removed
 
 
 def latest(garment_id):
@@ -89,16 +143,11 @@ def latest(garment_id):
             return {"status": "queued", "job": None, "error": None, "backImageId": waiting[garment_id][4]}
         if garment_id in active:
             return {"status": "running", "job": None, "error": None, "backImageId": active[garment_id]}
-    jobs = []
-    # フォルダ名に服IDの先頭8文字が入るので、まずそれで絞ってからjob.jsonの服IDで確かめる
-    for folder in OUTPUT.glob(f"*_{garment_id[:8]}*"):
-        job = read_job(folder)
-        if job and job.get("garmentId") == garment_id:
-            jobs.append((job.get("createdAt") or "", folder.name, job))
+    jobs = garment_folders(garment_id)
     if not jobs:
         return None
-    _, name, job = max(jobs, key=lambda item: (item[0], item[1]))
-    return {"status": job.get("status"), "job": name, "error": job.get("error"), "backImageId": job.get("backImageId")}
+    folder, job = jobs[0]
+    return {"status": job.get("status"), "job": folder.name, "error": job.get("error"), "backImageId": job.get("backImageId")}
 
 
 def texture_file(garment_id, job_name):

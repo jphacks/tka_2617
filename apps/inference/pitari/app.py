@@ -230,6 +230,12 @@ def texture_image(garmentId: str, job: str):
     return FileResponse(path, media_type="image/png")
 
 
+@app.delete("/textures/{garmentId}", dependencies=[Depends(authorize)])
+def delete_textures(garmentId: str):
+    """apiが服を消したあとに呼ぶ。待ちの作業を取り消し、PCに残る写真とテクスチャを片付ける（ADR 0053）。"""
+    return texture.forget(garment_uuid(garmentId))
+
+
 def garment_uuid(value):
     try:
         return str(uuid.UUID(value))
