@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import presetsJson from "@/../public/presets/presets.json";
-import { AVATAR_MODELS, type ModelGender } from "@/lib/avatar-models";
+import { AVATAR_MODELS } from "@/lib/avatar-models";
 import {
   defaultAvatarSettings,
   heightFromInput,
+  modelGenderOf,
   type AvatarSettings,
+  type ModelGender,
   type Build,
 } from "@/lib/avatar-settings";
 import {
@@ -278,13 +280,15 @@ export type Worn = { top: WornTop | null; bottom: WornTrousers | null };
 /**
  * 試着の状態（体・服・髪・靴の選択と服の実寸）と、そこから決まるmorphの値。
  * 本番のアバター画面と確認ページ（/dev/tryon）で使う。体と髪はinitialの値、服はwornの服で始める。
- * 3Dモデルは男性で始める。女性に切り替える（selectGender）のは、ブラウザで確かめるまで確認ページだけ
+ * 3Dモデルは設定の性別で始める（女性は女性、ほかは男性）。確認ページは、selectGenderで切り替えられる
  */
 export function useTryOn(
   initial: AvatarSettings = defaultAvatarSettings,
   worn: Worn = { top: null, bottom: null },
 ) {
-  const [gender, setGender] = useState<ModelGender>("male");
+  const [gender, setGender] = useState<ModelGender>(() =>
+    modelGenderOf(initial.gender),
+  );
   const models = AVATAR_MODELS[gender];
   const samples = SAMPLES[gender];
   const heightTable = models.tops.tshirt.table;
@@ -301,14 +305,14 @@ export function useTryOn(
   const [input, setInput] = useState<Inputs>(() =>
     worn.top
       ? toInputs(worn.top.measurements, 1)
-      : toInputs(topMeasurements(SAMPLE_GARMENT)),
+      : toInputs(topMeasurements(SAMPLES[gender].tshirt)),
   );
   const topTable = models.tops[top].table;
   const [wearTrousers, setWearTrousers] = useState(true);
   const [trouserInput, setTrouserInput] = useState<TrouserInputs>(() =>
     worn.bottom
       ? toTrouserInputs(worn.bottom.measurements, 1)
-      : toTrouserInputs(trouserMeasurements(SAMPLE_TROUSERS)),
+      : toTrouserInputs(trouserMeasurements(SAMPLES[gender].trousers)),
   );
   const [hairId, setHairId] = useState(initial.hairId);
   const [hairColor, setHairColor] = useState(initial.hairColor);

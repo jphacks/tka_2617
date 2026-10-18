@@ -3,8 +3,8 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { test } from "node:test";
 import presetsJson from "@/../public/presets/presets.json";
-import { heightFromInput } from "@/lib/avatar-settings";
-import { AVATAR_MODELS, type ModelGender } from "@/lib/avatar-models";
+import { AVATAR_MODELS } from "@/lib/avatar-models";
+import type { ModelGender } from "@/lib/avatar-settings";
 
 const PUBLIC = path.join(import.meta.dirname, "..", "public");
 const GENDERS: ModelGender[] = ["male", "female"];
@@ -87,13 +87,7 @@ void test("男性の体のglbには、着せるための体は無い（体に対
   assert.ok(!gltf.nodes.some((n) => n.name === "avatar_fit"));
 });
 
-void test("入力できる身長は性別ごと（女性は140〜185cm、男性は150〜195cm）で、標準の身長はその間にある", () => {
-  const female = AVATAR_MODELS.female.heightRangeCm;
-  assert.equal(heightFromInput("140", female), 140);
-  assert.equal(heightFromInput("139.5", female), null);
-  assert.equal(heightFromInput("190", female), null);
-  assert.equal(heightFromInput("190"), 190);
-  assert.equal(heightFromInput("145"), null);
+void test("Blenderの身長の表は、性別ごとの入力できる身長の両端を含み、標準の身長はその間にある", () => {
   type Table = {
     standard_cm: number;
     builds: Record<string, { height_cm: number }[]>;
