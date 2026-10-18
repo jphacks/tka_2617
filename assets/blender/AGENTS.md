@@ -104,6 +104,7 @@ Blender 4.2＋MPFB2 2.0.17で、男性・女性のアバターとTシャツのgl
   - mhcloの服は体のhelper（`helper-tights`）の頂点を基準に置くので、肌と`helper-tights`の両方に同じ計算をする。着せるときは、体に着せるための体との差のキー`__fit`を値1で足し、着せたら消す（`pitari_female.dress_on_fit`）
 - 女性の体の身幅`body_width`は、脇の下1cm下の胴の一周÷2と、着せるための体で胸の一番高い所（乳首の高さ）の一周÷2の、大きい方（`pitari_female.body_width`）。胸の一周は谷間を渡って測るので、本物の体の一周より少し短い
 - 肌のテクスチャは`young_caucasian_female`（男性と同じく明暗だけの灰色）
+- いつも下着を着ける（[ADR 0044](../../docs/adr/0044-female-avatar-always-wears-underwear.md)）。`female_sportsuit01`の上（下のレギンスはつながっていない別の塊なので消す）を本物の体に着せ（`pitari_female.add_underwear`）、体と同じ体型キー・身長キーを持たせて`avatar_female.glb`に`underwear`として入れる。ブラウザは下着をいつも描き、上の服は下着の外へ押し出す（重ね着の`wraps`）。`verify_sizes.py`の画像には描かない
 
 ## 寸法の定義（`pitari_tshirt.measure`）
 
@@ -179,4 +180,4 @@ Blender 4.2＋MPFB2 2.0.17で、男性・女性のアバターとTシャツのgl
 - 髪の半透明は、アルファをMath:Roundに通してglTFのalphaMode MASK（alphaCutoff 0.5）にする。three.jsではalphaTestで描かれる。両面を描く
 - 靴を履いたら、体の`_shoe_<靴のid>`が1の頂点を隠す（靴の中の足が突き抜けないように）。範囲は靴のmhcloの`delete_verts`
 - 1ファイル3MB以内、テクスチャは1024px以下
-- 女性の体の髪・靴・顔のパーツは`build_presets.py -- female`で作り、`presets/female/`の下に男性と同じ名前で書き出す（`presets.json`は男性の実行だけが書く）。ブラウザは`AVATAR_MODELS`の`presetUrl`でパスの頭を性別で変える。男性のものを女性に重ねると、頭の高さが違う（標準の身長が約14cm低い）ので髪・目が浮く
+- 女性の体の髪・靴・顔のパーツは`build_presets.py -- female`で作り、`presets/female/`の下に男性と同じ名前で書き出す（`presets.json`は男性の実行だけが書く）。ブラウザは`AVATAR_MODELS`の`presetUrl`でパスの頭を性別で変える（サムネイルも）。サムネイルは`render_presets.py -- female`で、下着を着けた女性の体に重ねて`presets/female/thumbs/`に描く。男性のものを女性に重ねると、頭の高さが違う（標準の身長が約14cm低い）ので髪・目が浮く
