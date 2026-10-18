@@ -32,4 +32,4 @@
 
 ## 影響
 
-- Supabase Authを入れ、apiが`profile_id`をトークンから決めるようになったら、このADRを「置き換え済み」にする。そのときに、AGENTS.mdの「既知のリスク」を消す
+- 撤去条件：Supabase Authを入れ、apiが`profile_id`をトークンから決めるようになったら、このADRを「置き換え済み」にする。そのときに、AGENTS.mdの「既知のリスク」を消す
