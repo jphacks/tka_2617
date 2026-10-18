@@ -6,9 +6,7 @@ Pitariは、手持ちの服をスマホで撮影し、測った寸法と写真�
 
 服と体の寸法を比べて「タイト」「小さすぎる」といったサイズ感を確かめ、Tシャツとシャツの重ね着も試せます。着替える前に、手持ちの服のサイズ感と組み合わせを確認できます。
 
-![Pitari：着るまで分からないサイズ感を、着る前に確かめるアプリ](docs/images/pitari-cover.png)
-
-<!-- 画像ファイルはGit管理外。GitHubで公開する前に、上の画像パスをGitHubの添付画像URLへ差し替える。 -->
+![Pitari：着るまで分からないサイズ感を、着る前に確かめるアプリ](https://github.com/user-attachments/assets/cdb6d925-4698-4156-89d5-fee382964e0d)
 
 ## デモ動画
 
@@ -64,7 +62,7 @@ Pitariは、手持ちの服をスマホで撮り、寸法と柄を自分の体�
 
 | 服の種類を選ぶ | 表をA4と一緒に撮る |
 | --- | --- |
-| <img src="docs/images/demo/01-capture.png" alt="Tシャツを選択した撮影画面。既存の服には寸法の編集・削除ボタンもある" width="260"> | <img src="docs/images/demo/02-front-photo.png" alt="青いJP HACKSのロゴがある白TシャツとA4の紙を、床に平置きして撮影" width="260"> |
+| <img src="https://github.com/user-attachments/assets/1d18de27-6938-4b3e-a0e7-e2b518f3523c" alt="Tシャツを選択した撮影画面。既存の服には寸法の編集・削除ボタンもある" width="260"> | <img src="https://github.com/user-attachments/assets/996d6cee-a412-4521-8d0c-4fd834129402" alt="青いJP HACKSのロゴがある白TシャツとA4の紙を、床に平置きして撮影" width="260"> |
 
 ##### 2. 採寸した寸法を確かめる
 
@@ -72,7 +70,7 @@ PCのCPUで動く推論サービスが、A4・服の範囲・肩先や袖口な�
 
 | 採寸処理の進み具合 | 寸法の確認と修正 |
 | --- | --- |
-| <img src="docs/images/demo/03-measurement-progress.png" alt="仕上げていますと表示された採寸処理。進み具合の目安92%と34秒経過の表示" width="260"> | <img src="docs/images/demo/04-measurements.png" alt="肩幅53.3cm、袖丈21.8cm、身幅57.6cm、着丈76.6cmを確認できる入力欄" width="260"> |
+| <img src="https://github.com/user-attachments/assets/92d2dc85-b8a5-448a-9f9d-ffa4d4f1f072" alt="仕上げていますと表示された採寸処理。進み具合の目安92%と34秒経過の表示" width="260"> | <img src="https://github.com/user-attachments/assets/e58afab3-247b-44cf-b4fa-17835712d93e" alt="肩幅53.3cm、袖丈21.8cm、身幅57.6cm、着丈76.6cmを確認できる入力欄" width="260"> |
 
 今回の画面に表示された寸法は次のとおり。この操作例の表示値で、メジャーと比較した精度検証の結果とは別のもの。
 
@@ -86,7 +84,7 @@ PCのCPUで動く推論サービスが、A4・服の範囲・肩先や袖口な�
 
 | 裏を撮る | 背景を切り抜く | 名前と寸法を登録する |
 | --- | --- | --- |
-| <img src="docs/images/demo/05-back-photo.png" alt="背中にFull Stack Hackersの文字がある白TシャツをA4と一緒に撮影" width="220"> | <img src="docs/images/demo/06-back-progress.png" alt="裏面の切り抜き処理。進み具合の目安82%と22秒経過の表示" width="220"> | <img src="docs/images/demo/07-registration.png" alt="服の名前JPHACKS白Tシャツ、素材綿100%、4項目の寸法を入力して登録する画面" width="220"> |
+| <img src="https://github.com/user-attachments/assets/1fa42a39-d850-4ad1-a3c2-086b23545b2b" alt="背中にFull Stack Hackersの文字がある白TシャツをA4と一緒に撮影" width="220"> | <img src="https://github.com/user-attachments/assets/fb4b1d7b-6b84-4961-881c-1bceae130d1b" alt="裏面の切り抜き処理。進み具合の目安82%と22秒経過の表示" width="220"> | <img src="https://github.com/user-attachments/assets/fce7f442-8dfc-42ae-948c-e08ceb9f0622" alt="服の名前JPHACKS白Tシャツ、素材綿100%、4項目の寸法を入力して登録する画面" width="220"> |
 
 表裏の写真がそろうと、写真から服の柄を作るテクスチャ生成を自動で依頼する。寸法は3Dモデルの形に、写真は表裏の柄に使う。
 
@@ -94,7 +92,7 @@ PCのCPUで動く推論サービスが、A4・服の範囲・肩先や袖口な�
 
 登録後に「今日」を開くと、朝13°C・昼23°C・夜20°Cに合わせて、登録済みの黒い長そでとズボンを提案した。「23°Cまでなので、長そでにしました」と理由を表示し、ズボンには「ズボンがタイト」とサイズ感も表示している。
 
-<img src="docs/images/demo/08-today-outfit.png" alt="今日のコーデ。朝13°C・昼23°C・夜20°Cに対して黒い長そでとズボンを提案し、ズボンがタイトと表示" width="320">
+<img src="https://github.com/user-attachments/assets/82e20eb4-12ae-4fef-9bff-db1bcd114a63" alt="今日のコーデ。朝13°C・昼23°C・夜20°Cに対して黒い長そでとズボンを提案し、ズボンがタイトと表示" width="320">
 
 提案はトップスとボトムスが1着ずつあれば利用でき、気温・季節・素材・色をもとに選ぶ。組み合わせを考える手間を減らしながら、サイズ感も同じ画面で確認できる。
 
@@ -106,7 +104,7 @@ PCのCPUで動く推論サービスが、A4・服の範囲・肩先や袖口な�
 
 | 写真と寸法で探す | 表裏を確認して試着へ進む |
 | --- | --- |
-| <img src="docs/images/demo/09-closet.png" alt="クローゼットに登録された白Tシャツ。写真の下に着丈76.6cm、身幅57.6cm、肩幅53.3cm、袖丈21.8cmを表示" width="260"> | <img src="docs/images/demo/10-garment-detail.png" alt="白Tシャツの表裏の写真、テクスチャ生成の依頼中表示、アバターに着せるボタンがある詳細画面" width="260"> |
+| <img src="https://github.com/user-attachments/assets/23378bc1-424e-44c6-87ae-81d2f1818586" alt="クローゼットに登録された白Tシャツ。写真の下に着丈76.6cm、身幅57.6cm、肩幅53.3cm、袖丈21.8cmを表示" width="260"> | <img src="https://github.com/user-attachments/assets/40512d58-4627-4fa8-bb48-50be31460b7c" alt="白Tシャツの表裏の写真、テクスチャ生成の依頼中表示、アバターに着せるボタンがある詳細画面" width="260"> |
 
 ##### 6. アバターを回して、前後の柄と形を見る
 
@@ -114,7 +112,7 @@ PCのCPUで動く推論サービスが、A4・服の範囲・肩先や袖口な�
 
 | 正面：胸のロゴ | 背面：背中の文字 |
 | --- | --- |
-| <img src="docs/images/demo/11-avatar-front.png" alt="撮影した白Tシャツを着た男性アバターの正面。胸に青いJP HACKSのロゴを反映" width="260"> | <img src="docs/images/demo/12-avatar-back.png" alt="同じ白Tシャツを着たアバターの背面。Full Stack Hackersの文字を反映" width="260"> |
+| <img src="https://github.com/user-attachments/assets/d8051c04-c591-44ca-9977-395ac054ba57" alt="撮影した白Tシャツを着た男性アバターの正面。胸に青いJP HACKSのロゴを反映" width="260"> | <img src="https://github.com/user-attachments/assets/6632f412-0231-4b90-9bf7-be9dd286e96c" alt="同じ白Tシャツを着たアバターの背面。Full Stack Hackersの文字を反映" width="260"> |
 
 ドラッグで回転し、ピンチで拡大して、服の形と柄を前後から確かめられる。登録した名前・寸法の編集や服の削除もできるので、測り直した値への更新や、着なくなった服の整理にも使える。
 
