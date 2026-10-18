@@ -5,9 +5,15 @@ import Link from "next/link";
 import type { GarmentView } from "@pitari/api";
 import { AvatarPlaceholder } from "@/components/avatar-placeholder";
 import { CameraIcon } from "@/components/icons";
+import { TodayAvatar } from "@/components/today-avatar";
+import { categoryLabels } from "@/lib/garment-category";
+import { garmentPhotoUrl } from "@/lib/garment-photo";
+import { avatarUrl } from "@/lib/outfit";
+import { suggestOutfit } from "@/lib/outfit-suggestion";
 import { requestJson } from "@/lib/request";
-import { todayLabel, wardrobeNeeds } from "@/lib/today";
+import { dayNumberOf, todayLabel, wardrobeNeeds } from "@/lib/today";
 import type { DayPart, TodayWeather } from "@/lib/weather";
+import { wornTop, wornTrousers } from "@/lib/worn-garment";
 
 const dayParts: { part: DayPart; label: string }[] = [
   { part: "morning", label: "朝" },
@@ -16,6 +22,14 @@ const dayParts: { part: DayPart; label: string }[] = [
 ];
 
 const noSubscription = () => () => undefined;
+
+// 寸法が足りずアバターに着せられない服は、提案に使わない
+function isWearable(garment: GarmentView) {
+  return (
+    "worn" in
+    (garment.category === "trousers" ? wornTrousers(garment) : wornTop(garment))
+  );
+}
 
 export function TodayContents() {
   // 天気と服は別々に読み、片方が失敗しても、もう片方は出す
@@ -28,6 +42,11 @@ export function TodayContents() {
     noSubscription,
     () => todayLabel(new Date()),
     () => "",
+  );
+  const dayNumber = useSyncExternalStore(
+    noSubscription,
+    () => dayNumberOf(new Date()),
+    () => null,
   );
 
   useEffect(() => {
@@ -58,6 +77,19 @@ export function TodayContents() {
     ? wardrobeNeeds(garments.map((garment) => garment.category))
     : null;
   const remaining = needs?.filter((need) => !need.registered).length;
+  // 天気を読み終わってから選ぶ。気温が後から届くと、別の服に着せ替わってしまう
+  const suggestion =
+    Array.isArray(garments) &&
+    remaining === 0 &&
+    weather !== null &&
+    dayNumber !== null
+      ? suggestOutfit(garments.filter(isWearable), {
+          season: weather === "failed" ? null : weather.season,
+          temperatures,
+          dayNumber,
+        })
+      : null;
+  const outfit = suggestion && !("missing" in suggestion) ? suggestion : null;
 
   return (
     <main className="px-6 pb-6 motion-safe:animate-fade-in">
@@ -82,8 +114,19 @@ export function TodayContents() {
         </p>
       )}
 
-      <div className="mt-4 flex h-57.5 items-end justify-center rounded-xl bg-surface pt-4 pb-1.5">
-        <AvatarPlaceholder />
+      <div className="mt-4">
+        {outfit ? (
+          // 別の服を提案したら、試着の状態をその服の寸法で作り直す
+          <TodayAvatar
+            key={`${outfit.top.id} ${outfit.bottom.id}`}
+            top={outfit.top}
+            bottom={outfit.bottom}
+          />
+        ) : (
+          <div className="flex h-57.5 items-end justify-center rounded-xl bg-surface pt-4 pb-1.5">
+            <AvatarPlaceholder />
+          </div>
+        )}
       </div>
 
       {garments === "failed" && (
@@ -91,18 +134,18 @@ export function TodayContents() {
           クローゼットを読み込めませんでした。APIとDBの起動を確認してください。
         </p>
       )}
-      {garments === null && (
+      {(garments === null || (remaining === 0 && suggestion === null)) && (
         <p role="status" className="mt-5 text-sm text-muted">
           読み込み中…
         </p>
       )}
-      {needs && (
+      {needs && remaining !== 0 && (
         <>
           <h2 className="mt-5 text-[19px] leading-normal font-bold">
             あと{remaining}着で、コーデの提案が始まります
           </h2>
           <p className="mt-2 text-sm leading-[1.8] text-description">
-            トップス・ボトムス・靴が1着ずつそろうと、気温に合わせた組み合わせを毎朝提案します。
+            トップスとボトムスが1着ずつそろうと、気温に合わせた組み合わせを毎朝提案します。
           </p>
           <ul className="mt-3">
             {needs.map((need) => (
@@ -127,6 +170,65 @@ export function TodayContents() {
               </li>
             ))}
           </ul>
+        </>
+      )}
+      {suggestion && "missing" in suggestion && (
+        <>
+          <h2 className="mt-5 text-[19px] leading-normal font-bold">
+            今日に合う服が足りません
+          </h2>
+          <p className="mt-2 text-sm leading-[1.8] text-description">
+            {suggestion.missing}
+          </p>
+        </>
+      )}
+      {outfit && (
+        <>
+          <h2 className="mt-5 text-[19px] leading-normal font-bold">
+            今日はこの組み合わせ
+          </h2>
+          <p className="mt-2 text-sm leading-[1.8] text-description">
+            {outfit.reason}
+            {outfit.note && <br />}
+            {outfit.note}
+          </p>
+          <ul className="mt-3">
+            {[outfit.top, outfit.bottom].map((garment) => {
+              const photo = garmentPhotoUrl(garment);
+              return (
+                <li key={garment.id} className="border-b border-line">
+                  <Link
+                    href={`/garments/${encodeURIComponent(garment.id)}`}
+                    className="flex min-h-13 items-center gap-3 py-1.5 transition active:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main"
+                  >
+                    <svg
+                      viewBox="0 0 300 360"
+                      className="w-10 shrink-0 rounded bg-surface"
+                      aria-hidden="true"
+                    >
+                      {photo && (
+                        <image
+                          href={photo}
+                          width="300"
+                          height="360"
+                          preserveAspectRatio="xMidYMid meet"
+                        />
+                      )}
+                    </svg>
+                    <span className="text-[15px] wrap-anywhere">
+                      {garment.name || categoryLabels[garment.category]}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          <Link
+            href={avatarUrl({ top: outfit.top.id, bottom: outfit.bottom.id })}
+            className="mt-4 flex h-12 w-full items-center justify-center rounded border border-main text-[15px] font-semibold transition hover:opacity-70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main"
+          >
+            マイで着せ替える
+          </Link>
         </>
       )}
       <Link
