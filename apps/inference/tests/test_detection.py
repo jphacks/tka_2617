@@ -92,3 +92,20 @@ class DetectionTests(unittest.TestCase):
         self.assertGreater(record["mask"][240, 460], 0)
         for other in [(self.raw + b"x", 700, 500, "short_sleeve_top"), (self.raw, 700, 500, "trousers"), (self.raw, 350, 250, "short_sleeve_top")]:
             self.assertIsNone(detections.recall(*other))
+
+    def test_mask_rewritten_for_other_points_is_not_paired_with_the_old_record(self):
+        points = [{"id": 7, "x": 320, "y": 90, "score": 0.9}]
+        self.request("cutout", category="short_sleeve_top", bbox=self.box, paperCorners=self.corners, points=points)
+        key = detections.photo_key(self.raw)
+        # 別の点で切り抜き直して.pngだけが先に新しくなった状態
+        other = np.zeros((500, 700), dtype=np.uint8)
+        cv2.rectangle(other, (300, 60), (620, 420), 255, -1)
+        (self.cache / f"{key}.png").write_bytes(cv2.imencode(".png", other)[1].tobytes())
+        self.assertIsNone(detections.recall(self.raw, 700, 500, "short_sleeve_top"))
+
+    def test_cutout_is_returned_even_if_the_record_cannot_be_written(self):
+        points = [{"id": 7, "x": 320, "y": 90, "score": 0.9}]
+        with patch.object(detections.os, "replace", side_effect=OSError("disk full")), self.assertLogs("pitari", "WARNING"):
+            result = self.request("cutout", category="short_sleeve_top", bbox=self.box, paperCorners=self.corners, points=points)
+        self.assertTrue(result["cutoutBase64"])
+        self.assertIsNone(detections.recall(self.raw, 700, 500, "short_sleeve_top"))

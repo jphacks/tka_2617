@@ -120,7 +120,7 @@ apps/inference/textures/{生成日時}_{種類}_{服ID先頭8文字}/
 
 - 変換の本体は`artifacts/uv/pitari/scripts/photo_to_texture.py`の`make_texture`。服の種類でテンプレートを選ぶ。Tシャツは`artifacts/uv/pitari/uv_template.json`、長そでは`artifacts/uv/pitari/longsleeve/uv_template.json`、シャツは`artifacts/uv/pitari/shirt/uv_template.json`、ズボンは`artifacts/uv/pitari/trousers/uv_template.json`（どれもGitに含まれない）。シャツの写真は、検出・点・切り抜きを長そでとして扱う。テンプレートが無いPCでは503を返し、テクスチャは作らない。作り方は[UVテンプレートのREADME](../../artifacts/uv/pitari/README.md)。
 - ズボンの切り抜きと服の領域は、ランドマークで囲んだ輪郭の外を背景として教えて作る（`pitari/cutout.py`の`garment_alpha`、[ADR 0024](../../docs/adr/0024-trousers-cutout-with-landmarks.md)）。テクスチャを作るときも同じ関数を使う。
-- `/detect`の切り抜きの段階で点を受け取ったら、服の範囲・点・A4の角・服の領域を、写真のJPEGのハッシュで`apps/inference/.cache/detections/`に残す（新しいものから200件）。テクスチャの作業は、同じ写真・大きさ・種類の記録があれば、推論と切り抜きを省く（`pitari/detections.py`、[ADR 0048](../../docs/adr/0048-reuse-cutout-for-texture.md)）。使ったときは、`report.json`の`notes`に書く。
+- `/detect`の切り抜きの段階で点を受け取ったら、服の範囲・点・A4の角・服の領域を、写真のJPEGのハッシュで`apps/inference/.cache/detections/`に残す（新しいものから200件）。テクスチャの作業は、同じ写真・大きさ・種類の記録があれば、推論と切り抜きを省く（`pitari/detections.py`、[ADR 0048](../../docs/adr/0048-reuse-cutout-for-texture.md)）。使ったときは、`report.json`の`notes`に書く。記録の`.json`には服の領域の`.png`のハッシュも残し、読むときに照合する。合わなければ使わずに推論し直す。記録を書けなくても、`/detect`の結果はそのまま返す。
 - モデルは採寸と同じものを使う。テクスチャを作るのにモデルを使っている間は、採寸のリクエストが最大60秒待ってから処理される。
 - 待っている作業は5件まで。同じ服の作業が待っている間に新しい写真が届いたら、新しいほうに置き換える。
 
