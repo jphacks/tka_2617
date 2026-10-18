@@ -37,6 +37,8 @@ apps/inference/textures/
 *.[pP][nN][gG]
 *.[jJ][pP][gG]
 *.[jJ][pP][eE][gG]
+# アプリが出すプリセットのサムネイル（Blenderのrender_presets.pyが描く）は共有する
+!apps/web/public/presets/**/thumbs/*.png
 
 # Blenderの元モデル・作業ファイル・世代別バックアップはローカルに残す
 *.[bB][lL][eE][nN][dD]

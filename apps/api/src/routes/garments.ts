@@ -8,6 +8,8 @@ import {
 } from "#src/lib/measurement-schema";
 import { HttpError } from "#src/lib/http-error";
 import { purchasedMonthSchema, seasonSchema } from "#src/lib/garment-records";
+import { garmentMaterialsSchema } from "#src/lib/materials";
+import { colorFamilySchema } from "#src/lib/color-family";
 import { createGarment } from "#src/services/create-garment";
 import { listGarments } from "#src/services/list-garments";
 import { getGarment } from "#src/services/get-garment";
@@ -121,6 +123,8 @@ export const garments = new Hono()
               seasonSchema.options.filter((season) => values.includes(season)),
             )
             .optional(),
+          materials: garmentMaterialsSchema.optional(),
+          colorFamily: colorFamilySchema.nullable().optional(),
         })
         .strict()
         .refine(
@@ -128,12 +132,14 @@ export const garments = new Hono()
             value.name !== undefined ||
             value.measurements !== undefined ||
             value.purchasedMonth !== undefined ||
-            value.seasons !== undefined,
+            value.seasons !== undefined ||
+            value.materials !== undefined ||
+            value.colorFamily !== undefined,
         ),
       (result, c) => {
         if (!result.success)
           return c.json(
-            { error: "名前・寸法・購入時期・季節を確認してください" },
+            { error: "名前・寸法・購入時期・季節・素材・色を確認してください" },
             400,
           );
       },

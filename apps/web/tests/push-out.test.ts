@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Vector3 } from "three";
-import { clearAlongNormal } from "@/lib/push-out";
+import { Group, Mesh, Vector3 } from "three";
+import { bodyMeshes, clearAlongNormal } from "@/lib/push-out";
 
 const GAP = 0.004;
 
@@ -28,4 +28,39 @@ void test("押し出しが無ければ、面からgapの所まで法線の方向
   clearAlongNormal(push, n, 0.001, GAP);
   assert.ok(Math.abs(push.y - 0.003) < 1e-9);
   assert.equal(push.x, 0);
+});
+
+void test("体のglbに着せるための体（avatar_fit）があれば、それを押し出しの相手にして、描かない", () => {
+  const root = new Group();
+  const fit = new Mesh();
+  fit.name = "avatar_fit";
+  const body = new Mesh();
+  body.name = "avatar";
+  // Blenderの書き出しでは、着せるための体が先に並ぶ
+  root.add(fit, body);
+  assert.deepEqual(bodyMeshes(root), { body, collider: fit, underwear: null });
+  // 着せるための体は描かない
+  assert.equal(fit.visible, false);
+  assert.equal(body.visible, true);
+});
+
+void test("着せるための体が無ければ（男性）、描く体に対して押し出す", () => {
+  const root = new Group();
+  const body = new Mesh();
+  root.add(body);
+  assert.deepEqual(bodyMeshes(root), { body, collider: body, underwear: null });
+});
+
+void test("女性の体のglbでは、下着（underwear）も選び、下着より後ろに並ぶ体を描く体にする", () => {
+  const root = new Group();
+  const fit = new Mesh();
+  fit.name = "avatar_fit";
+  const underwear = new Mesh();
+  underwear.name = "underwear";
+  const body = new Mesh();
+  body.name = "avatar";
+  root.add(fit, underwear, body);
+  assert.deepEqual(bodyMeshes(root), { body, collider: fit, underwear });
+  // 下着は描く
+  assert.equal(underwear.visible, true);
 });

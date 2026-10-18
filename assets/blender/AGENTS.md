@@ -1,12 +1,14 @@
 # assets/blenderのルール
 
-Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作るスクリプト。身長・体型と実寸（cm）に合わせてTシャツを変形させる。
+Blender 4.2＋MPFB2 2.0.17で、男性・女性のアバターとTシャツのglbを作るスクリプト。身長・体型と実寸（cm）に合わせてTシャツを変形させる。
 
 ## ファイル
 
 - `build_tshirt.py`：入口。アバターとTシャツを作り、`apps/web/public/models/`に書き出す
 - `verify_sizes.py`：サイズ合わせの検証と、確認用の画像（`out/renders/`）
 - `pitari_tshirt.py`：共通処理（生成・基準点・計測・シェイプキー・書き出し）
+- `build_tshirt_female.py`：入口。女性のアバター（着せるための体を含む）とTシャツを作り、`apps/web/public/models/`に書き出す（[ADR 0042](../../docs/adr/0042-fit-body-for-female.md)）
+- `pitari_female.py`：女性の共通処理（着せるための体、女性の体の身幅）
 - `build_presets.py`：入口。髪4種と靴を作り、`apps/web/public/presets/`に書き出す
 - `build_longsleeve.py`：入口。Tシャツの袖を手首まで伸ばした長袖を作り、`apps/web/public/models/`に書き出す（[ADR 0018](../../docs/adr/0018-longsleeve-from-tshirt.md)）
 - `pitari_longsleeve.py`：長袖の共通処理（袖口の先に腕に沿って輪を足す）
@@ -28,12 +30,23 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_longsleeve.blend --python assets/blender/verify_sizes.py -- longsleeve
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_shirt.py
 "C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_shirt.blend --python assets/blender/verify_sizes.py -- shirt
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_tshirt_female.py
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_female.blend --python assets/blender/verify_sizes.py -- tshirt female
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_longsleeve.py -- female
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_longsleeve_female.blend --python assets/blender/verify_sizes.py -- longsleeve female
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_shirt.py -- female
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_shirt_female.blend --python assets/blender/verify_sizes.py -- shirt female
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background --python assets/blender/build_trousers.py -- female
+"C:\Program Files\Blender Foundation\Blender 4.2\blender.exe" --background assets/blender/out/build_trousers_female.blend --python assets/blender/verify_trousers.py -- female
 ```
+
+- 長袖・シャツ・ズボンの女性版は、同じ入口に`-- female`を付けて作る（ファイル名の`male`が`female`になる）。女性の体（`avatar_female.glb`）は`build_tshirt_female.py`が書き出す
 
 - プリセットの生成は約20秒、確認は約3分。確認は`build_tshirt.py`の体（`avatar_male.glb`）を読むので、体を作り直したら確認もやり直す
 
 - 生成は約30〜50秒、検証は約40秒（画像の書き出しを含む）
 - 検証は標準体型±0.5cm、ほかの体型±1cmで合否を出し、不合格なら終了コード1。身長は標準と150〜195cmの8点で確かめる
+- 女性は、服の名前の後に`female`を付けて検証する（画像は`out/renders_female/`に正面・横・斜め）。押し出しは着せるための体に対して行い、「谷間に服の頂点が入っていない」「胸の下に、埋めた深さの0.9倍以上の服と体の間の空間がある」も合否に入れる。着せ直したままの服（体型4つ）と、押し出した後の服（指定の組み合わせ）の両方で確かめる
 - 書き出した`*_male_height.json`は、webのテスト（`apps/web/tests/`）も読む。webのスキーマで読めるか、寸法からキーを解けるかを確かめるので、書き出し直したら`pnpm --filter @pitari/web test`も流す
 - 生成スクリプトは、途中でPythonのエラーが出てもBlenderが終了コード0を返す。ログの`[pitari] 完了`で終わったかを見る
 - MPFB2はBlenderの拡張機能として有効にしておく（Pythonからは`bl_ext.blender_org.mpfb`でimport）
@@ -41,15 +54,18 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 
 ## 出力（apps/web/public/models/）
 
-| ファイル                                        | 中身                                                                                                                                                                                                                                                   |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `avatar_male.glb`                               | 体。体型キー3個＋身長キー2個＋頂点属性`_cover`（服の下の重み0〜1。1は服で完全に覆われる所）と`_shoe_<靴のid>`（その靴で隠れる所が1。靴ごとに範囲が違う）。親指を内側に曲げるキー`thumb_in`。肌は明暗だけの灰色のテクスチャ（ブラウザで肌の色を掛ける） |
-| `tshirt_male.glb`                               | Tシャツ。体型キー3個＋身長キー2個＋サイズキー4個                                                                                                                                                                                                       |
-| `tshirt_male_height.json`                       | 標準の身長（`standard_cm`）と、体型・身長（150、160、標準、185、195cm）ごとの基準寸法、キーの効き方`m`（4項目×4キー）、体の身幅`body_width`。webはこれを使う                                                                                           |
-| `tshirt_male_base.json`                         | 標準の身長での体型ごとの基準寸法（cm）。webは使っていない                                                                                                                                                                                              |
-| `tshirt_male_correction.json`                   | 標準の身長での体型ごとのキーの効き方`m`。webは使っていない                                                                                                                                                                                             |
-| `longsleeve_male.glb`、`longsleeve_male_*.json` | 長袖。中身はTシャツの同じ名前のファイルと同じ形（体型キー3個＋身長キー2個＋サイズキー4個、身長ごとの表）                                                                                                                                               |
-| `shirt_male.glb`、`shirt_male_*.json`           | 長袖のシャツ。長袖と同じキーに、前の開け閉めのキー`shirt_close`／`shirt_open`を足したもの                                                                                                                                                              |
+| ファイル                                                     | 中身                                                                                                                                                                                                                                                   |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `avatar_male.glb`                                            | 体。体型キー3個＋身長キー2個＋頂点属性`_cover`（服の下の重み0〜1。1は服で完全に覆われる所）と`_shoe_<靴のid>`（その靴で隠れる所が1。靴ごとに範囲が違う）。親指を内側に曲げるキー`thumb_in`。肌は明暗だけの灰色のテクスチャ（ブラウザで肌の色を掛ける） |
+| `tshirt_male.glb`                                            | Tシャツ。体型キー3個＋身長キー2個＋サイズキー4個                                                                                                                                                                                                       |
+| `tshirt_male_height.json`                                    | 標準の身長（`standard_cm`）と、体型・身長（150、160、標準、185、195cm）ごとの基準寸法、キーの効き方`m`（4項目×4キー）、体の身幅`body_width`。webはこれを使う                                                                                           |
+| `tshirt_male_base.json`                                      | 標準の身長での体型ごとの基準寸法（cm）。webは使っていない                                                                                                                                                                                              |
+| `tshirt_male_correction.json`                                | 標準の身長での体型ごとのキーの効き方`m`。webは使っていない                                                                                                                                                                                             |
+| `longsleeve_male.glb`、`longsleeve_male_*.json`              | 長袖。中身はTシャツの同じ名前のファイルと同じ形（体型キー3個＋身長キー2個＋サイズキー4個、身長ごとの表）                                                                                                                                               |
+| `shirt_male.glb`、`shirt_male_*.json`                        | 長袖のシャツ。長袖と同じキーに、前の開け閉めのキー`shirt_close`／`shirt_open`を足したもの                                                                                                                                                              |
+| `avatar_female.glb`                                          | 女性の体。`avatar_male.glb`と同じキー・属性に、見えないメッシュ`avatar_fit`（着せるための体。体と同じ頂点の並び・キー・`thumb_in`・`_cover`）を足したもの。ブラウザは`avatar_fit`を描かず、押し出しの相手にだけ使う                                    |
+| `tshirt_female.glb`、`tshirt_female_*.json`                  | 女性のTシャツ。中身は`tshirt_male`の同じ名前のファイルと同じ形。`body_width`だけ女性の決め方（下の「女性」）                                                                                                                                           |
+| `longsleeve_female.*`、`shirt_female.*`、`trousers_female.*` | 女性の長袖・シャツ・ズボン。中身は男性の同じ名前のファイルと同じ形。上の服の`body_width`は女性の決め方                                                                                                                                                 |
 
 生成物だが、Vercelでは再生成できないのでcommitする。
 
@@ -72,6 +88,23 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - 突き抜け対策は「服を体の外へ押し出す」だけにする（[ADR 0007](../../docs/adr/0007-push-shirt-out-only.md)）。体は変形させない
   - 体から8mm未満の服の頂点を外へ押し出してなだらかに広げ、服で完全に覆われる体（`_cover`が0.99以上）が服の外へ出ていれば、その面の頂点をさらに外へ足す
   - 同じ計算をwebの`apps/web/src/lib/push-out.ts`と`verify_sizes.push_out_e`に持っている。変えるときは両方
+
+## 女性（`pitari_female.py`、[ADR 0042](../../docs/adr/0042-fit-body-for-female.md)）
+
+- 体はMPFBのマクロ`gender`だけを0（女性）にする（`pitari_tshirt.macros_for(build, "female")`）。体型4つ（`BUILD_MACROS`）・身長キー2つの作り方は男性と同じ。胸の大きさは`cupsize`0.5で固定
+  - 標準の身長は女性の体で測り直す（159.12cm）。入力できる身長は140〜185cm、身長を測る点は140・150・175・185cm（`pitari_tshirt.HEIGHT_RANGE_CM`・`HEIGHT_SAMPLES_CM`）。男性より10cm下にずらし、身長キーを延ばす量（標準から−19〜+26cm）を男性（−23〜+22cm）と同じくらいにする。検証も140〜185cmの8点で確かめる
+- 服は男性と同じ服を、mhcloで女性の体に着せ直す。UV・基準点・寸法の測り方・サイズキーは男性と同じ（基準点は女性の服で求め直し、`out/<服>_female_landmarks.json`）
+  - 上の服（Tシャツ・長袖・シャツ）は着せるための体に着せる。ズボンは腰より下で、着せるための体と本物の体が同じなので、本物の体に着せる
+  - 女性のズボンは、股上のキーだけ形を変える（`pitari_trousers.rise_displacement_from_hip`）。ヒップを測る高さから上だけを伸ばす。股から伸ばすと、ヒップを測る高さで切る所がずれ、腰の丸みが強い女性ではヒップがキーの値に比例しなくなる。女性の体ではヒップとわたり幅のキーがほぼ同じ向きに効くので、そのずれが解いたキーで大きくなり、検証に通らなかった（最大1.23cm）。男性のキーは変えていない
+- 着せるための体（見えないメッシュ`avatar_fit`）を作り、服の着せ直し・押し出し・検証はこれに対して行う。体は変形させない（ADR 0007）
+  - 谷間を埋める：高さごとに、胴の切り口の前側を、左右のふくらみの外側で結ぶ（切り口の前側の凸包）。乳首の高さから`FIT_BUST_RISE`（10cm）上まで
+  - 胸の下を落とす：乳首の高さから下は、縦の列ごとに、前面をウエスト（腰の関節`joint-spine-3`から乳首までで胴の一周が一番短い高さ）へまっすぐ下ろす（縦の列の前側の凸包）
+  - 体の中心から左右`FIT_HALF_WIDTH`（16cm）まで。端の3cm・上端の3cmで、前へ出す量を0へ下げる
+  - 手で形を決めず、体の形から計算する。体型キー・身長キーの体にも同じ計算をして、`avatar_fit`のキーにする（骨格のキーを足しても流し直せる）
+  - mhcloの服は体のhelper（`helper-tights`）の頂点を基準に置くので、肌と`helper-tights`の両方に同じ計算をする。着せるときは、体に着せるための体との差のキー`__fit`を値1で足し、着せたら消す（`pitari_female.dress_on_fit`）
+- 女性の体の身幅`body_width`は、脇の下1cm下の胴の一周÷2と、着せるための体で胸の一番高い所（乳首の高さ）の一周÷2の、大きい方（`pitari_female.body_width`）。胸の一周は谷間を渡って測るので、本物の体の一周より少し短い
+- 肌のテクスチャは`young_caucasian_female`（男性と同じく明暗だけの灰色）
+- いつも下着を着ける（[ADR 0047](../../docs/adr/0047-female-avatar-always-wears-underwear.md)）。`female_sportsuit01`の上（下のレギンスはつながっていない別の塊なので消す）を本物の体に着せ（`pitari_female.add_underwear`）、体と同じ体型キー・身長キーを持たせて`avatar_female.glb`に`underwear`として入れる。ブラウザは下着をいつも描き、上の服は下着の外へ押し出す（重ね着の`wraps`）。`verify_sizes.py`の画像には描かない
 
 ## 寸法の定義（`pitari_tshirt.measure`）
 
@@ -96,6 +129,8 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - 身長キー：`heightKeyValues(身長, table)`（体とTシャツの両方に入れる）
 - サイズキー：`fitAt(build, 身長, table)`で前後の身長の基準寸法とMを直線で補間し、`sizeKeyValues(実寸, fit, table)`がM（4×4）×キー＝（実寸−その体型・身長の基準寸法）を解く。同じ計算を`verify_sizes.fit_at`と`key_values`に持っている
 - 服の押し出しは`src/lib/push-out.ts`（three-mesh-bvh）。スマホでは1回0.3〜0.4秒かかるので、入力が止まってから（0.3秒後に）計算する。検証スクリプトは押し出した後の寸法のずれを出す（合否には使わない）
+  - 体のglbに着せるための体（`avatar_fit`、女性だけ）があれば、それに対して押し出し、描かない（`bodyMeshes`）。`avatar_fit`は体と同じUVを持たせ、glbでも体と同じ頂点の並びにする（袖の中に隠れる腕などで、頂点番号を体にも使う）
+  - 性別ごとの3Dモデル（glbのパス・身長の表・入力できる身長）は`src/lib/avatar-models.ts`の`AVATAR_MODELS`。設定の性別が女性なら女性、男性と「選ばない」は男性（`modelGenderOf`、[ADR 0043](../../docs/adr/0043-show-female-avatar-by-gender.md)）。確認ページ（`/dev/tryon`）は「アバターの性別」で切り替えられる
 - アバター画面は`/avatar`（`src/app/avatar/`）。開発用の確認ページは`/dev/tryon`（`src/app/dev/tryon/`、実寸の直接入力・キーの値・計算時間を出す）。本番では404で、`next dev`のときだけ開く。スマホではPCの`next dev`にLANでつなぐ（`docs/setup.md`の「スマホで撮影する」）。どちらも状態と計算は`src/components/try-on/use-try-on.ts`、3D表示は`src/components/try-on/try-on-scene.tsx`
 
 ## UV（写真から貼る用、`pitari`）
@@ -145,3 +180,4 @@ Blender 4.2＋MPFB2 2.0.17で、男性アバターとTシャツのglbを作る�
 - 髪の半透明は、アルファをMath:Roundに通してglTFのalphaMode MASK（alphaCutoff 0.5）にする。three.jsではalphaTestで描かれる。両面を描く
 - 靴を履いたら、体の`_shoe_<靴のid>`が1の頂点を隠す（靴の中の足が突き抜けないように）。範囲は靴のmhcloの`delete_verts`
 - 1ファイル3MB以内、テクスチャは1024px以下
+- 女性の体の髪・靴・顔のパーツは`build_presets.py -- female`で作り、`presets/female/`の下に男性と同じ名前で書き出す（`presets.json`は男性の実行だけが書く）。ブラウザは`AVATAR_MODELS`の`presetUrl`でパスの頭を性別で変える（サムネイルも）。サムネイルは`render_presets.py -- female`で、下着を着けた女性の体に重ねて`presets/female/thumbs/`に描く。男性のものを女性に重ねると、頭の高さが違う（標準の身長が約14cm低い）ので髪・目が浮く
