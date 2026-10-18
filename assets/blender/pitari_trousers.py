@@ -293,6 +293,18 @@ def rise_displacement(P, lm, k):
     return d
 
 
+def rise_displacement_from_hip(P, lm, k):
+    """股上 +（女性）: ヒップを測る高さから上だけを上へ伸ばす（ヒップの高さで 0、ウエストの帯で k）。
+    股から伸ばすと、ヒップを測る高さで切る所が上へずれる。腰の丸みが強い女性の体では、ヒップがキーの値に比例しなくなり
+    （股上 +4 だけで 0.5cm ずれる）、ヒップとわたり幅のキーがほぼ同じ向きに効くので、解いたキーで大きくずれた"""
+    z_crotch, z_waist = _heights(P, lm)
+    z_hip = z_crotch + HIP_RISE
+    w = np.clip((P[:, 2] - z_hip) / (z_waist - z_hip), 0, 1)
+    d = np.zeros_like(P)
+    d[:, 2] = k * w
+    return d
+
+
 def inseam_displacement(P, lm, k):
     """股下 +: 股から下を、脚の軸に沿って伸ばす（股で 0、裾で k）"""
     crotch = P[lm["crotch"]]
@@ -308,6 +320,8 @@ def inseam_displacement(P, lm, k):
 
 DISPLACEMENTS = {"waist": waist_displacement, "hip": hip_displacement, "thigh": thigh_displacement,
                  "rise": rise_displacement, "inseam": inseam_displacement, "hem": hem_displacement}
+# 女性は股上のキーだけ違う形にする
+FEMALE_DISPLACEMENTS = {**DISPLACEMENTS, "rise": rise_displacement_from_hip}
 
 
 # ---------------------------------------------------------------- 体の寸法（着られるかの判定）
