@@ -14,10 +14,6 @@ export const BUILD_LABELS: Record<Build, string> = {
   chubby: "ぽっちゃり",
 };
 
-/** 入力できる身長（cm）。Blenderで基準寸法とキーの効き方を測った範囲 */
-export const HEIGHT_MIN_CM = 150;
-export const HEIGHT_MAX_CM = 195;
-
 export const GENDERS = ["male", "female", "unspecified"] as const;
 export type Gender = (typeof GENDERS)[number];
 export const GENDER_LABELS: Record<Gender, string> = {
@@ -26,7 +22,28 @@ export const GENDER_LABELS: Record<Gender, string> = {
   unspecified: "選ばない",
 };
 
-// 骨格は女性のときだけ聞く。今は3Dに反映せず、女性のアバターを足したときに使う
+/**
+ * 3Dモデルの性別ごとの、入力できる身長（cm）。Blenderで基準寸法とキーの効き方を測った範囲。
+ * 女性のモデルは標準の身長（159cm）が低いので、範囲を低い側へずらしてある
+ */
+export const HEIGHT_RANGE_CM = {
+  male: [150, 195],
+  female: [140, 185],
+} as const satisfies Record<string, readonly [number, number]>;
+/** 3Dモデルの性別。Blenderが性別ごとに、同じキー・同じ表の形でglbとJSONを書き出す */
+export type ModelGender = keyof typeof HEIGHT_RANGE_CM;
+
+/** 設定の性別で使う3Dモデル。「選ばない」は男性（docs/adr/0043-show-female-avatar-by-gender.md） */
+export function modelGenderOf(gender: Gender): ModelGender {
+  return gender === "female" ? "female" : "male";
+}
+
+/** 設定の性別で入力できる身長（cm） */
+export function heightRangeOf(gender: Gender) {
+  return HEIGHT_RANGE_CM[modelGenderOf(gender)];
+}
+
+// 骨格は女性のときだけ聞く。今は3Dに反映しない（骨格のキーは候補要件）
 export const BODY_FRAMES = ["straight", "wave", "natural", "unknown"] as const;
 export type BodyFrame = (typeof BODY_FRAMES)[number];
 export const BODY_FRAME_LABELS: Record<BodyFrame, string> = {
@@ -40,7 +57,11 @@ const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/);
 
 const AvatarSettingsSchema = z.object({
   gender: z.enum(GENDERS),
-  heightCm: z.number().min(HEIGHT_MIN_CM).max(HEIGHT_MAX_CM),
+  // 性別ごとの範囲には、読んだあとにwithGenderで収める
+  heightCm: z
+    .number()
+    .min(HEIGHT_RANGE_CM.female[0])
+    .max(HEIGHT_RANGE_CM.male[1]),
   build: z.enum(BUILDS),
   bodyFrame: z.enum(BODY_FRAMES).nullable(),
   skinColor: hexColor,
@@ -61,23 +82,29 @@ export const defaultAvatarSettings: AvatarSettings = {
   hairColor: presetsJson.hairColors[1],
 };
 
+/** 性別を変える。骨格は女性のときだけ持ち、身長はその性別の3Dモデルで入力できる範囲に収める */
 export function withGender(
   settings: AvatarSettings,
   gender: Gender,
 ): AvatarSettings {
+  const [min, max] = heightRangeOf(gender);
   return {
     ...settings,
     gender,
+    heightCm: Math.min(Math.max(settings.heightCm, min), max),
     bodyFrame: gender === "female" ? (settings.bodyFrame ?? "unknown") : null,
   };
 }
 
-/** 入力欄の文字を身長（cm）にする。空欄、数値でないもの、3Dで変えられる範囲の外はnull */
-export function heightFromInput(input: string): number | null {
+/**
+ * 入力欄の文字を身長（cm）にする。空欄、数値でないもの、3Dで変えられる範囲（3Dモデルの性別ごと、heightRangeOf）の外はnull
+ */
+export function heightFromInput(
+  input: string,
+  [min, max]: readonly [number, number],
+): number | null {
   const heightCm = Number(input);
-  return input.trim() !== "" &&
-    heightCm >= HEIGHT_MIN_CM &&
-    heightCm <= HEIGHT_MAX_CM
+  return input.trim() !== "" && heightCm >= min && heightCm <= max
     ? heightCm
     : null;
 }
@@ -117,6 +144,11 @@ export function createAvatarSettingsStore(
     },
   };
 }
+
+/** 画面で使う設定。ページごとに作ると、マイで登録したあとに今日の画面へ戻っても、前に読んだ「未登録」のまま残る */
+export const avatarSettingsStore = createAvatarSettingsStore(
+  () => window.localStorage,
+);
 
 function load(storage: () => Pick<Storage, "getItem">): AvatarSettings | null {
   try {

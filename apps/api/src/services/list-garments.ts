@@ -1,6 +1,6 @@
 import { supabase } from "#src/lib/supabase";
 import { env } from "#src/lib/env";
-import { garmentRecordSchema } from "#src/lib/garment-records";
+import { garmentColumns, garmentRecordSchema } from "#src/lib/garment-records";
 import { garmentView } from "#src/lib/garment-view";
 import { HttpError } from "#src/lib/http-error";
 import type { Category } from "#src/lib/measurement-schema";
@@ -8,7 +8,7 @@ import type { Category } from "#src/lib/measurement-schema";
 export async function listGarments(category?: Category) {
   let query = supabase
     .from("garments")
-    .select("*, garment_images(*)")
+    .select(garmentColumns)
     .eq("profile_id", env.DEMO_PROFILE_ID)
     .order("created_at", { ascending: false })
     .limit(100);

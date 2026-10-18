@@ -1,4 +1,4 @@
-"""Grounding DINOとHRNetをOpenVINOのIRに変換し、変換したものを動かす（ADR 0043）。
+"""Grounding DINOとHRNetをOpenVINOのIRに変換し、変換したものを動かす（ADR 0049）。
 
 PyTorchのままだと、服の検出がCPUの4スレッドで1枚約23秒かかる。
 OpenVINOはIntelのCPU向けに同じモデルを速く動かせる。変換したモデルは変換に使った画像の大きさでしか動かないため、

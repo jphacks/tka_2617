@@ -417,6 +417,7 @@ void test("服の詳細のimagesにはテクスチャを入れない（古いこ
         measurement_version: "df2-a4-flat-midpoint-v2",
         purchased_month: null,
         seasons: [],
+        color_family: null,
         created_at: "2026-10-17T00:00:00Z",
         garment_images: [image(back.id, "back"), image(textureId, "texture")],
       }),
