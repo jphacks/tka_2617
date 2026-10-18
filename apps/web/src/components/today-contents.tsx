@@ -13,7 +13,7 @@ import { suggestOutfit } from "@/lib/outfit-suggestion";
 import { requestJson } from "@/lib/request";
 import { dayNumberOf, todayLabel, wardrobeNeeds } from "@/lib/today";
 import type { DayPart, TodayWeather } from "@/lib/weather";
-import { wornTop, wornTrousers } from "@/lib/worn-garment";
+import { isWearable } from "@/lib/worn-garment";
 
 const dayParts: { part: DayPart; label: string }[] = [
   { part: "morning", label: "朝" },
@@ -22,14 +22,6 @@ const dayParts: { part: DayPart; label: string }[] = [
 ];
 
 const noSubscription = () => () => undefined;
-
-// 寸法が足りずアバターに着せられない服は、提案に使わない
-function isWearable(garment: GarmentView) {
-  return (
-    "worn" in
-    (garment.category === "trousers" ? wornTrousers(garment) : wornTop(garment))
-  );
-}
 
 export function TodayContents() {
   // 天気と服は別々に読み、片方が失敗しても、もう片方は出す
