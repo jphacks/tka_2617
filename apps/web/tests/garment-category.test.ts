@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { test } from "node:test";
-import { TOPS } from "@/components/try-on/use-try-on";
+import { AVATAR_MODELS } from "@/lib/avatar-models";
 import {
   categoryChoices,
   categoryLabels,
@@ -18,7 +18,9 @@ void test("撮影の画面では、シャツ・長そで・Tシャツ・ズボ�
 void test("服の種類ごとに、着せる3Dモデルのglbがある", () => {
   const urls = categoryChoices.map((category) => {
     const model = categoryModels[category];
-    return model === "trousers" ? "/models/trousers_male.glb" : TOPS[model].url;
+    return model === "trousers"
+      ? AVATAR_MODELS.male.trousers
+      : AVATAR_MODELS.male.tops[model].url;
   });
   assert.deepEqual(urls, [
     "/models/shirt_male.glb",
