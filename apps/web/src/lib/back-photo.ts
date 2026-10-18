@@ -38,7 +38,42 @@ export async function prepareBackPhoto(
   category: Category,
   showProgress: ShowProgress,
 ): Promise<BackPhoto> {
-  const photo = await preparePhoto(file);
+  return cutBackPhoto(await preparePhoto(file), category, showProgress);
+}
+
+type PreparedPhoto = Pick<
+  Awaited<ReturnType<typeof preparePhoto>>,
+  "file" | "imageBase64" | "widthPx" | "heightPx"
+>;
+
+/**
+ * 整えた裏面の写真を、推論で切り抜く。推論の通信に失敗したときや、切り抜けなかったときは、
+ * JPEGだけを返す。推論サービスが未設定・停止中でも、裏面を保存できるようにするため
+ */
+export async function cutBackPhoto(
+  photo: PreparedPhoto,
+  category: Category,
+  showProgress: ShowProgress,
+): Promise<BackPhoto> {
+  const jpegOnly: BackPhoto = {
+    image: photo.file,
+    cutoutImage: null,
+    previewUrl: `data:image/jpeg;base64,${photo.imageBase64}`,
+    previewWidthPx: photo.widthPx,
+    previewHeightPx: photo.heightPx,
+  };
+  try {
+    return (await cutout(photo, category, showProgress)) ?? jpegOnly;
+  } catch {
+    return jpegOnly;
+  }
+}
+
+async function cutout(
+  photo: PreparedPhoto,
+  category: Category,
+  showProgress: ShowProgress,
+): Promise<BackPhoto | null> {
   showProgress(0, 30, "裏面を確認しています", 5000);
   const paper = await detect(photo.file, {
     stage: "paper",
@@ -55,35 +90,27 @@ export async function prepareBackPhoto(
     paperCorners,
     points: [],
   });
-  let cutout: DetectionResult | null = null;
-  if (garment.bbox) {
-    showProgress(70, 100, "切り抜いています", 5000);
-    cutout = await detect(photo.file, {
-      stage: "cutout",
-      category,
-      paperCorners,
-      bbox: garment.bbox,
-      points: garment.points,
-    });
-  }
+  if (!garment.bbox) return null;
+  showProgress(70, 100, "切り抜いています", 5000);
+  const result: DetectionResult = await detect(photo.file, {
+    stage: "cutout",
+    category,
+    paperCorners,
+    bbox: garment.bbox,
+    points: garment.points,
+  });
   if (
-    cutout?.cutoutBase64 &&
-    cutout.cutoutWidthPx !== null &&
-    cutout.cutoutHeightPx !== null
+    !result.cutoutBase64 ||
+    result.cutoutWidthPx === null ||
+    result.cutoutHeightPx === null
   )
-    return {
-      image: photo.file,
-      cutoutImage: pngFile(cutout.cutoutBase64),
-      previewUrl: `data:image/png;base64,${cutout.cutoutBase64}`,
-      previewWidthPx: cutout.cutoutWidthPx,
-      previewHeightPx: cutout.cutoutHeightPx,
-    };
+    return null;
   return {
     image: photo.file,
-    cutoutImage: null,
-    previewUrl: `data:image/jpeg;base64,${photo.imageBase64}`,
-    previewWidthPx: photo.widthPx,
-    previewHeightPx: photo.heightPx,
+    cutoutImage: pngFile(result.cutoutBase64),
+    previewUrl: `data:image/png;base64,${result.cutoutBase64}`,
+    previewWidthPx: result.cutoutWidthPx,
+    previewHeightPx: result.cutoutHeightPx,
   };
 }
 

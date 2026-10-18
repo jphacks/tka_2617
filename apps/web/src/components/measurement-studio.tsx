@@ -36,24 +36,13 @@ import { MeasurementImage } from "@/components/measurement-image";
 import type { AdjustmentMode } from "@/components/measurement-image";
 import { SimilarGarmentsSheet } from "@/components/similar-garments-sheet";
 import { cutoutColorFamily, type AddedGarment } from "@/lib/color-family";
+import { emptyMeasurements, manualResult } from "@/lib/manual-measurement";
 
 type DefinitionResponse = {
   definitions: Record<Category, MeasurementDefinition[]>;
   measurementVersion: DetectionResult["measurementVersion"];
 };
 type Photo = Awaited<ReturnType<typeof preparePhoto>>;
-const emptyMeasurements: Measurements = {
-  shoulderWidthCm: null,
-  sleeveLengthCm: null,
-  bodyWidthCm: null,
-  bodyLengthCm: null,
-  waistCm: null,
-  hipCm: null,
-  thighWidthCm: null,
-  riseCm: null,
-  inseamCm: null,
-  hemWidthCm: null,
-};
 const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-main";
 const button = `min-h-12 rounded bg-main px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-85 active:scale-[0.98] disabled:opacity-40 ${focusRing}`;
@@ -69,6 +58,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [back, setBack] = useState<BackPhoto | null>(null);
   const [result, setResult] = useState<DetectionResult | null>(null);
+  // 推論を使わずに作った結果か。A4や服の範囲を直す操作は推論が要るので出さない
+  const [manual, setManual] = useState(false);
   const [mode, setMode] = useState<AdjustmentMode | "dimensions">("dimensions");
   const [values, setValues] = useState<Measurements>({ ...emptyMeasurements });
   const [overrides, setOverrides] = useState<
@@ -284,43 +275,60 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   async function analyze() {
     await work(async () => {
       showProgress(0, 25, "写真を確認しています", 5000);
-      await loadDefinitions();
+      const loaded = await loadDefinitions();
       setOverrides({});
       setEditing(null);
       setValues({ ...emptyMeasurements });
-      let next = await detect("paper");
-      setResult(next);
-      showProgress(25, 50, "服を見つけています", 20000);
-      const garment = await detect("garment", next, chosenCategory ?? "auto");
-      next = {
-        ...next,
-        category: garment.category ?? chosenCategory,
-        bbox: garment.bbox,
-        warnings: [...next.warnings, ...garment.warnings],
-      };
-      setResult(next);
-      if (!next.category || !next.bbox) {
-        setMode("bbox");
-        return;
+      setManual(false);
+      try {
+        await detectAll();
+      } catch {
+        // 推論サービスが未設定・停止中でも、写真と手入力の寸法で登録できるようにする。寸法は推定しない
+        if (!photo || !chosenCategory)
+          throw new Error("写真と服の種類を選んでください");
+        setResult(
+          manualResult(photo, chosenCategory, loaded.measurementVersion),
+        );
+        setManual(true);
+        setMode("dimensions");
       }
-      showProgress(50, 75, "サイズを測っています", 15000);
-      const landmarks = await detect("landmarks", next);
-      next = {
-        ...next,
-        points: landmarks.points,
-        modelVersion: landmarks.modelVersion,
-        measurements: landmarks.measurements,
-        warnings: [...new Set([...next.warnings, ...landmarks.warnings])],
-      };
-      setResult(next);
-      applyValues(next.measurements, false);
-      showProgress(75, 100, "仕上げています", 5000);
-      next = await cutout(next);
-      setResult(next);
-      setMode("dimensions");
-      showProgress(100, 100, "測定できました");
-      await new Promise((resolve) => setTimeout(resolve, 300));
     });
+  }
+
+  /** 推論でA4・服の範囲・点・切り抜きを順に求める。途中で失敗したら例外を投げる */
+  async function detectAll() {
+    let next = await detect("paper");
+    setResult(next);
+    showProgress(25, 50, "服を見つけています", 20000);
+    const garment = await detect("garment", next, chosenCategory ?? "auto");
+    next = {
+      ...next,
+      category: garment.category ?? chosenCategory,
+      bbox: garment.bbox,
+      warnings: [...next.warnings, ...garment.warnings],
+    };
+    setResult(next);
+    if (!next.category || !next.bbox) {
+      setMode("bbox");
+      return;
+    }
+    showProgress(50, 75, "サイズを測っています", 15000);
+    const landmarks = await detect("landmarks", next);
+    next = {
+      ...next,
+      points: landmarks.points,
+      modelVersion: landmarks.modelVersion,
+      measurements: landmarks.measurements,
+      warnings: [...new Set([...next.warnings, ...landmarks.warnings])],
+    };
+    setResult(next);
+    applyValues(next.measurements, false);
+    showProgress(75, 100, "仕上げています", 5000);
+    next = await cutout(next);
+    setResult(next);
+    setMode("dimensions");
+    showProgress(100, 100, "測定できました");
+    await new Promise((resolve) => setTimeout(resolve, 300));
   }
 
   function geometryChanged(next: DetectionResult) {
@@ -391,6 +399,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
   async function save() {
     await work(async () => {
       let backFailed = false;
+      let withoutCutout = false;
       let textureMessage = "";
       let newlyAdded: AddedGarment | null = null;
       const checked = materialsFromRows(materialInput);
@@ -407,19 +416,22 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
         });
         setEditing({ ...editing, measurements: { ...values } });
       } else {
-        if (!result?.category || !result.bbox)
-          throw new Error("服の種類と範囲を指定してください");
-        const ready = result.cutoutBase64 ? result : await cutout(result);
+        if (!result?.category) throw new Error("服の種類を選んでください");
+        // 切り抜きに失敗しても登録は止めず、写真のまま保存する。クローゼットには写真を出す
+        const ready =
+          result.cutoutBase64 || !result.bbox
+            ? result
+            : await cutout(result).catch(() => result);
         setResult(ready);
-        if (!ready.cutoutBase64)
-          throw new Error("切り抜きに失敗しました。服の範囲を調整してください");
-        // 色を決められなくても登録は止めず、色の分からない服として保存する
-        const colorFamily = await cutoutColorFamily(ready.cutoutBase64).catch(
-          () => null,
-        );
+        withoutCutout = !ready.cutoutBase64;
+        // 色を決められなくても登録は止めず、色の分からない服として保存する。切り抜きが無ければ決めない
+        const colorFamily = ready.cutoutBase64
+          ? await cutoutColorFamily(ready.cutoutBase64).catch(() => null)
+          : null;
         const form = new FormData();
         form.set("image", jpegFile(ready.imageBase64));
-        form.set("cutoutImage", pngFile(ready.cutoutBase64));
+        if (ready.cutoutBase64)
+          form.set("cutoutImage", pngFile(ready.cutoutBase64));
         form.set(
           "metadata",
           JSON.stringify({
@@ -466,6 +478,9 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
           : Object.values(values).some((value) => value !== null)
             ? "服と寸法をクローゼットに登録しました"
             : "服を登録しました。寸法はあとから入力できます。") +
+          (withoutCutout
+            ? "切り抜けなかったので、クローゼットには写真をそのまま出します。"
+            : "") +
           (backFailed
             ? "裏面は保存できなかったため、服の詳細から撮り直してください。"
             : textureMessage),
@@ -568,11 +583,12 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
                   setName("");
                   setMaterialInput(defaultMaterialRows);
                   setMode("dimensions");
+                  setManual(false);
                 });
             }}
           />
         </label>
-        {photo && !result && (
+        {photo && (!result || manual) && (
           <svg
             viewBox={`0 0 ${String(photo.widthPx)} ${String(photo.heightPx)}`}
             className="w-full rounded bg-surface"
@@ -597,7 +613,12 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             {result ? "最初から測定" : "寸法を測定"}
           </button>
         )}
-        {result && !editing && (
+        {result && !editing && manual && (
+          <p role="status" className="rounded bg-surface p-3 text-sm">
+            推論サービスにつながらないため、自動で採寸していません。寸法を測って手で入れてください。空欄のままでも登録でき、寸法はあとから入れられます。
+          </p>
+        )}
+        {result && !editing && !manual && (
           <>
             <p className="text-sm text-description">
               {mode === "dimensions" ? "測定結果" : "ドラッグで調整"}
@@ -825,9 +846,7 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             </div>
             <button
               className={`${button} w-full`}
-              disabled={
-                !category || !definitions || (!editing && !result?.bbox)
-              }
+              disabled={!category || !definitions || (!editing && !result)}
               onClick={() => {
                 void save();
               }}
