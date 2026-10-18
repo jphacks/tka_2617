@@ -22,6 +22,7 @@ erDiagram
     text measurement_version
     text purchased_month "YYYY-MM、未設定はnull"
     text[] seasons "spring・summer・autumn・winter"
+    text color_family "白・紺などの色の系統、分からなければnull"
     timestamptz created_at
     timestamptz updated_at
   }
@@ -58,6 +59,7 @@ erDiagram
 - textureは推論サービスが作ったテクスチャのPNG。apiが推論サービスから受け取って保存し、作業フォルダ名を`texture_job`に持つ。差し替えは関数`save_garment_texture`で1つのトランザクションにし、同じ作業は2回保存しない。関数は服の行をロックしたまま、作業のもとになった裏面が今の裏面かを確かめ直し、違えば保存しない（`20261017000500_save_texture_checks_back.sql`）（[ADR 0033](adr/0033-serve-texture-through-api.md)）。
 - 購入時期と季節は[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。
 - 素材は混率で持ち、服1着につき1行以上（綿98%・ポリウレタン2%なら2行）。合計100%は、差し替えの関数`set_garment_materials`が確かめる。素材を入れずに登録した服と、素材を足す前の服は綿100%にする。素材の一覧`materials`はmigrationで入れ、画面からは足さない。
+- 色の系統は、webが切り抜きの色から決める。前からある服と、色を決められなかった服はnull（[ADR 0042](adr/0042-color-family-from-cutout.md)）。
 - 元画像とはブラウザで向き・縮小・EXIF除去を確定した画像であり、カメラの元ファイルとは異なる。
 - 全テーブルでRLSを有効にし、公開ポリシーは設けない。apiのsecret keyだけがDBを操作する。
 - Storageは非公開のgarmentsバケット。JPEG・PNGを許可し、1枚16MiBまで（テクスチャのために上げた。実際のテクスチャは約0.5MB。利用者が上げる写真は、apiが8MiBまでに抑える）。apiが期限付きURLを発行する。
