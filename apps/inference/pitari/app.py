@@ -67,6 +67,15 @@ class Options(BaseModel):
     stage: Literal["all", "paper", "garment", "landmarks", "cutout"] = "all"
 
 
+class SavedView(BaseModel):
+    """採寸画面で確かめてDBに保存した、写真の上の点とA4の四隅。"""
+
+    widthPx: int = Field(gt=0)
+    heightPx: int = Field(gt=0)
+    paperCorners: list[tuple[float, float]] = Field(default_factory=list, max_length=4)
+    points: list[Point] = Field(default_factory=list, max_length=33)
+
+
 def read_jpeg(upload):
     raw = upload.file.read(MAX_BYTES + 1)
     if len(raw) > MAX_BYTES:
@@ -175,8 +184,13 @@ def textures(
     back: UploadFile | None = File(None),
     garmentCreatedAt: Annotated[datetime | None, Form()] = None,
     backImageId: Annotated[str | None, Form()] = None,
+    frontSaved: Annotated[str | None, Form()] = None,
 ):
     garment_id = garment_uuid(garmentId)
+    try:
+        front_saved = SavedView.model_validate_json(frontSaved).model_dump() if frontSaved else None
+    except ValidationError:
+        raise HTTPException(400, "保存した点とA4の四隅を確認してください") from None
     try:
         back_image_id = str(uuid.UUID(backImageId)) if backImageId else None
     except ValueError:
@@ -194,7 +208,7 @@ def textures(
             back.file.close()
     try:
         texture.submit(garment_id, category, front_raw, back_raw, models, processing,
-                       garment_created_at=garmentCreatedAt, back_image_id=back_image_id)
+                       garment_created_at=garmentCreatedAt, back_image_id=back_image_id, front_saved=front_saved)
     except texture.QueueFull:
         raise HTTPException(429, "テクスチャの作成待ちが多すぎます。少し待って再試行してください") from None
     return {"accepted": True}
