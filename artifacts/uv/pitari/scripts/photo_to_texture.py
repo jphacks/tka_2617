@@ -107,8 +107,8 @@ class Inference:
     def __init__(self, models=None):
         self.models = models
 
-    def run(self, image, bbox, category="short_sleeve_top", paper_corners=None, points=None):
-        """paper_corners・pointsを渡したら、その工程は推論しない。"""
+    def run(self, image, bbox, category="short_sleeve_top", paper_corners=None):
+        """paper_cornersを渡したら、紙は推論しない。"""
         from pitari.geometry import paper_candidate
         from pitari.models import MODEL_VERSION, Models
 
@@ -123,9 +123,8 @@ class Inference:
         if bbox is None:
             with clock.measure("detect"):
                 _, bbox = self.models.detect(image, category)
-        if not points:
-            with clock.measure("landmarks"):
-                points = self.models.landmarks(image, category, bbox)
+        with clock.measure("landmarks"):
+            points = self.models.landmarks(image, category, bbox)
         return {"bbox": [float(v) for v in bbox], "paperCorners": [[float(x), float(y)] for x, y in corners], "points": points, "modelVersion": MODEL_VERSION, "timingsMs": clock.ms}
 
 
@@ -461,7 +460,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
 
     detectionは、同じ写真を採寸や裏面の登録で切り抜いたときの{"bbox", "paperCorners", "points", "mask", "modelVersion", "widthPx", "heightPx"}。
     渡すと推論と切り抜きをやり直さない。
-    savedは、採寸画面で確かめてDBに保存した{"paperCorners", "points", "widthPx", "heightPx"}。detectionより優先し、推論で上書きしない。
+    savedは、採寸画面で確かめてDBに保存した{"paperCorners", "points", "widthPx", "heightPx"}。detectionや推論より優先する。
+    保存した点が一部の番号だけでも、ほかの番号は推論の点で補う。
     """
     clock = Stopwatch()
     root = TEMPLATE_ROOTS[category]
@@ -514,15 +514,18 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
             notes.append(f"点は{Path(points_path).name}を使った")
         else:
             if detection:
-                result = {**detection, **known}
+                result = {**detection, "paperCorners": known.get("paperCorners") or detection["paperCorners"]}
                 notes.append("採寸・裏面の登録で切り抜いたときの範囲・点・服の領域を使った")
             else:
                 # ロックの待ちも含む。モデルの時間は内訳として別に残す。
                 with clock.measure(f"{view}.inference"):
-                    result = inference.run(photo, given.get("bbox"), model_category,
-                                           paper_corners=known.get("paperCorners"), points=known.get("points"))
+                    result = inference.run(photo, given.get("bbox"), model_category, paper_corners=known.get("paperCorners"))
                 for step, ms in result.get("timingsMs", {}).items():
                     clock.add(f"{view}.{step}", ms)
+            if known.get("points"):
+                by_id = {point["id"]: point for point in result["points"]}
+                by_id.update({point["id"]: point for point in known["points"]})
+                result = {**result, "points": sorted(by_id.values(), key=lambda point: point["id"])}
             if known:
                 notes.append("採寸画面で保存した" + "・".join({"paperCorners": "A4の四隅", "points": "点"}[key] for key in known) + "を使った")
             record = {

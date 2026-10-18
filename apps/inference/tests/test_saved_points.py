@@ -13,7 +13,7 @@ from pitari import texture
 photo_to_texture = texture.photo_to_texture
 SAVED_POINTS = [{"id": 1, "x": 10.0, "y": 8.0, "score": None}]
 SAVED_CORNERS = [[1.0, 2.0], [29.0, 2.0], [29.0, 38.0], [1.0, 38.0]]
-MODEL_POINTS = [{"id": 1, "x": 3.0, "y": 3.0, "score": 0.5}]
+MODEL_POINTS = [{"id": 1, "x": 3.0, "y": 3.0, "score": 0.5}, {"id": 2, "x": 4.0, "y": 4.0, "score": 0.5}]
 MODEL_CORNERS = [[0.0, 0.0], [5.0, 0.0], [5.0, 5.0], [0.0, 5.0]]
 
 
@@ -55,20 +55,20 @@ class SavedPointsTests(unittest.TestCase):
     def points_record(self, **front):
         # 点を書き出したあとの工程は、この確認では使わないので止める
         with patch.dict(photo_to_texture.TEMPLATE_ROOTS, {"short_sleeve_top": self.template}), \
-                patch("pitari.geometry.paper_candidate", return_value=MODEL_CORNERS), \
+                patch("pitari.geometry.paper_candidate", return_value=MODEL_CORNERS) as self.paper, \
                 patch.object(photo_to_texture, "save_mask", side_effect=SystemExit("ここまで")):
             with self.assertRaises(SystemExit):
                 photo_to_texture.make_texture(self.out, {"front": {"photo": self.photo, **front}},
                                               photo_to_texture.Inference(self.models), category="short_sleeve_top")
         return json.loads((self.out / "points_front.json").read_text(encoding="utf-8"))
 
-    def test_saved_points_and_corners_skip_their_models(self):
+    def test_saved_points_and_corners_win_over_inference(self):
         saved = {"widthPx": 30, "heightPx": 40, "paperCorners": SAVED_CORNERS, "points": SAVED_POINTS}
         record = self.points_record(saved=saved)
+        self.paper.assert_not_called()
         self.assertEqual(record["paperCorners"], SAVED_CORNERS)
-        self.assertEqual([(p["id"], p["x"], p["y"]) for p in record["points"]], [(1, 10.0, 8.0)])
-        # 範囲はDBに無いので、検出だけはする
-        self.assertEqual(self.models.calls, ["detect"])
+        # 保存に無い番号は、推論の点で補う
+        self.assertEqual([(p["id"], p["x"], p["y"]) for p in record["points"]], [(1, 10.0, 8.0), (2, 4.0, 4.0)])
 
     def test_saved_points_win_over_the_cached_cutout(self):
         mask = np.zeros((40, 30), np.uint8)
@@ -78,7 +78,7 @@ class SavedPointsTests(unittest.TestCase):
         saved = {"widthPx": 30, "heightPx": 40, "paperCorners": [], "points": SAVED_POINTS}
         record = self.points_record(detection=detection, saved=saved)
         self.assertEqual(record["paperCorners"], MODEL_CORNERS)
-        self.assertEqual(record["points"][0]["x"], 10.0)
+        self.assertEqual([(p["id"], p["x"]) for p in record["points"]], [(1, 10.0), (2, 4.0)])
         self.assertEqual(self.models.calls, [])
 
     def test_saved_values_for_another_size_are_not_used(self):
