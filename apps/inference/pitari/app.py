@@ -18,7 +18,7 @@ import numpy as np
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile, Depends
 from fastapi.responses import FileResponse
 from PIL import Image, UnidentifiedImageError
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 from pitari.geometry import paper_candidate, paper_scale
 from pitari.cutout import garment_cutout
@@ -68,12 +68,20 @@ class Options(BaseModel):
 
 
 class SavedView(BaseModel):
-    """採寸画面で確かめてDBに保存した、写真の上の点とA4の四隅。"""
+    """採寸画面で確かめてDBに保存した、写真の上の点・A4の四隅・服の範囲。"""
 
     widthPx: int = Field(gt=0)
     heightPx: int = Field(gt=0)
     paperCorners: list[tuple[float, float]] = Field(default_factory=list, max_length=4)
     points: list[Point] = Field(default_factory=list, max_length=33)
+    bbox: tuple[float, float, float, float] | None = None
+
+    @field_validator("bbox")
+    @classmethod
+    def ordered(cls, bbox):
+        if bbox and not (0 <= bbox[0] < bbox[2] and 0 <= bbox[1] < bbox[3]):
+            raise ValueError("服の範囲は左上・右下の順に指定してください")
+        return bbox
 
 
 def read_jpeg(upload):
@@ -190,7 +198,7 @@ def textures(
     try:
         front_saved = SavedView.model_validate_json(frontSaved).model_dump() if frontSaved else None
     except ValidationError:
-        raise HTTPException(400, "保存した点とA4の四隅を確認してください") from None
+        raise HTTPException(400, "保存した点・A4の四隅・服の範囲を確認してください") from None
     try:
         back_image_id = str(uuid.UUID(backImageId)) if backImageId else None
     except ValueError:

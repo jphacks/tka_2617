@@ -80,7 +80,7 @@ GETは`{ definitions, measurementVersion }`を返す。POSTの入力は`{ imageI
 
 ### POST /v1/garments
 
-multipartの`image`（測定用のJPEG）、`cutoutImage`（透過PNG、無くてもよい）、`metadata`（JSON文字列）を受け取る。画面から新しく登録するときは、切り抜きができれば両方の画像を送る。推論サービスにつながらないときや切り抜けなかったときは、測定用のJPEGだけを送る。推論にまったくつながらなかったときは、pointsとpaperCornersを空、pixelsPerCmとmodelVersionをnullにし、寸法は手で入れた値だけを送る（推定値は作らない）。`originalImage`も受け取れるが、今の画面では送らない。metadataは`{ name, category, imageId, widthPx, heightPx, points, pixelsPerCm, paperCorners, modelVersion, measurements, measurementVersion, materials?, colorFamily? }`。materialsは下の「素材」の形で、省くと綿100%で保存する。colorFamilyは下の「色の系統」の値で、省くとnullで保存する。apiは、画像の実際のサイズと、座標系の画像サイズが一致するかを確かめる。手で直したあとのmeasurementsを最終の値として保存し、推定し直して上書きしない。成功は`201 { id }`。
+multipartの`image`（測定用のJPEG）、`cutoutImage`（透過PNG、無くてもよい）、`metadata`（JSON文字列）を受け取る。画面から新しく登録するときは、切り抜きができれば両方の画像を送る。推論サービスにつながらないときや切り抜けなかったときは、測定用のJPEGだけを送る。推論にまったくつながらなかったときは、pointsとpaperCornersを空、pixelsPerCmとmodelVersionをnullにし、寸法は手で入れた値だけを送る（推定値は作らない）。`originalImage`も受け取れるが、今の画面では送らない。metadataは`{ name, category, imageId, widthPx, heightPx, points, pixelsPerCm, paperCorners, bbox?, modelVersion, measurements, measurementVersion, materials?, colorFamily? }`。bboxは採寸画面で確かめた服の範囲`[x1, y1, x2, y2]`で、省くとnullで保存する。写真の端をはみ出した範囲は写真の中に切り詰め、写真の外にあれば保存しない（[ADR 0052](adr/0052-saved-bbox-for-texture.md)）。materialsは下の「素材」の形で、省くと綿100%で保存する。colorFamilyは下の「色の系統」の値で、省くとnullで保存する。apiは、画像の実際のサイズと、座標系の画像サイズが一致するかを確かめる。手で直したあとのmeasurementsを最終の値として保存し、推定し直して上書きしない。成功は`201 { id }`。
 
 ### GET /v1/garments、GET /v1/garments/:id
 
@@ -165,7 +165,7 @@ Tシャツ・長そで・シャツ・ズボンでテンプレートが違い、�
 
 apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBearerトークン）：
 
-- `POST /textures`：フォームの`backImageId`を作業に記録する。表のmeasurement画像に点かA4の四隅が保存してあれば、`frontSaved`に`{ widthPx, heightPx, points, paperCorners }`のJSONを入れる。推論サービスは、写真と大きさが同じなら、その点と四隅を推論の結果より優先して使う（[ADR 0051](adr/0051-saved-points-for-texture.md)）
+- `POST /textures`：フォームの`backImageId`を作業に記録する。表のmeasurement画像に点・A4の四隅・服の範囲のどれかが保存してあれば、`frontSaved`に`{ widthPx, heightPx, points, paperCorners, bbox }`のJSONを入れる。推論サービスは、写真と大きさが同じなら、その点・四隅・範囲を推論の結果より優先して使う（[ADR 0051](adr/0051-saved-points-for-texture.md)、[ADR 0052](adr/0052-saved-bbox-for-texture.md)）
 - `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null, backImageId: string | null }`。作業が無ければ404。`backImageId`を返さない推論サービスでは、最新の作業を今の写真のものとみなす
 - `GET /textures/{garmentId}/{job}/texture.png`：`done`の作業のテクスチャ
 

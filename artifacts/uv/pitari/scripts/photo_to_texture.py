@@ -460,7 +460,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
 
     detectionは、同じ写真を採寸や裏面の登録で切り抜いたときの{"bbox", "paperCorners", "points", "mask", "modelVersion", "widthPx", "heightPx"}。
     渡すと推論と切り抜きをやり直さない。
-    savedは、採寸画面で確かめてDBに保存した{"paperCorners", "points", "widthPx", "heightPx"}。detectionや推論より優先する。
+    savedは、採寸画面で確かめてDBに保存した{"paperCorners", "points", "bbox", "widthPx", "heightPx"}。detectionや推論より優先する。
+    bboxは、detectionが無いときに服の検出の代わりに使う。detectionがあれば、範囲から作った服の領域ごとdetectionを使う。
     保存した点が一部の番号だけでも、ほかの番号は推論の点で補う。
     """
     clock = Stopwatch()
@@ -512,6 +513,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
             known["paperCorners"] = saved["paperCorners"]
         if saved and saved["points"]:
             known["points"] = saved["points"]
+        if saved and saved.get("bbox") and not detection:
+            known["bbox"] = saved["bbox"]
         if points_path:
             record = json.loads(Path(points_path).read_text(encoding="utf-8"))
             if [record["widthPx"], record["heightPx"]] != [width, height]:
@@ -524,7 +527,8 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
             else:
                 # ロックの待ちも含む。モデルの時間は内訳として別に残す。
                 with clock.measure(f"{view}.inference"):
-                    result = inference.run(photo, given.get("bbox"), model_category, paper_corners=known.get("paperCorners"))
+                    result = inference.run(photo, given.get("bbox") or known.get("bbox"), model_category,
+                                           paper_corners=known.get("paperCorners"))
                 for step, ms in result.get("timingsMs", {}).items():
                     clock.add(f"{view}.{step}", ms)
             if known.get("points"):
@@ -532,7 +536,7 @@ def make_texture(out, views, inference, fraction="3d", category="short_sleeve_to
                 by_id.update({point["id"]: point for point in known["points"]})
                 result = {**result, "points": sorted(by_id.values(), key=lambda point: point["id"])}
             if known:
-                notes.append("採寸画面で保存した" + "・".join({"paperCorners": "A4の四隅", "points": "点"}[key] for key in known) + "を使った")
+                notes.append("採寸画面で保存した" + "・".join({"paperCorners": "A4の四隅", "points": "点", "bbox": "服の範囲"}[key] for key in known) + "を使った")
             record = {
                 "imageId": f"photo_{view}.jpg",
                 "view": view,

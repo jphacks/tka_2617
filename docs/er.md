@@ -42,6 +42,7 @@ erDiagram
     jsonb points "この画像上のランドマーク"
     float pixels_per_cm "縮尺不明ならnull"
     jsonb paper_corners "この画像上のA4四隅"
+    jsonb bbox "この画像上の服の範囲、measurement以外はnull"
     text model_version
     text texture_job "テクスチャを作った作業、texture以外はnull"
     timestamptz created_at
@@ -60,7 +61,7 @@ erDiagram
 
 - profilesのデモ用1行と、デモユーザーのダミーの服4着を`supabase/seed.sql`で用意する。服の画像は`supabase/seed/garments/`にあり、`supabase/config.toml`の`[storage.buckets.garments]`でStorageに入る（[セットアップ](setup.md#ダミーの服)）。apiはDEMO_PROFILE_IDだけを使用する。
 - categoryはshort_sleeve_top・long_sleeve_top・shirt・trousers。長そでは20261017000100_long_sleeve_top.sql、シャツは20261017000400_shirt_category.sqlで既存のカテゴリ制約を拡張する。measurementsは[API一覧](api.md)の共通型。
-- 画像は服1着につき各roleを1枚ずつ保存できる。現在のv2ではランドマーク・A4四隅ともmeasurement画像に保存する。cutoutは表示用PNGでpoints・paper_cornersは空配列、pixels_per_cmはnull。旧v1ではA4四隅はoriginal画像にある。
+- 画像は服1着につき各roleを1枚ずつ保存できる。現在のv2ではランドマーク・A4四隅ともmeasurement画像に保存する。採寸画面で確かめた服の範囲（bbox）もmeasurement画像に保存し、テクスチャを作るときに服の検出を省く。前からある写真はnull（`20261018000400_garment_image_bbox.sql`、[ADR 0052](adr/0052-saved-bbox-for-texture.md)）。cutoutは表示用PNGでpoints・paper_cornersは空配列、pixels_per_cmはnull。旧v1ではA4四隅はoriginal画像にある。
 - backは裏面のJPEG、back_cutoutは裏面の表示用PNG。どちらも採寸しないため、points・paper_cornersは空配列、pixels_per_cm・model_versionはnull。差し替えのたびに新しいキーで保存し、行の入れ替えは関数`replace_garment_back`（`20261017000200_replace_garment_back.sql`）で1つのトランザクションにする。関数はapiの`service_role`だけが実行できる（[ADR 0020](adr/0020-back-photo-as-separate-role.md)）。
 - textureは推論サービスが作ったテクスチャのPNG。apiが推論サービスから受け取って保存し、作業フォルダ名を`texture_job`に持つ。差し替えは関数`save_garment_texture`で1つのトランザクションにし、同じ作業は2回保存しない。関数は服の行をロックしたまま、作業のもとになった裏面が今の裏面かを確かめ直し、違えば保存しない（`20261017000500_save_texture_checks_back.sql`）（[ADR 0033](adr/0033-serve-texture-through-api.md)）。
 - 購入時期と季節は[ADR 0021](adr/0021-purchase-month-and-seasons.md)を参照。

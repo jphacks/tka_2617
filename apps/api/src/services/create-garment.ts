@@ -8,6 +8,20 @@ import type { GarmentMetadata } from "#src/lib/measurement-schema";
 import { defaultMaterials } from "#src/lib/materials";
 import { setGarmentMaterials } from "#src/lib/garment-materials";
 
+// 服の範囲は推論の結果で、写真の端を少しはみ出すことがある。補助の情報なので登録は止めず、
+// 写真の中に切り詰め、収まらなければ保存しない
+function clipBox(
+  bbox: GarmentMetadata["bbox"],
+  widthPx: number,
+  heightPx: number,
+): GarmentMetadata["bbox"] {
+  if (!bbox) return null;
+  const [x1, y1] = bbox;
+  const x2 = Math.min(bbox[2], widthPx);
+  const y2 = Math.min(bbox[3], heightPx);
+  return x2 > x1 && y2 > y1 ? [x1, y1, x2, y2] : null;
+}
+
 export async function createGarment(
   image: File,
   originalImage: File | undefined,
@@ -32,6 +46,11 @@ export async function createGarment(
     )
   )
     throw new HttpError(400, "A4の四隅を原画像内に指定してください");
+  const bbox = clipBox(
+    metadata.bbox,
+    measurement.widthPx,
+    measurement.heightPx,
+  );
   const id = crypto.randomUUID();
   const uploaded: string[] = [];
   let inserted = false;
@@ -64,6 +83,7 @@ export async function createGarment(
         pixels_per_cm:
           file.role === "measurement" ? metadata.pixelsPerCm : null,
         paper_corners: file.role === "measurement" ? metadata.paperCorners : [],
+        bbox: file.role === "measurement" ? bbox : null,
         model_version:
           file.role === "measurement" ? metadata.modelVersion : null,
       });

@@ -24,7 +24,8 @@ const savedCorners = [
   [300, 420],
   [10, 420],
 ];
-const unmeasured = { points: [], paper_corners: [] };
+const savedBbox = [40, 60, 900, 1200];
+const unmeasured = { points: [], paper_corners: [], bbox: null };
 const photos = [
   {
     id: "33333333-3333-4333-8333-333333333333",
@@ -34,6 +35,7 @@ const photos = [
     height_px: 1280,
     points: savedPoints,
     paper_corners: savedCorners,
+    bbox: savedBbox,
   },
   {
     id: backImageId,
@@ -99,6 +101,7 @@ void test("Tシャツ・長そで・シャツ・ズボンは保存済みのカ�
             heightPx: 1280,
             points: savedPoints,
             paperCorners: savedCorners,
+            bbox: savedBbox,
           });
           assert.equal(await (form.get("front") as File).text(), "front bytes");
           assert.equal(await (form.get("back") as File).text(), "back bytes");
@@ -152,6 +155,49 @@ void test("点もA4の四隅も保存していない服は、推論サービス�
   });
   assert.equal(response.status, 202);
   assert.equal(form?.has("frontSaved"), false);
+});
+
+void test("服の範囲だけを保存した服でも、範囲を推論サービスに渡す", async (t) => {
+  let form: FormData | undefined;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(input instanceof Request ? input.url : input);
+      if (url.pathname === "/rest/v1/garments")
+        return Promise.resolve(
+          Response.json({
+            category: "short_sleeve_top",
+            created_at: registeredAt,
+            garment_images: photos.map((photo) =>
+              photo.role === "measurement"
+                ? { ...photo, ...unmeasured, bbox: savedBbox }
+                : photo,
+            ),
+          }),
+        );
+      if (url.pathname.startsWith("/storage/v1/object/"))
+        return Promise.resolve(
+          new Response("jpeg", { headers: { "Content-Type": "image/jpeg" } }),
+        );
+      form = init?.body as FormData;
+      return Promise.resolve(
+        Response.json({ accepted: true }, { status: 202 }),
+      );
+    },
+  );
+  const response = await app.request(`${path}/texture`, {
+    method: "POST",
+    headers,
+  });
+  assert.equal(response.status, 202);
+  assert.deepEqual(JSON.parse(form?.get("frontSaved") as string), {
+    widthPx: 960,
+    heightPx: 1280,
+    points: [],
+    paperCorners: [],
+    bbox: savedBbox,
+  });
 });
 
 void test("認証・ID・写真不足を確認し、勝手に推論を開始しない", async (t) => {

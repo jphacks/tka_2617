@@ -447,6 +447,8 @@ export function MeasurementStudio({ editId }: { editId: string | null }) {
             pixelsPerCm: ready.pixelsPerCm,
             paperCorners:
               ready.paperCorners.length === 4 ? ready.paperCorners : [],
+            // テクスチャを作るときに、服の検出をやり直さないため
+            bbox: ready.bbox,
             modelVersion: ready.modelVersion,
             measurementVersion: ready.measurementVersion,
             name,
