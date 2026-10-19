@@ -66,6 +66,7 @@
 - [0049 服の検出とランドマークは、OpenVINOに変換したモデルをCPUで動かす](0049-openvino-for-models.md)
 - [0050 テクスチャの三角形の貼り付けは、Rust拡張で並列に計算する](0050-rust-for-texture-warp.md)
 - [0051 テクスチャを作るときは、DBに保存した表の点とA4の四隅を推論より優先する](0051-saved-points-for-texture.md)
+- [0053 推論サービスのテクスチャの作業は服ごとに新しい3件まで残し、服を消したら片付ける](0053-texture-folders-cleanup.md)
 
 ## 参考文献
 

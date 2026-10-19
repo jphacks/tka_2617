@@ -118,7 +118,7 @@ type Garment = {
 
 PATCHの入力は`{ name?, measurements?, purchasedMonth?, seasons?, materials?, colorFamily? }`で、成功は`200 { id }`。寸法・季節・素材は、送ったもので丸ごと置き換える。purchasedMonthは`YYYY-MM`。purchasedMonthとcolorFamilyは、nullを送ると未設定に戻る。seasonsは、春夏秋冬から重ならない0〜4件で、季節の順に並べて保存する。種類の変更と、保存したあとの点の編集は、最初の版ではできない。
 
-DELETEは、画像を先に消してから行を消す。成功は204。途中で失敗したら503を返し、やり直せる。
+DELETEは、画像を先に消してから行を消す。成功は204。途中で失敗したら503を返し、やり直せる。行を消したあと、推論サービスに`DELETE /textures/{garmentId}`を送り、PCに残る作業と写真を片付ける。推論サービスにつながらなくても、204を返す（[ADR 0053](adr/0053-texture-folders-cleanup.md)）。
 
 ### 素材
 
@@ -163,11 +163,12 @@ Tシャツ・長そで・シャツ・ズボンでテンプレートが違い、�
 
 完成した作業は、`{プロフィールID}/{服ID}/texture-{UUID}.png`としてStorageに置き、`garment_images`の`texture_job`に作業フォルダ名を記録する。同じ作業は2回保存しない。新しい作業が完成したら、DBの関数`save_garment_texture`で行を1つのトランザクションで差し替え、古い画像を消す。関数は服の行をロックしたまま裏面が変わっていないかを確かめ直し、変わっていれば保存せずに`processing`を返す。裏面を撮り直す前に保存したテクスチャは使わない。推論サービスが返す`backImageId`が今の裏面と違う作業も、無い扱いにする。[ADR 0033](adr/0033-serve-texture-through-api.md)を参照。
 
-apiが使う推論サービスのAPI（どちらも`POST /textures`と同じBearerトークン）：
+apiが使う推論サービスのAPI（どれも`POST /textures`と同じBearerトークン）：
 
 - `POST /textures`：フォームの`backImageId`を作業に記録する。表のmeasurement画像に点かA4の四隅が保存してあれば、`frontSaved`に`{ widthPx, heightPx, points, paperCorners }`のJSONを入れる。推論サービスは、写真と大きさが同じなら、その点と四隅を推論の結果より優先して使う（[ADR 0051](adr/0051-saved-points-for-texture.md)）
 - `GET /textures/{garmentId}`：最新の作業の`{ status: "queued" | "running" | "done" | "failed", job: string | null, error: string | null, backImageId: string | null }`。作業が無ければ404。`backImageId`を返さない推論サービスでは、最新の作業を今の写真のものとみなす
 - `GET /textures/{garmentId}/{job}/texture.png`：`done`の作業のテクスチャ
+- `DELETE /textures/{garmentId}`：服を消したあとに呼ぶ。待ちの作業を取り消し、その服の作業フォルダと、写真の切り抜きの記録を消す。作っている最中なら、終わってから消す。`{ removed: number, running: boolean }`を返す
 
 ## 今日の天気（webだけ）
 

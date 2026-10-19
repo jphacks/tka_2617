@@ -6,6 +6,7 @@ import {
   type GarmentRecord,
 } from "#src/lib/garment-records";
 import { HttpError } from "#src/lib/http-error";
+import { deleteFromInference } from "#src/lib/inference-client";
 
 export async function deleteGarment(id: string) {
   const { data, error } = await supabase
@@ -39,4 +40,8 @@ export async function deleteGarment(id: string) {
       503,
       "登録情報を削除できませんでした。再試行してください",
     );
+  // 推論サービスのPCに残る写真とテクスチャも片付ける。待ちの作業も取り消す（ADR 0053）。
+  // 推論サービスが止まっていても、DBとStorageからは消えているので、服の削除は済んだとして返す
+  if ((await deleteFromInference(`/textures/${id}`)) === false)
+    console.error("推論サービスに残る服の作業を片付けられませんでした", id);
 }

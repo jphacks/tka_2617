@@ -51,6 +51,13 @@ def recall(raw, width, height, category):
     return {**record, "mask": mask}
 
 
+def forget(raw):
+    """服を消したときに、その写真の記録を消す。"""
+    key = photo_key(raw)
+    (FOLDER / f"{key}.json").unlink(missing_ok=True)
+    (FOLDER / f"{key}.png").unlink(missing_ok=True)
+
+
 def forget_old():
     records = sorted(FOLDER.glob("*.json"), key=lambda path: path.stat().st_mtime, reverse=True)
     for path in records[KEEP:]:
